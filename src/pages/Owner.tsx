@@ -9,8 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { LogOut, Plus, Percent, Package, Settings } from "lucide-react";
+import { LogOut, Plus, Percent, Package, Settings, Upload } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { ExcelUpload } from "@/components/ExcelUpload";
 
 interface Category {
   id: string;
@@ -159,10 +160,14 @@ const Owner = () => {
 
       <div className="container mx-auto p-6">
         <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
             <TabsTrigger value="products">
               <Plus className="w-4 h-4 mr-2" />
               Add Products
+            </TabsTrigger>
+            <TabsTrigger value="bulk-upload">
+              <Upload className="w-4 h-4 mr-2" />
+              Bulk Upload
             </TabsTrigger>
             <TabsTrigger value="settings">
               <Settings className="w-4 h-4 mr-2" />
@@ -289,6 +294,10 @@ const Owner = () => {
                 </form>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="bulk-upload">
+            <ExcelUpload onSuccess={fetchCategories} />
           </TabsContent>
 
           <TabsContent value="settings">
