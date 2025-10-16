@@ -40,6 +40,7 @@ const Auth = () => {
         });
         if (error) throw error;
         toast.success("Welcome back!");
+        navigate("/");
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -84,7 +85,7 @@ const Auth = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="owner@medstore.com"
+                placeholder="owner@Kalyanam Pharmaceuticals.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

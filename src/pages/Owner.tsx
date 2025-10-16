@@ -243,10 +243,10 @@ const Owner = () => {
               <Plus className="w-4 h-4 mr-2" />
               Add Products
             </TabsTrigger>
-            <TabsTrigger value="bulk-upload">
-              <Upload className="w-4 h-4 mr-2" />
+            {/* <TabsTrigger value="bulk-upload">
+              <ExcelUpload className="w-4 h-4 mr-2" />
               Bulk Upload
-            </TabsTrigger>
+            </TabsTrigger> */}
             <TabsTrigger value="settings">
               <Settings className="w-4 h-4 mr-2" />
               Settings

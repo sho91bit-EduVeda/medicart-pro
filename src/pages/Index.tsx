@@ -180,7 +180,7 @@ const Index = () => {
                 <Store className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">MedStore</h1>
+                <h1 className="text-xl font-bold">Kalyanam Pharmaceuticals</h1>
                 <p className="text-xs text-muted-foreground">Your Trusted Pharmacy</p>
               </div>
             </div>
@@ -352,13 +352,13 @@ const Index = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Store className="w-6 h-6 text-primary" />
-            <span className="text-xl font-bold">MedStore</span>
+            <span className="text-xl font-bold">Kalyanam Pharmaceuticals</span>
           </div>
           <p className="text-muted-foreground">
             Your trusted online medical store with quality products and detailed information.
           </p>
           <p className="text-sm text-muted-foreground mt-4">
-            © 2025 MedStore. All rights reserved.
+            © 2025 Kalyanam Pharmaceuticals. All rights reserved.
           </p>
         </div>
       </footer>
