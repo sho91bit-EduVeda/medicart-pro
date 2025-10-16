@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { LogOut, Plus, Percent, Package, Settings, MessageSquare } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { whatsappService } from "@/services/whatsappService";
+import { ExcelUpload } from "@/components/ExcelUpload";
 
 interface Category {
   id: string;
@@ -242,6 +243,10 @@ const Owner = () => {
               <Plus className="w-4 h-4 mr-2" />
               Add Products
             </TabsTrigger>
+            <TabsTrigger value="bulk-upload">
+              <Upload className="w-4 h-4 mr-2" />
+              Bulk Upload
+            </TabsTrigger>
             <TabsTrigger value="settings">
               <Settings className="w-4 h-4 mr-2" />
               Settings
@@ -375,6 +380,10 @@ const Owner = () => {
                 </form>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="bulk-upload">
+            <ExcelUpload onSuccess={fetchCategories} />
           </TabsContent>
 
           <TabsContent value="settings">
