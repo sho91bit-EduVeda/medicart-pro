@@ -1,12 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ProductCard from "@/components/ProductCard";
 import CategoryCard from "@/components/CategoryCard";
-import { ShieldCheck, Search, Store } from "lucide-react";
+import UnavailableMedicinesSheet from "@/components/UnavailableMedicinesSheet";
+import { ProductFilters, FilterOptions } from "@/components/ProductFilters";
+import { StockStatus } from "@/components/StockStatus";
+import { ShieldCheck, Search, Store, Package } from "lucide-react";
 import { toast } from "sonner";
+import { whatsappService } from "@/services/whatsappService";
 import heroBanner from "@/assets/hero-banner.jpg";
 import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
@@ -26,6 +31,11 @@ interface Product {
   original_price: number;
   image_url?: string;
   in_stock: boolean;
+  brand?: string;
+  medicine_type?: string;
+  expiry_date?: string;
+  requires_prescription?: boolean;
+  quantity?: number;
   categories?: {
     name: string;
   };
@@ -41,16 +51,24 @@ const categoryImages: Record<string, string> = {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { isAuthenticated, signOut, checkAuth } = useAuth();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const selectedCategory = searchParams.get("category");
 
   useEffect(() => {
     fetchData();
+    // Initialize WhatsApp service
+    whatsappService.initialize();
   }, [selectedCategory]);
 
   const fetchData = async () => {
@@ -100,6 +118,48 @@ const Index = () => {
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Debounced search tracking function
+  const trackSearch = useCallback(async (query: string) => {
+    if (!query.trim()) return;
+
+    const resultsCount = filteredProducts.length;
+    
+    // Log the search
+    await whatsappService.logSearch(query, resultsCount);
+
+    // If no results found, track as unavailable medicine
+    if (resultsCount === 0) {
+      await whatsappService.trackUnavailableMedicine(query);
+    }
+  }, [filteredProducts.length]);
+
+  // Handle search input change with debouncing
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    // Set new timeout for tracking
+    const timeout = setTimeout(() => {
+      trackSearch(value);
+    }, 1000); // 1 second delay
+
+    setSearchTimeout(timeout);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -115,10 +175,33 @@ const Index = () => {
                 <p className="text-xs text-muted-foreground">Your Trusted Pharmacy</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => navigate("/auth")}>
-              <ShieldCheck className="w-4 h-4 mr-2" />
-              Owner Login
-            </Button>
+            <div className="flex items-center gap-2">
+              <UnavailableMedicinesSheet>
+                <Button variant="outline" size="sm">
+                  <Package className="w-4 h-4 mr-2" />
+                  Track Medicines
+                </Button>
+              </UnavailableMedicinesSheet>
+              {isAuthenticated ? (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => navigate("/owner")}> 
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => {
+                    signOut();
+                    navigate("/");
+                  }}>
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => navigate("/auth")}> 
+                  <ShieldCheck className="w-4 h-4 mr-2" />
+                  Owner Login
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -171,20 +254,36 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Search Bar */}
+        {/* Search Bar and Filters */}
         <section className="mb-8">
-          <div className="relative max-w-2xl mx-auto">
+          <div className="relative max-w-2xl mx-auto mb-6">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
             <Input
               type="search"
               placeholder="Search for medicines..."
               className="pl-12 h-12 text-lg"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
-        </section>
-
+          
+          <ProductFilters
+            onFilterChange={(filters) => {
+              // Apply filters to products
+              const filtered = products.filter((product) => {
+                const price = product.original_price * (1 - discountPercentage / 100);
+                const matchesPrice = price >= filters.priceRange[0] && price <= filters.priceRange[1];
+                const matchesBrand = filters.brand === 'all' || product.brand === filters.brand;
+                // Add more filter conditions here
+                return matchesPrice && matchesBrand;
+              });
+              setProducts(filtered);
+            }}
+            brands={["Brand 1", "Brand 2"]} // Replace with actual brands
+            medicineTypes={["Tablet", "Syrup", "Injection"]} // Replace with actual types
+            maxPrice={2000} // Replace with actual max price
+          />
+</section>
         {/* Products Grid */}
         <section>
           <h2 className="text-3xl font-bold mb-6">

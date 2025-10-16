@@ -2,6 +2,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { StockStatus } from "./StockStatus";
+import { useFeatureFlags } from "../hooks/useFeatureFlags";
 
 interface ProductCardProps {
   id: string;
@@ -11,6 +13,7 @@ interface ProductCardProps {
   discountPercentage: number;
   imageUrl?: string;
   inStock: boolean;
+  quantity?: number;
 }
 
 const ProductCard = ({
@@ -21,10 +24,17 @@ const ProductCard = ({
   discountPercentage,
   imageUrl,
   inStock,
+  quantity = 0,
 }: ProductCardProps) => {
   const navigate = useNavigate();
   const discountedPrice = originalPrice * (1 - discountPercentage / 100);
   const savings = originalPrice - discountedPrice;
+  const { quickAddToCart } = useFeatureFlags();
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // TODO: Implement add to cart logic
+    alert('Added to cart!');
+  };
 
   return (
     <Card 
@@ -48,10 +58,17 @@ const ProductCard = ({
             {discountPercentage}% OFF
           </Badge>
         )}
-        {!inStock && (
-          <Badge className="absolute top-2 left-2 bg-muted text-muted-foreground">
-            Out of Stock
-          </Badge>
+        <div className="absolute top-2 left-2">
+          <StockStatus quantity={quantity} />
+        </div>
+        {quickAddToCart && inStock && (
+          <Button
+            size="sm"
+            className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={handleQuickAdd}
+          >
+            Add to Cart
+          </Button>
         )}
       </div>
       <CardContent className="p-4">

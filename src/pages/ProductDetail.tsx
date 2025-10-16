@@ -205,6 +205,40 @@ const ProductDetail = () => {
               </div>
             )}
           </div>
+
+          {/* Product Reviews Section */}
+          <div className="mt-12">
+            <ProductReviews
+              productId={product.id}
+              reviews={[]} // You'll need to fetch reviews from your database
+              onAddReview={async (review) => {
+                try {
+                  const { error } = await supabase
+                    .from('product_reviews')
+                    .insert([
+                      {
+                        product_id: product.id,
+                        ...review,
+                      },
+                    ]);
+
+                  if (error) throw error;
+                  toast.success('Review added successfully');
+                } catch (error) {
+                  toast.error('Failed to add review');
+                  console.error(error);
+                }
+              }}
+            />
+          </div>
+
+          {/* Product Comparison Section */}
+          <div className="mt-12">
+            <ProductComparison
+              products={[product]} // Add comparison products here
+              onRemoveProduct={() => {}} // Implement removal logic
+            />
+          </div>
         </div>
       </div>
     </div>
