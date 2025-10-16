@@ -1,21 +1,29 @@
 export interface FeatureFlags {
-  advancedSearch: boolean;
-  productComparison: boolean;
-  stockStatus: boolean;
-  reviews: boolean;
-  quickAddToCart: boolean;
+  shoppingCart: boolean;
+  orderManagement: boolean;
+  productReviews: boolean;
   wishlist: boolean;
-  recentlyViewed: boolean;
-  bulkOrder: boolean;
+  advancedSearch: boolean;
+  productRecommendations: boolean;
+  notifications: boolean;
+  bulkOrders: boolean;
+  prescriptionUpload: boolean;
+  liveChat: boolean;
+  loyaltyProgram: boolean;
+  guestCheckout: boolean;
 }
 
 export const defaultFeatureFlags: FeatureFlags = {
-  advancedSearch: true,
-  productComparison: true,
-  stockStatus: true,
-  reviews: true,
-  quickAddToCart: true,
+  shoppingCart: true,
+  orderManagement: true,
+  productReviews: true,
   wishlist: true,
-  recentlyViewed: true,
-  bulkOrder: true,
+  advancedSearch: true,
+  productRecommendations: true,
+  notifications: true,
+  bulkOrders: true,
+  prescriptionUpload: true,
+  liveChat: false,
+  loyaltyProgram: false,
+  guestCheckout: true,
 };

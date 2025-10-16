@@ -5,8 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Package, AlertCircle, Pill, Info } from "lucide-react";
+import { ArrowLeft, Package, AlertCircle, Pill, Info, ShoppingCart, Heart } from "lucide-react";
 import { toast } from "sonner";
+import { ProductReviewsSection } from "@/components/ProductReviewsSection";
+import { ProductRecommendations } from "@/components/ProductRecommendations";
+import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface Product {
   id: string;
@@ -30,6 +35,10 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const { addItem } = useCart();
+  const { toggleItem, isInWishlist, loadWishlist } = useWishlist();
+  const { shoppingCart, wishlist: wishlistEnabled } = useFeatureFlags();
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,6 +70,9 @@ const ProductDetail = () => {
     };
 
     fetchData();
+    if (wishlistEnabled) {
+      loadWishlist();
+    }
   }, [id]);
 
   if (loading) {
@@ -89,6 +101,15 @@ const ProductDetail = () => {
 
   const discountedPrice = product.original_price * (1 - discountPercentage / 100);
   const savings = product.original_price - discountedPrice;
+  const isWishlisted = isInWishlist(product.id);
+
+  const handleAddToCart = async () => {
+    await addItem(product.id, quantity);
+  };
+
+  const handleWishlistToggle = async () => {
+    await toggleItem(product.id);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -156,6 +177,24 @@ const ProductDetail = () => {
                     </span>
                   </div>
                 )}
+                <div className="flex gap-2 mt-4">
+                  {shoppingCart && product.in_stock && (
+                    <Button className="flex-1" size="lg" onClick={handleAddToCart}>
+                      <ShoppingCart className="w-5 h-5 mr-2" />
+                      Add to Cart
+                    </Button>
+                  )}
+                  {wishlistEnabled && (
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleWishlistToggle}
+                      className={isWishlisted ? 'border-red-500 text-red-500' : ''}
+                    >
+                      <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-red-500' : ''}`} />
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -206,39 +245,17 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Product Reviews Section */}
-          <div className="mt-12">
-            <ProductReviews
-              productId={product.id}
-              reviews={[]} // You'll need to fetch reviews from your database
-              onAddReview={async (review) => {
-                try {
-                  const { error } = await supabase
-                    .from('product_reviews')
-                    .insert([
-                      {
-                        product_id: product.id,
-                        ...review,
-                      },
-                    ]);
-
-                  if (error) throw error;
-                  toast.success('Review added successfully');
-                } catch (error) {
-                  toast.error('Failed to add review');
-                  console.error(error);
-                }
-              }}
-            />
+          <div className="md:col-span-2 mt-8">
+            <ProductReviewsSection productId={product.id} />
           </div>
+        </div>
 
-          {/* Product Comparison Section */}
-          <div className="mt-12">
-            <ProductComparison
-              products={[product]} // Add comparison products here
-              onRemoveProduct={() => {}} // Implement removal logic
-            />
-          </div>
+        <div className="container mx-auto px-4">
+          <ProductRecommendations
+            currentProductId={product.id}
+            categoryId={product.category_id}
+            limit={4}
+          />
         </div>
       </div>
     </div>

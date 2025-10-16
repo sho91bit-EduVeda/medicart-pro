@@ -9,9 +9,14 @@ import CategoryCard from "@/components/CategoryCard";
 import UnavailableMedicinesSheet from "@/components/UnavailableMedicinesSheet";
 import { ProductFilters, FilterOptions } from "@/components/ProductFilters";
 import { StockStatus } from "@/components/StockStatus";
-import { ShieldCheck, Search, Store, Package } from "lucide-react";
+import { ShieldCheck, Search, Store, Package, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { whatsappService } from "@/services/whatsappService";
+import { ShoppingCart } from "@/components/ShoppingCart";
+import { NotificationBell } from "@/components/NotificationBell";
+import { ProductRecommendations } from "@/components/ProductRecommendations";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import heroBanner from "@/assets/hero-banner.jpg";
 import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
@@ -62,14 +67,18 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const { wishlist: wishlistEnabled } = useFeatureFlags();
+  const { loadWishlist, items: wishlistItems } = useWishlist();
 
   const selectedCategory = searchParams.get("category");
 
   useEffect(() => {
     fetchData();
-    // Initialize WhatsApp service
     whatsappService.initialize();
-  }, [selectedCategory]);
+    if (wishlistEnabled) {
+      loadWishlist();
+    }
+  }, [selectedCategory, wishlistEnabled]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -176,6 +185,19 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <NotificationBell />
+              {wishlistEnabled && (
+                <Button variant="outline" size="sm" onClick={() => navigate("/wishlist")} className="relative">
+                  <Heart className="w-4 h-4 mr-2" />
+                  Wishlist
+                  {wishlistItems.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                      {wishlistItems.length}
+                    </span>
+                  )}
+                </Button>
+              )}
+              <ShoppingCart discountPercentage={discountPercentage} />
               <UnavailableMedicinesSheet>
                 <Button variant="outline" size="sm">
                   <Package className="w-4 h-4 mr-2" />
@@ -184,7 +206,7 @@ const Index = () => {
               </UnavailableMedicinesSheet>
               {isAuthenticated ? (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => navigate("/owner")}> 
+                  <Button variant="outline" size="sm" onClick={() => navigate("/owner")}>
                     <ShieldCheck className="w-4 h-4 mr-2" />
                     Dashboard
                   </Button>
@@ -196,7 +218,7 @@ const Index = () => {
                   </Button>
                 </>
               ) : (
-                <Button variant="outline" size="sm" onClick={() => navigate("/auth")}> 
+                <Button variant="outline" size="sm" onClick={() => navigate("/auth")}>
                   <ShieldCheck className="w-4 h-4 mr-2" />
                   Owner Login
                 </Button>
@@ -312,11 +334,17 @@ const Index = () => {
                   discountPercentage={discountPercentage}
                   imageUrl={product.image_url}
                   inStock={product.in_stock}
+                  quantity={product.quantity}
+                  averageRating={product.average_rating}
+                  reviewCount={product.review_count}
                 />
               ))}
             </div>
           )}
         </section>
+
+        {/* Product Recommendations */}
+        <ProductRecommendations />
       </div>
 
       {/* Footer */}
