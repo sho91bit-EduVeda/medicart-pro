@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroBanner from "@/assets/hero-banner.jpg";
-import kalyaanamBanner from "@/assets/WhatsApp Image 2025-10-03 at 3.11.56 PM.jpeg";
+import kalyaanamBanner from "@/assets/banner.jpg";
 
 interface BannerSlide {
   image: string;
@@ -14,9 +14,9 @@ interface BannerSlide {
 const slides: BannerSlide[] = [
   {
     image: kalyaanamBanner,
-    title: "Kalyaanam",
-    subtitle: "2/50 Sector 0, Mansarovar Colony",
-    gradientOverlay: "bg-gradient-to-r from-primary/95 to-primary/70",
+    title: "",
+    subtitle: "",
+    gradientOverlay: "",
   },
   {
     image: heroBanner,
@@ -56,44 +56,34 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
   };
 
   return (
-    <section className="relative overflow-hidden group">
+    <section className="relative h-[400px] overflow-hidden group">
       {slides.map((slide, index) => (
         <div
           key={index}
-          className={`relative transition-opacity duration-700 ${
-            index === currentSlide ? "opacity-100" : "opacity-0 absolute inset-0"
+          className={`absolute inset-0 transition-opacity duration-700 ${
+            index === currentSlide ? "opacity-100" : "opacity-0"
           }`}
+          style={{backgroundColor: '#f4a824'}} 
         >
-          {index === 0 ? (
-            <img
-              src={slide.image}
-              alt={slide.title}
-              className="w-full h-auto"
-            />
-          ) : (
-            <>
-              <div className="h-[400px]">
-                <img
-                  src={slide.image}
-                  alt={slide.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className={`absolute inset-0 ${slide.gradientOverlay} flex items-center`}>
-                <div className="container mx-auto px-4">
-                  <div className="max-w-2xl text-white">
-                    <h2 className="text-5xl font-bold mb-4">{slide.title}</h2>
-                    <p className="text-xl mb-6 text-white/90">{slide.subtitle}</p>
-                    {discountPercentage > 0 && (
-                      <div className="inline-block bg-secondary text-secondary-foreground px-6 py-3 rounded-full font-bold text-lg">
-                        {discountPercentage}% OFF on all products!
-                      </div>
-                    )}
+          <img
+            src={slide.image}
+            alt={slide.title}
+            className="w-full h-full"
+            style={{ objectFit: 'contain'}}
+          />
+          <div className={`absolute inset-0 ${slide.gradientOverlay} flex items-center`}>
+            <div className="container mx-auto px-4">
+              <div className="max-w-2xl text-white">
+                <h2 className="text-5xl font-bold mb-4">{slide.title}</h2>
+                <p className="text-xl mb-6 text-white/90">{slide.subtitle}</p>
+                {index === 1 && discountPercentage > 0 && (
+                  <div className="inline-block bg-secondary text-secondary-foreground px-6 py-3 rounded-full font-bold text-lg">
+                    {discountPercentage}% OFF on all products!
                   </div>
-                </div>
+                )}
               </div>
-            </>
-          )}
+            </div>
+          </div>
         </div>
       ))}
 
