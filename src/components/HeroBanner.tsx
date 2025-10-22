@@ -56,7 +56,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
   };
 
   return (
-    <section className="relative overflow-hidden group bg-black">
+    <section className="relative overflow-hidden group">
       {slides.map((slide, index) => (
         <div
           key={index}
