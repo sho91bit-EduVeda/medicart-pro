@@ -56,32 +56,44 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
   };
 
   return (
-    <section className="relative h-[400px] overflow-hidden group">
+    <section className="relative overflow-hidden group bg-black">
       {slides.map((slide, index) => (
         <div
           key={index}
-          className={`absolute inset-0 transition-opacity duration-700 ${
-            index === currentSlide ? "opacity-100" : "opacity-0"
+          className={`relative transition-opacity duration-700 ${
+            index === currentSlide ? "opacity-100" : "opacity-0 absolute inset-0"
           }`}
         >
-          <img
-            src={slide.image}
-            alt={slide.title}
-            className="w-full h-full object-cover"
-          />
-          <div className={`absolute inset-0 ${slide.gradientOverlay} flex items-center`}>
-            <div className="container mx-auto px-4">
-              <div className="max-w-2xl text-white">
-                <h2 className="text-5xl font-bold mb-4">{slide.title}</h2>
-                <p className="text-xl mb-6 text-white/90">{slide.subtitle}</p>
-                {index === 1 && discountPercentage > 0 && (
-                  <div className="inline-block bg-secondary text-secondary-foreground px-6 py-3 rounded-full font-bold text-lg">
-                    {discountPercentage}% OFF on all products!
-                  </div>
-                )}
+          {index === 0 ? (
+            <img
+              src={slide.image}
+              alt={slide.title}
+              className="w-full h-auto"
+            />
+          ) : (
+            <>
+              <div className="h-[400px]">
+                <img
+                  src={slide.image}
+                  alt={slide.title}
+                  className="w-full h-full object-cover"
+                />
               </div>
-            </div>
-          </div>
+              <div className={`absolute inset-0 ${slide.gradientOverlay} flex items-center`}>
+                <div className="container mx-auto px-4">
+                  <div className="max-w-2xl text-white">
+                    <h2 className="text-5xl font-bold mb-4">{slide.title}</h2>
+                    <p className="text-xl mb-6 text-white/90">{slide.subtitle}</p>
+                    {discountPercentage > 0 && (
+                      <div className="inline-block bg-secondary text-secondary-foreground px-6 py-3 rounded-full font-bold text-lg">
+                        {discountPercentage}% OFF on all products!
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       ))}
 
