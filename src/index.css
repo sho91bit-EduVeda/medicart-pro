@@ -17,10 +17,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 15%;
 
-    --primary: 210 100% 45%;
+    --primary: 37 91% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 152 60% 48%;
+    --secondary: 345 70% 38%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 210 40% 96%;
@@ -39,18 +39,18 @@ All colors MUST be HSL.
     --radius: 0.75rem;
 
     /* Medical Store Theme */
-    --medical-blue: 210 100% 45%;
-    --medical-green: 152 60% 48%;
-    --trust-blue: 215 85% 60%;
+    --medical-orange: 37 91% 55%;
+    --medical-maroon: 345 70% 38%;
+    --trust-gold: 42 87% 55%;
     --price-red: 0 84% 60%;
-    
+
     /* Gradients */
-    --gradient-header: linear-gradient(135deg, hsl(210 100% 45%) 0%, hsl(215 85% 60%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%);
-    
+    --gradient-header: linear-gradient(135deg, hsl(37 91% 55%) 0%, hsl(42 87% 55%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(37 40% 98%) 100%);
+
     /* Shadows */
-    --shadow-card: 0 2px 8px hsl(210 15% 15% / 0.08);
-    --shadow-hover: 0 4px 16px hsl(210 100% 45% / 0.15);
+    --shadow-card: 0 2px 8px hsl(37 15% 15% / 0.08);
+    --shadow-hover: 0 4px 16px hsl(37 91% 55% / 0.15);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -82,10 +82,10 @@ All colors MUST be HSL.
     --popover: 215 30% 12%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 210 100% 50%;
+    --primary: 37 91% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 152 60% 48%;
+    --secondary: 345 70% 38%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 215 30% 18%;

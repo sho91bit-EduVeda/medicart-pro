@@ -15,9 +15,9 @@ import { whatsappService } from "@/services/whatsappService";
 import { ShoppingCart } from "@/components/ShoppingCart";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProductRecommendations } from "@/components/ProductRecommendations";
+import { HeroBanner } from "@/components/HeroBanner";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
-import heroBanner from "@/assets/hero-banner.jpg";
 import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
 import coldFluImage from "@/assets/category-cold-flu.jpg";
@@ -229,28 +229,7 @@ const Index = () => {
       </header>
 
       {/* Hero Banner */}
-      <section className="relative h-[400px] overflow-hidden">
-        <img
-          src={heroBanner}
-          alt="Medical Store"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/60 flex items-center">
-          <div className="container mx-auto px-4">
-            <div className="max-w-2xl text-white">
-              <h2 className="text-5xl font-bold mb-4">Your Health, Our Priority</h2>
-              <p className="text-xl mb-6 text-white/90">
-                Quality medicines with detailed information at your fingertips
-              </p>
-              {discountPercentage > 0 && (
-                <div className="inline-block bg-destructive text-destructive-foreground px-6 py-3 rounded-full font-bold text-lg">
-                  🎉 {discountPercentage}% OFF on all products!
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroBanner discountPercentage={discountPercentage} />
 
       <div className="container mx-auto px-4 py-12">
         {/* Categories Section */}
