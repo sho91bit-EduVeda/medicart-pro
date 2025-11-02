@@ -244,6 +244,35 @@ const ProductDetail = () => {
               </CardContent>
             </Card>
 
+            {/* Prescription Upload Section */}
+            {prescriptionEnabled && product.requires_prescription && (
+              <Card>
+                <CardContent className="p-6">
+                  <PrescriptionUpload
+                    productId={product.id}
+                    onUploadSuccess={handlePrescriptionUpload}
+                    onUploadError={handlePrescriptionError}
+                    disabled={!product.in_stock}
+                  />
+
+                  {getPrescriptionsForProduct(product.id).length > 0 && (
+                    <div className="mt-6 space-y-4">
+                      <h4 className="font-medium text-lg">
+                        Uploaded Prescriptions ({getPrescriptionsForProduct(product.id).length})
+                      </h4>
+                      {getPrescriptionsForProduct(product.id).map((prescription) => (
+                        <PrescriptionPreview
+                          key={prescription.id}
+                          prescriptionFile={prescription}
+                          onRemove={() => handleRemovePrescription(prescription.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Description */}
             {product.description && (
               <div>
