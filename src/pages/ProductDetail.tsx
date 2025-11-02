@@ -9,9 +9,13 @@ import { ArrowLeft, Package, AlertCircle, Pill, Info, ShoppingCart, Heart } from
 import { toast } from "sonner";
 import { ProductReviewsSection } from "@/components/ProductReviewsSection";
 import { ProductRecommendations } from "@/components/ProductRecommendations";
+import { PrescriptionBadge } from "@/components/PrescriptionBadge";
+import { PrescriptionUpload } from "@/components/PrescriptionUpload";
+import { PrescriptionPreview } from "@/components/PrescriptionPreview";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { usePrescriptionUpload } from "@/hooks/usePrescriptionUpload";
 
 interface Product {
   id: string;
