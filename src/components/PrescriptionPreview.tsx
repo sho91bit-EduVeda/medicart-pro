@@ -43,8 +43,9 @@ export function PrescriptionPreview({
       const url = await prescriptionService.getPrescriptionUrl(prescriptionFile.file_path);
       setPreviewUrl(url);
       setIsViewing(true);
-    } catch (error: any) {
-      toast.error('Failed to load prescription preview');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load prescription preview';
+      toast.error(errorMessage);
       console.error('Error loading prescription:', error);
     } finally {
       setIsLoading(false);
