@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Progress } from './ui/progress';
 import { usePrescriptionUpload } from '@/hooks/usePrescriptionUpload';
-import { PrescriptionUploadOptions } from '@/types/prescription';
+import { PrescriptionUploadOptions, PrescriptionFile } from '@/types/prescription';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
