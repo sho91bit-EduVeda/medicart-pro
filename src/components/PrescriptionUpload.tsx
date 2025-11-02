@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 interface PrescriptionUploadProps {
   productId: string;
-  onUploadSuccess?: (fileData: any) => void;
+  onUploadSuccess?: (fileData: PrescriptionFile) => void;
   onUploadError?: (error: string) => void;
   disabled?: boolean;
   className?: string;
