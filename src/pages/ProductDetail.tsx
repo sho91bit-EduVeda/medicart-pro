@@ -217,9 +217,17 @@ const ProductDetail = () => {
                 )}
                 <div className="flex gap-2 mt-4">
                   {shoppingCart && product.in_stock && (
-                    <Button className="flex-1" size="lg" onClick={handleAddToCart}>
+                    <Button
+                      className="flex-1"
+                      size="lg"
+                      onClick={handleAddToCart}
+                      disabled={product.requires_prescription && !hasPrescriptionForProduct(product.id)}
+                    >
                       <ShoppingCart className="w-5 h-5 mr-2" />
-                      Add to Cart
+                      {product.requires_prescription && !hasPrescriptionForProduct(product.id)
+                        ? "Upload Prescription Required"
+                        : "Add to Cart"
+                      }
                     </Button>
                   )}
                   {wishlistEnabled && (
