@@ -185,6 +185,11 @@ const ProductDetail = () => {
               {!product.in_stock && (
                 <Badge variant="destructive" className="mb-4">Out of Stock</Badge>
               )}
+              {prescriptionEnabled && product.requires_prescription && (
+                <div className="mb-4">
+                  <PrescriptionBadge />
+                </div>
+              )}
             </div>
 
             {/* Pricing */}
