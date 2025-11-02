@@ -72,6 +72,11 @@ const ProductDetail = () => {
 
         if (settingsError) throw settingsError;
         setDiscountPercentage(settingsData.discount_percentage || 0);
+
+        // Load prescriptions if prescription is required
+        if (prescriptionEnabled && productData.requires_prescription) {
+          await loadPrescriptionsForProduct(productData.id);
+        }
       } catch (error: any) {
         toast.error("Failed to load product details");
         console.error(error);
@@ -84,7 +89,7 @@ const ProductDetail = () => {
     if (wishlistEnabled) {
       loadWishlist();
     }
-  }, [id]);
+  }, [id, prescriptionEnabled, loadPrescriptionsForProduct]);
 
   if (loading) {
     return (
