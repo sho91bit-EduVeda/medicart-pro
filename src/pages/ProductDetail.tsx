@@ -27,6 +27,7 @@ interface Product {
   original_price: number;
   image_url?: string;
   in_stock: boolean;
+  requires_prescription?: boolean;
   category_id?: string;
   categories?: {
     name: string;
