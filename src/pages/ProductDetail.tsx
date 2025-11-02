@@ -42,7 +42,13 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
   const { toggleItem, isInWishlist, loadWishlist } = useWishlist();
-  const { shoppingCart, wishlist: wishlistEnabled } = useFeatureFlags();
+  const { shoppingCart, wishlist: wishlistEnabled, prescriptionUpload: prescriptionEnabled } = useFeatureFlags();
+  const {
+    loadPrescriptionsForProduct,
+    getPrescriptionsForProduct,
+    removePrescription,
+    hasPrescriptionForProduct
+  } = usePrescriptionUpload();
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
