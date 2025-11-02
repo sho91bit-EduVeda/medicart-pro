@@ -120,11 +120,28 @@ const ProductDetail = () => {
   const isWishlisted = isInWishlist(product.id);
 
   const handleAddToCart = async () => {
+    // Check if prescription is required but not uploaded
+    if (product.requires_prescription && !hasPrescriptionForProduct(product.id)) {
+      toast.error("Please upload a prescription before adding this item to cart");
+      return;
+    }
     await addItem(product.id, quantity);
   };
 
   const handleWishlistToggle = async () => {
     await toggleItem(product.id);
+  };
+
+  const handlePrescriptionUpload = (fileData: any) => {
+    toast.success("Prescription uploaded successfully");
+  };
+
+  const handlePrescriptionError = (error: string) => {
+    toast.error(error);
+  };
+
+  const handleRemovePrescription = async (prescriptionId: string) => {
+    await removePrescription(prescriptionId);
   };
 
   return (
