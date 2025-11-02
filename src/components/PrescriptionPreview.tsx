@@ -61,8 +61,9 @@ export function PrescriptionPreview({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (error: any) {
-      toast.error('Failed to download prescription');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to download prescription';
+      toast.error(errorMessage);
       console.error('Error downloading prescription:', error);
     }
   };
