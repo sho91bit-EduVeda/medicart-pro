@@ -37,46 +37,73 @@ export type Database = {
       }
       products: {
         Row: {
+          brand: string | null
           category_id: string | null
           composition: string | null
           created_at: string | null
           description: string | null
+          expiry_date: string | null
           id: string
           image_url: string | null
           in_stock: boolean | null
+          manufacturer: string | null
+          medicine_type: string | null
           name: string
           original_price: number
+          requires_prescription: boolean | null
           side_effects: string | null
+          sku: string | null
           updated_at: string | null
           uses: string | null
+          average_rating: number | null
+          review_count: number | null
+          tags: string[] | null
         }
         Insert: {
+          brand?: string | null
           category_id?: string | null
           composition?: string | null
           created_at?: string | null
           description?: string | null
+          expiry_date?: string | null
           id?: string
           image_url?: string | null
           in_stock?: boolean | null
+          manufacturer?: string | null
+          medicine_type?: string | null
           name: string
           original_price: number
+          requires_prescription?: boolean | null
           side_effects?: string | null
+          sku?: string | null
           updated_at?: string | null
           uses?: string | null
+          average_rating?: number | null
+          review_count?: number | null
+          tags?: string[] | null
         }
         Update: {
+          brand?: string | null
           category_id?: string | null
           composition?: string | null
           created_at?: string | null
           description?: string | null
+          expiry_date?: string | null
           id?: string
           image_url?: string | null
           in_stock?: boolean | null
+          manufacturer?: string | null
+          medicine_type?: string | null
           name?: string
           original_price?: number
+          requires_prescription?: boolean | null
           side_effects?: string | null
+          sku?: string | null
           updated_at?: string | null
           uses?: string | null
+          average_rating?: number | null
+          review_count?: number | null
+          tags?: string[] | null
         }
         Relationships: [
           {
@@ -84,6 +111,69 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescription_uploads: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          product_id: string
+          upload_status: 'uploaded' | 'pending' | 'failed' | 'verified' | 'rejected'
+          updated_at: string
+          user_id: string
+          verification_notes: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          product_id: string
+          upload_status?: 'uploaded' | 'pending' | 'failed' | 'verified' | 'rejected'
+          updated_at?: string
+          user_id: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          product_id?: string
+          upload_status?: 'uploaded' | 'pending' | 'failed' | 'verified' | 'rejected'
+          updated_at?: string
+          user_id?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescription_uploads_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescription_uploads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
