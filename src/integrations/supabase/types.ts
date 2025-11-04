@@ -35,6 +35,148 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          id: string
+          user_id: string | null
+          order_number: string
+          status: string
+          total_amount: number
+          discount_applied: number
+          delivery_address: Json
+          payment_method: string | null
+          payment_status: string
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          order_number?: string | null
+          status?: string
+          total_amount: number
+          discount_applied?: number
+          delivery_address: Json
+          payment_method?: string | null
+          payment_status?: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          order_number?: string
+          status?: string
+          total_amount?: number
+          discount_applied?: number
+          delivery_address?: Json
+          payment_method?: string | null
+          payment_status?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          id: string
+          order_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          unit_price: number
+          discount_percentage: number
+          subtotal: number
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          unit_price: number
+          discount_percentage?: number
+          subtotal: number
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          unit_price?: number
+          discount_percentage?: number
+          subtotal?: number
+        }
+        Relationships: []
+      }
+      shopping_cart: {
+        Row: {
+          id: string
+          user_id: string
+          product_id: string
+          quantity: number
+          added_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          product_id: string
+          quantity: number
+          added_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: []
+      }
+      prescription_uploads: {
+        Row: {
+          id: string
+          user_id: string
+          order_id: string | null
+          file_url: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          status: string
+          verified_by: string | null
+          verified_at: string | null
+          rejection_reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          order_id?: string | null
+          file_url: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          status?: string
+          verified_by?: string | null
+          verified_at?: string | null
+          rejection_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          order_id?: string | null
+          status?: string
+          verified_by?: string | null
+          verified_at?: string | null
+          rejection_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category_id: string | null
@@ -103,6 +245,91 @@ export type Database = {
           discount_percentage?: number | null
           id?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_settings: {
+        Row: {
+          id: string
+          phone_number: string
+          api_key: string
+          webhook_url: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          phone_number: string
+          api_key: string
+          webhook_url?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          phone_number?: string
+          api_key?: string
+          webhook_url?: string | null
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      search_logs: {
+        Row: {
+          id: string
+          search_query: string
+          search_timestamp: string
+          results_count: number
+          user_ip: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          search_query: string
+          search_timestamp?: string
+          results_count?: number
+          user_ip?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          search_query?: string
+          results_count?: number
+        }
+        Relationships: []
+      }
+      unavailable_medicines: {
+        Row: {
+          id: string
+          medicine_name: string
+          search_count: number
+          first_searched_at: string
+          last_searched_at: string
+          status: string
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          medicine_name: string
+          search_count?: number
+          first_searched_at?: string
+          last_searched_at?: string
+          status?: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          search_count?: number
+          last_searched_at?: string
+          status?: string
+          notes?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

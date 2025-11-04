@@ -29,11 +29,21 @@ export function ShoppingCart({ discountPercentage }: ShoppingCartProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="relative">
+        <Button variant="outline" size="sm" className="relative hidden sm:flex">
           <CartIcon className="w-4 h-4 mr-2" />
           Cart
           {itemCount > 0 && (
             <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+              {itemCount}
+            </Badge>
+          )}
+        </Button>
+      </SheetTrigger>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="icon" className="relative sm:hidden">
+          <CartIcon className="w-4 h-4" />
+          {itemCount > 0 && (
+            <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
               {itemCount}
             </Badge>
           )}

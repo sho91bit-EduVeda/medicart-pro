@@ -12,6 +12,7 @@ interface CartItem {
     original_price: number;
     image_url?: string;
     in_stock: boolean;
+    requires_prescription?: boolean;
   };
 }
 
@@ -53,13 +54,13 @@ export const useCart = create<CartStore>()(
           const { data, error } = await supabase
             .from('shopping_cart')
             .insert([{ user_id: user.id, product_id: productId, quantity }])
-            .select('*, products:product_id(name, original_price, image_url, in_stock)')
+            .select('*, products:product_id(name, original_price, image_url, in_stock, requires_prescription)')
             .single();
 
           if (error) throw error;
 
           set(state => ({
-            items: [...state.items, { ...data, product: data.products }]
+            items: [...state.items, { ...data, product: data.products as any }]
           }));
 
           toast.success('Added to cart');
@@ -167,12 +168,12 @@ export const useCart = create<CartStore>()(
         try {
           const { data, error } = await supabase
             .from('shopping_cart')
-            .select('*, products:product_id(name, original_price, image_url, in_stock)')
+            .select('*, products:product_id(name, original_price, image_url, in_stock, requires_prescription)')
             .eq('user_id', user.id);
 
           if (error) throw error;
 
-          set({ items: data.map(item => ({ ...item, product: item.products })) || [] });
+          set({ items: data.map(item => ({ ...item, product: item.products as any })) || [] });
         } catch (error: any) {
           console.error('Failed to load cart:', error);
         } finally {

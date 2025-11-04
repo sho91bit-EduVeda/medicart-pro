@@ -53,8 +53,11 @@ class WhatsAppService {
 
   async sendNotification(message: string): Promise<boolean> {
     if (!this.settings) {
-      console.error('WhatsApp settings not initialized');
-      return false;
+      await this.initialize();
+      if (!this.settings) {
+        console.error('WhatsApp settings not initialized');
+        return false;
+      }
     }
 
     try {

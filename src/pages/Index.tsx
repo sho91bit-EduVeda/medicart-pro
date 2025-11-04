@@ -41,6 +41,8 @@ interface Product {
   expiry_date?: string;
   requires_prescription?: boolean;
   quantity?: number;
+  average_rating?: number;
+  review_count?: number;
   categories?: {
     name: string;
   };
@@ -173,21 +175,24 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Store className="w-6 h-6 text-primary" />
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 cursor-pointer" onClick={() => navigate("/")}>
+              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+                <Store className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold">Kalyanam Pharmaceuticals</h1>
+              <div className="hidden sm:block">
+                <h1 className="text-lg sm:text-xl font-bold">Kalyanam Pharmaceuticals</h1>
                 <p className="text-xs text-muted-foreground">Your Trusted Pharmacy</p>
               </div>
+              <div className="block sm:hidden">
+                <h1 className="text-sm font-bold">Kalyanam</h1>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <NotificationBell />
               {wishlistEnabled && (
-                <Button variant="outline" size="sm" onClick={() => navigate("/wishlist")} className="relative">
+                <Button variant="outline" size="sm" onClick={() => navigate("/wishlist")} className="relative hidden sm:flex">
                   <Heart className="w-4 h-4 mr-2" />
                   Wishlist
                   {wishlistItems.length > 0 && (
@@ -197,28 +202,46 @@ const Index = () => {
                   )}
                 </Button>
               )}
+              {wishlistEnabled && (
+                <Button variant="outline" size="icon" onClick={() => navigate("/wishlist")} className="relative sm:hidden">
+                  <Heart className="w-4 h-4" />
+                  {wishlistItems.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
+                      {wishlistItems.length}
+                    </span>
+                  )}
+                </Button>
+              )}
               <ShoppingCart discountPercentage={discountPercentage} />
               <UnavailableMedicinesSheet>
-                <Button variant="outline" size="sm">
-                  <Package className="w-4 h-4 mr-2" />
-                  Track Medicines
-                </Button>
+                <div>
+                  <Button variant="outline" size="sm" className="hidden md:flex">
+                    <Package className="w-4 h-4 mr-2" />
+                    Track Medicines
+                  </Button>
+                  <Button variant="outline" size="icon" className="md:hidden">
+                    <Package className="w-4 h-4" />
+                  </Button>
+                </div>
               </UnavailableMedicinesSheet>
               {isAuthenticated ? (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => navigate("/owner")}>
+                  <Button variant="outline" size="sm" onClick={() => navigate("/owner")} className="hidden lg:flex">
                     <ShieldCheck className="w-4 h-4 mr-2" />
                     Dashboard
+                  </Button>
+                  <Button variant="outline" size="icon" onClick={() => navigate("/owner")} className="lg:hidden">
+                    <ShieldCheck className="w-4 h-4" />
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => {
                     signOut();
                     navigate("/");
-                  }}>
+                  }} className="hidden sm:flex">
                     Logout
                   </Button>
                 </>
               ) : (
-                <Button variant="outline" size="sm" onClick={() => navigate("/auth")}>
+                <Button variant="outline" size="sm" onClick={() => navigate("/auth")} className="hidden md:flex">
                   <ShieldCheck className="w-4 h-4 mr-2" />
                   Owner Login
                 </Button>
@@ -231,7 +254,7 @@ const Index = () => {
       {/* Hero Banner */}
       <HeroBanner discountPercentage={discountPercentage} />
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-2 sm:px-4 py-8 sm:py-12">
         {/* Categories Section */}
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
