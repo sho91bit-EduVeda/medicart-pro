@@ -211,57 +211,76 @@ const Owner = () => {
     }
   };
 
+  const [activeTab, setActiveTab] = useState("products");
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 shadow-lg">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/10 rounded-lg">
-              <Package className="w-6 h-6" />
+      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4 md:mb-0">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-2 bg-white/10 rounded-lg">
+                <Package className="w-5 h-5 md:w-6 md:h-6" />
+              </div>
+              <div>
+                <h1 className="text-lg md:text-2xl font-bold">Owner Dashboard</h1>
+                <p className="text-xs md:text-sm text-primary-foreground/90">Manage your medical store</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold">Owner Dashboard</h1>
-              <p className="text-sm text-primary-foreground/90">Manage your medical store</p>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" onClick={() => navigate("/")} size="sm" className="hidden sm:flex">
+                View Store
+              </Button>
+              <Button variant="secondary" onClick={handleLogout} size="sm">
+                <LogOut className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="secondary" onClick={() => navigate("/")} size="sm">
-              View Store
+
+          <nav className="flex overflow-x-auto gap-1 md:gap-2 pb-2 -mb-2 scrollbar-hide">
+            <Button
+              variant={activeTab === "products" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setActiveTab("products")}
+              className="flex-shrink-0 text-primary-foreground hover:bg-white/20"
+            >
+              <Plus className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="text-xs md:text-sm">Products</span>
             </Button>
-            <Button variant="secondary" onClick={handleLogout} size="sm">
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
+            <Button
+              variant={activeTab === "settings" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setActiveTab("settings")}
+              className="flex-shrink-0 text-primary-foreground hover:bg-white/20"
+            >
+              <Percent className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="text-xs md:text-sm">Settings</span>
             </Button>
-          </div>
+            <Button
+              variant={activeTab === "whatsapp" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setActiveTab("whatsapp")}
+              className="flex-shrink-0 text-primary-foreground hover:bg-white/20"
+            >
+              <MessageSquare className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="text-xs md:text-sm">WhatsApp</span>
+            </Button>
+            <Button
+              variant={activeTab === "features" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setActiveTab("features")}
+              className="flex-shrink-0 text-primary-foreground hover:bg-white/20"
+            >
+              <Settings className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="text-xs md:text-sm">Features</span>
+            </Button>
+          </nav>
         </div>
       </header>
 
-      <div className="container mx-auto p-6">
-        <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-4">
-            <TabsTrigger value="products">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Products
-            </TabsTrigger>
-            {/* <TabsTrigger value="bulk-upload">
-              <ExcelUpload className="w-4 h-4 mr-2" />
-              Bulk Upload
-            </TabsTrigger> */}
-            <TabsTrigger value="settings">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </TabsTrigger>
-            <TabsTrigger value="whatsapp">
-              <MessageSquare className="w-4 h-4 mr-2" />
-              WhatsApp
-            </TabsTrigger>
-            <TabsTrigger value="features">
-              <Settings className="w-4 h-4 mr-2" />
-              Features
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="products">
+      <div className="container mx-auto px-4 py-6 md:py-8">
+        <div className="space-y-6">{activeTab === "products" && (
             <Card>
               <CardHeader>
                 <CardTitle>Add New Product</CardTitle>
@@ -380,13 +399,13 @@ const Owner = () => {
                 </form>
               </CardContent>
             </Card>
-          </TabsContent>
+          )}
 
-          <TabsContent value="bulk-upload">
+          {activeTab === "bulk-upload" && (
             <ExcelUpload onSuccess={fetchCategories} />
-          </TabsContent>
+          )}
 
-          <TabsContent value="settings">
+          {activeTab === "settings" && (
             <Card>
               <CardHeader>
                 <CardTitle>Store Settings</CardTitle>
@@ -426,9 +445,9 @@ const Owner = () => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          )}
 
-          <TabsContent value="features">
+          {activeTab === "features" && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -443,9 +462,9 @@ const Owner = () => {
                 <FeatureFlagsPanel />
               </CardContent>
             </Card>
-          </TabsContent>
+          )}
 
-          <TabsContent value="whatsapp">
+          {activeTab === "whatsapp" && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -458,7 +477,7 @@ const Owner = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <div className="p-3 rounded-full bg-green-100">
                       <MessageSquare className="w-6 h-6 text-green-600" />
                     </div>
@@ -521,14 +540,15 @@ const Owner = () => {
                     </p>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button onClick={handleUpdateWhatsappSettings} disabled={loading}>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button onClick={handleUpdateWhatsappSettings} disabled={loading} className="w-full sm:w-auto">
                       {loading ? "Updating..." : "Update Settings"}
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={testWhatsappNotification}
                       disabled={!whatsappActive || !whatsappPhone || !whatsappApiKey}
+                      className="w-full sm:w-auto"
                     >
                       Send Test Message
                     </Button>
@@ -554,8 +574,8 @@ const Owner = () => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
     </div>
   );
