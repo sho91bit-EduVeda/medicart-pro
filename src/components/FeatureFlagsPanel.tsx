@@ -3,24 +3,19 @@ import { Label } from "./ui/label"
 import { Card } from "./ui/card"
 import { Button } from "./ui/button"
 import { useFeatureFlags } from "../hooks/useFeatureFlags"
-import { supabase } from "@/integrations/supabase/client"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { AlertTriangle } from "lucide-react"
 
 export function FeatureFlagsPanel() {
   const {
-    shoppingCart,
-    orderManagement,
     productReviews,
-    wishlist,
     advancedSearch,
     productRecommendations,
     notifications,
-    bulkOrders,
     prescriptionUpload,
     liveChat,
-    loyaltyProgram,
-    guestCheckout,
+    deliveryEnabled, // Controls all delivery-related features including wishlist and loyalty program
     toggleFeature,
     resetFeatures,
     syncWithDatabase
@@ -53,30 +48,6 @@ export function FeatureFlagsPanel() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <Label htmlFor="shopping-cart">Shopping Cart</Label>
-            <p className="text-xs text-muted-foreground">Enable full shopping cart functionality</p>
-          </div>
-          <Switch
-            id="shopping-cart"
-            checked={shoppingCart}
-            onCheckedChange={() => toggleFeature('shoppingCart')}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <Label htmlFor="order-management">Order Management</Label>
-            <p className="text-xs text-muted-foreground">Enable order placement and tracking</p>
-          </div>
-          <Switch
-            id="order-management"
-            checked={orderManagement}
-            onCheckedChange={() => toggleFeature('orderManagement')}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
             <Label htmlFor="product-reviews">Product Reviews & Ratings</Label>
             <p className="text-xs text-muted-foreground">Allow customers to review products</p>
           </div>
@@ -84,18 +55,6 @@ export function FeatureFlagsPanel() {
             id="product-reviews"
             checked={productReviews}
             onCheckedChange={() => toggleFeature('productReviews')}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <Label htmlFor="wishlist">Wishlist / Favorites</Label>
-            <p className="text-xs text-muted-foreground">Enable product wishlist feature</p>
-          </div>
-          <Switch
-            id="wishlist"
-            checked={wishlist}
-            onCheckedChange={() => toggleFeature('wishlist')}
           />
         </div>
 
@@ -137,18 +96,6 @@ export function FeatureFlagsPanel() {
 
         <div className="flex items-center justify-between">
           <div>
-            <Label htmlFor="bulk-orders">Bulk Orders</Label>
-            <p className="text-xs text-muted-foreground">Enable bulk ordering functionality</p>
-          </div>
-          <Switch
-            id="bulk-orders"
-            checked={bulkOrders}
-            onCheckedChange={() => toggleFeature('bulkOrders')}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
             <Label htmlFor="prescription-upload">Prescription Upload</Label>
             <p className="text-xs text-muted-foreground">Allow prescription uploads for medicines</p>
           </div>
@@ -171,29 +118,42 @@ export function FeatureFlagsPanel() {
           />
         </div>
 
-        <div className="flex items-center justify-between">
+        {/* Delivery Toggle - Controls all delivery-related features including wishlist and loyalty program */}
+        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg border border-primary/20">
           <div>
-            <Label htmlFor="loyalty-program">Loyalty Program</Label>
-            <p className="text-xs text-muted-foreground">Enable loyalty points and rewards</p>
+            <Label htmlFor="delivery-enabled" className="text-primary">Delivery Service</Label>
+            <p className="text-xs text-muted-foreground">Enable all delivery-related features (shopping cart, order management, bulk orders, guest checkout, wishlist, loyalty program)</p>
           </div>
           <Switch
-            id="loyalty-program"
-            checked={loyaltyProgram}
-            onCheckedChange={() => toggleFeature('loyaltyProgram')}
+            id="delivery-enabled"
+            checked={deliveryEnabled}
+            onCheckedChange={() => toggleFeature('deliveryEnabled')}
+            className="data-[state=checked]:bg-primary"
           />
         </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <Label htmlFor="guest-checkout">Guest Checkout</Label>
-            <p className="text-xs text-muted-foreground">Allow checkout without account</p>
+        
+        {/* Delivery Info Box */}
+        {!deliveryEnabled && (
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold text-yellow-800">Delivery Features Disabled</h4>
+                <p className="text-sm text-yellow-700 mt-1">
+                  When enabled, the following features will be activated:
+                  <ul className="list-disc list-inside mt-1 space-y-1">
+                    <li>Shopping Cart</li>
+                    <li>Order Management</li>
+                    <li>Bulk Orders</li>
+                    <li>Guest Checkout</li>
+                    <li>Wishlist</li>
+                    <li>Loyalty Program</li>
+                  </ul>
+                </p>
+              </div>
+            </div>
           </div>
-          <Switch
-            id="guest-checkout"
-            checked={guestCheckout}
-            onCheckedChange={() => toggleFeature('guestCheckout')}
-          />
-        </div>
+        )}
       </div>
 
       <div className="flex gap-2">

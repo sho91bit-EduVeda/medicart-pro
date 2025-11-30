@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Upload, FileSpreadsheet, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/config";
+import { writeBatch, collection, doc } from "firebase/firestore";
 
 interface ExcelUploadProps {
   onSuccess?: () => void;
@@ -36,7 +37,7 @@ export const ExcelUpload = ({ onSuccess }: ExcelUploadProps) => {
   const parseExcelFile = (file: File): Promise<ProductRow[]> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = (e) => {
         try {
           const data = e.target?.result;
@@ -54,8 +55,8 @@ export const ExcelUpload = ({ onSuccess }: ExcelUploadProps) => {
             composition: row.composition || row.Composition || null,
             original_price: parseFloat(row.original_price || row.price || row.Price || 0),
             image_url: row.image_url || row.ImageURL || row["Image URL"] || null,
-            in_stock: row.in_stock !== undefined 
-              ? Boolean(row.in_stock) 
+            in_stock: row.in_stock !== undefined
+              ? Boolean(row.in_stock)
               : (row.InStock !== undefined ? Boolean(row.InStock) : true),
           }));
 
@@ -93,17 +94,22 @@ export const ExcelUpload = ({ onSuccess }: ExcelUploadProps) => {
         return;
       }
 
-      // Bulk insert products
-      const { data, error } = await supabase
-        .from("products")
-        .insert(products)
-        .select();
+      // Bulk insert products using batch
+      const batch = writeBatch(db);
 
-      if (error) throw error;
+      products.forEach(product => {
+        const docRef = doc(collection(db, "products"));
+        batch.set(docRef, {
+          ...product,
+          created_at: new Date().toISOString()
+        });
+      });
 
-      toast.success(`Successfully added ${data.length} products!`);
+      await batch.commit();
+
+      toast.success(`Successfully added ${products.length} products!`);
       setFile(null);
-      
+
       // Reset file input
       const fileInput = document.getElementById("excel-file") as HTMLInputElement;
       if (fileInput) fileInput.value = "";
@@ -121,7 +127,7 @@ export const ExcelUpload = ({ onSuccess }: ExcelUploadProps) => {
     const template = [
       {
         name: "Paracetamol 500mg",
-        category_id: "",
+        category_id: "CATEGORY_ID_HERE", // Required field
         description: "Pain relief and fever reducer",
         uses: "For headache, fever, and body pain",
         side_effects: "Nausea, allergic reactions (rare)",
@@ -132,7 +138,7 @@ export const ExcelUpload = ({ onSuccess }: ExcelUploadProps) => {
       },
       {
         name: "Amoxicillin 250mg",
-        category_id: "",
+        category_id: "CATEGORY_ID_HERE", // Required field
         description: "Antibiotic for bacterial infections",
         uses: "Treats various bacterial infections",
         side_effects: "Diarrhea, nausea, rash",
@@ -147,8 +153,8 @@ export const ExcelUpload = ({ onSuccess }: ExcelUploadProps) => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
     XLSX.writeFile(workbook, "product_upload_template.xlsx");
-    
-    toast.success("Template downloaded!");
+
+    toast.success("Template downloaded! Remember to replace CATEGORY_ID_HERE with actual category IDs.");
   };
 
   return (
@@ -166,16 +172,16 @@ export const ExcelUpload = ({ onSuccess }: ExcelUploadProps) => {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-green-600" />
-            <span className="text-sm">Required: name, original_price</span>
+            <span className="text-sm">Required: name, original_price, category_id</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-green-600" />
-            <span className="text-sm">Optional: category_id, description, uses, side_effects, composition, image_url, in_stock</span>
+            <span className="text-sm">Optional: description, uses, side_effects, composition, image_url, in_stock</span>
           </div>
         </div>
 
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={downloadTemplate}
           className="w-full"
         >
@@ -205,8 +211,8 @@ export const ExcelUpload = ({ onSuccess }: ExcelUploadProps) => {
           )}
         </div>
 
-        <Button 
-          onClick={handleUpload} 
+        <Button
+          onClick={handleUpload}
           disabled={!file || uploading}
           className="w-full"
         >

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db } from "@/integrations/firebase/config";
+import { collection, addDoc, query, where, orderBy, getDocs } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { Button } from "./ui/button";
@@ -46,14 +47,19 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
   const loadReviews = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('product_reviews')
-        .select('*')
-        .eq('product_id', productId)
-        .order('created_at', { ascending: false });
+      const q = query(
+        collection(db, 'product_reviews'),
+        where('product_id', '==', productId),
+        orderBy('created_at', 'desc')
+      );
 
-      if (error) throw error;
-      setReviews(data || []);
+      const querySnapshot = await getDocs(q);
+      const reviewsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Review[];
+
+      setReviews(reviewsData);
     } catch (error) {
       console.error('Failed to load reviews:', error);
     } finally {
@@ -69,20 +75,33 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
 
     setSubmitting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
-        .from('product_reviews')
-        .insert([{
-          product_id: productId,
-          user_id: user.id,
-          rating,
-          title,
-          comment,
-        }]);
+      // Check if user already reviewed
+      const q = query(
+        collection(db, 'product_reviews'),
+        where('product_id', '==', productId),
+        where('user_id', '==', user.uid)
+      );
+      const existingReviews = await getDocs(q);
 
-      if (error) throw error;
+      if (!existingReviews.empty) {
+        toast.error('You have already reviewed this product');
+        setSubmitting(false);
+        return;
+      }
+
+      await addDoc(collection(db, 'product_reviews'), {
+        product_id: productId,
+        user_id: user.uid,
+        rating,
+        title,
+        comment,
+        verified_purchase: false, // Logic to check verification can be added later
+        helpful_count: 0,
+        created_at: new Date().toISOString()
+      });
 
       toast.success('Review submitted successfully');
       setShowForm(false);
@@ -91,11 +110,7 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
       setRating(5);
       loadReviews();
     } catch (error: any) {
-      if (error.code === '23505') {
-        toast.error('You have already reviewed this product');
-      } else {
-        toast.error('Failed to submit review');
-      }
+      toast.error('Failed to submit review');
       console.error(error);
     } finally {
       setSubmitting(false);
@@ -120,11 +135,10 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className={`w-5 h-5 ${
-                    star <= averageRating
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-300"
-                  }`}
+                  className={`w-5 h-5 ${star <= averageRating
+                    ? "fill-yellow-400 text-yellow-400"
+                    : "text-gray-300"
+                    }`}
                 />
               ))}
             </div>
@@ -147,11 +161,10 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      className={`w-8 h-8 cursor-pointer transition-colors ${
-                        star <= rating
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300 hover:text-yellow-200"
-                      }`}
+                      className={`w-8 h-8 cursor-pointer transition-colors ${star <= rating
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300 hover:text-yellow-200"
+                        }`}
                       onClick={() => setRating(star)}
                     />
                   ))}
@@ -206,11 +219,10 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
-                        className={`w-4 h-4 ${
-                          star <= review.rating
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-300"
-                        }`}
+                        className={`w-4 h-4 ${star <= review.rating
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
+                          }`}
                       />
                     ))}
                     {review.verified_purchase && (

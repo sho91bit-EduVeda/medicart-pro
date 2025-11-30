@@ -1,4 +1,4 @@
--- Simple SQL to create WhatsApp settings table
+-- SQL to create WhatsApp settings table
 CREATE TABLE IF NOT EXISTS public.whatsapp_settings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   phone_number text NOT NULL,

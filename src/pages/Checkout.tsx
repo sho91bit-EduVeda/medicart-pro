@@ -14,12 +14,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PrescriptionUpload } from "@/components/PrescriptionUpload";
 import { toast } from "sonner";
 import { Store, ShoppingBag, CreditCard, MapPin, FileText, ArrowLeft } from "lucide-react";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags"; // Import feature flags hook
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { items, getTotal, clearCart } = useCart();
   const { createOrder, isLoading } = useOrder();
+  const { deliveryEnabled } = useFeatureFlags(); // Use the delivery feature flag
 
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("cod");
@@ -183,107 +185,109 @@ const Checkout = () => {
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Left Column - Forms */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Delivery Address */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  Delivery Address
-                </CardTitle>
-                <CardDescription>Enter your delivery details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="full_name">Full Name *</Label>
-                    <Input
-                      id="full_name"
-                      name="full_name"
-                      value={formData.full_name}
-                      onChange={handleInputChange}
-                      className={errors.full_name ? "border-red-500" : ""}
-                    />
-                    {errors.full_name && <p className="text-xs text-red-500">{errors.full_name}</p>}
+            {/* Delivery Address - Only show when delivery is enabled */}
+            {deliveryEnabled && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5" />
+                    Delivery Address
+                  </CardTitle>
+                  <CardDescription>Enter your delivery details</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name">Full Name *</Label>
+                      <Input
+                        id="full_name"
+                        name="full_name"
+                        value={formData.full_name}
+                        onChange={handleInputChange}
+                        className={errors.full_name ? "border-red-500" : ""}
+                      />
+                      {errors.full_name && <p className="text-xs text-red-500">{errors.full_name}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number *</Label>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        placeholder="1234567890"
+                        className={errors.phone ? "border-red-500" : ""}
+                      />
+                      {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Label htmlFor="address_line1">Address Line 1 *</Label>
                     <Input
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
+                      id="address_line1"
+                      name="address_line1"
+                      value={formData.address_line1}
                       onChange={handleInputChange}
-                      placeholder="1234567890"
-                      className={errors.phone ? "border-red-500" : ""}
+                      placeholder="House No, Street Name"
+                      className={errors.address_line1 ? "border-red-500" : ""}
                     />
-                    {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address_line1">Address Line 1 *</Label>
-                  <Input
-                    id="address_line1"
-                    name="address_line1"
-                    value={formData.address_line1}
-                    onChange={handleInputChange}
-                    placeholder="House No, Street Name"
-                    className={errors.address_line1 ? "border-red-500" : ""}
-                  />
-                  {errors.address_line1 && <p className="text-xs text-red-500">{errors.address_line1}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address_line2">Address Line 2 (Optional)</Label>
-                  <Input
-                    id="address_line2"
-                    name="address_line2"
-                    value={formData.address_line2}
-                    onChange={handleInputChange}
-                    placeholder="Landmark, Area"
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City *</Label>
-                    <Input
-                      id="city"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className={errors.city ? "border-red-500" : ""}
-                    />
-                    {errors.city && <p className="text-xs text-red-500">{errors.city}</p>}
+                    {errors.address_line1 && <p className="text-xs text-red-500">{errors.address_line1}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="state">State *</Label>
+                    <Label htmlFor="address_line2">Address Line 2 (Optional)</Label>
                     <Input
-                      id="state"
-                      name="state"
-                      value={formData.state}
+                      id="address_line2"
+                      name="address_line2"
+                      value={formData.address_line2}
                       onChange={handleInputChange}
-                      className={errors.state ? "border-red-500" : ""}
+                      placeholder="Landmark, Area"
                     />
-                    {errors.state && <p className="text-xs text-red-500">{errors.state}</p>}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="postal_code">Postal Code *</Label>
-                    <Input
-                      id="postal_code"
-                      name="postal_code"
-                      value={formData.postal_code}
-                      onChange={handleInputChange}
-                      placeholder="600001"
-                      className={errors.postal_code ? "border-red-500" : ""}
-                    />
-                    {errors.postal_code && <p className="text-xs text-red-500">{errors.postal_code}</p>}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City *</Label>
+                      <Input
+                        id="city"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        className={errors.city ? "border-red-500" : ""}
+                      />
+                      {errors.city && <p className="text-xs text-red-500">{errors.city}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State *</Label>
+                      <Input
+                        id="state"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        className={errors.state ? "border-red-500" : ""}
+                      />
+                      {errors.state && <p className="text-xs text-red-500">{errors.state}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="postal_code">Postal Code *</Label>
+                      <Input
+                        id="postal_code"
+                        name="postal_code"
+                        value={formData.postal_code}
+                        onChange={handleInputChange}
+                        placeholder="600001"
+                        className={errors.postal_code ? "border-red-500" : ""}
+                      />
+                      {errors.postal_code && <p className="text-xs text-red-500">{errors.postal_code}</p>}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Prescription Upload */}
             {requiresPrescription && (
@@ -297,14 +301,18 @@ const Checkout = () => {
                   <CreditCard className="w-5 h-5" />
                   Payment Method
                 </CardTitle>
-                <CardDescription>Select your preferred payment method</CardDescription>
+                <CardDescription>
+                  {deliveryEnabled 
+                    ? "Select your preferred payment method" 
+                    : "Select your preferred payment method for in-store pickup"}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                   <div className="flex items-center space-x-2 p-3 border rounded-lg">
                     <RadioGroupItem value="cod" id="cod" />
                     <Label htmlFor="cod" className="flex-1 cursor-pointer">
-                      Cash on Delivery (COD)
+                      {deliveryEnabled ? "Cash on Delivery (COD)" : "Pay at Store"}
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2 p-3 border rounded-lg opacity-50">
@@ -330,7 +338,9 @@ const Checkout = () => {
                   name="notes"
                   value={formData.notes}
                   onChange={handleInputChange}
-                  placeholder="Any special instructions for your order?"
+                  placeholder={deliveryEnabled 
+                    ? "Any special instructions for your delivery?" 
+                    : "Any special instructions for your in-store pickup?"}
                   rows={3}
                 />
               </CardContent>
@@ -387,10 +397,18 @@ const Checkout = () => {
                       <span>-₹{discount.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Delivery</span>
-                    <span className="text-green-600">FREE</span>
-                  </div>
+                  {/* Show delivery cost or in-store pickup message based on delivery toggle */}
+                  {deliveryEnabled ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Delivery</span>
+                      <span className="text-green-600">FREE</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">In-Store Pickup</span>
+                      <span className="text-green-600">FREE</span>
+                    </div>
+                  )}
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
@@ -404,12 +422,30 @@ const Checkout = () => {
                   onClick={handlePlaceOrder}
                   disabled={isLoading}
                 >
-                  {isLoading ? "Placing Order..." : "Place Order"}
+                  {isLoading ? "Placing Order..." : deliveryEnabled ? "Place Delivery Order" : "Place Pickup Order"}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
                   By placing this order, you agree to our terms and conditions
                 </p>
+                
+                {/* Show delivery info when enabled */}
+                {deliveryEnabled && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800 text-center">
+                      🚚 Your order will be delivered within 2 hours
+                    </p>
+                  </div>
+                )}
+                
+                {/* Show pickup info when disabled */}
+                {!deliveryEnabled && (
+                  <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-yellow-800 text-center">
+                      🏪 Please visit our store to pickup your order
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

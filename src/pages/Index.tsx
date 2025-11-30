@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/config";
+import { collection, getDocs, query, where, orderBy, doc, getDoc, limit } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ProductCard from "@/components/ProductCard";
@@ -9,15 +10,34 @@ import CategoryCard from "@/components/CategoryCard";
 import UnavailableMedicinesSheet from "@/components/UnavailableMedicinesSheet";
 import { ProductFilters, FilterOptions } from "@/components/ProductFilters";
 import { StockStatus } from "@/components/StockStatus";
-import { ShieldCheck, Search, Store, Package, Heart } from "lucide-react";
+import { ShieldCheck, Search, Store, Package, Heart, User, LogOut, LogIn, Pill, Star } from "lucide-react";
 import { toast } from "sonner";
 import { whatsappService } from "@/services/whatsappService";
 import { ShoppingCart } from "@/components/ShoppingCart";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProductRecommendations } from "@/components/ProductRecommendations";
 import { HeroBanner } from "@/components/HeroBanner";
+import { SearchPopup } from "@/components/SearchPopup";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { 
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import StoreReviewForm from "@/components/StoreReviewForm";
+import StoreReviews from "@/components/StoreReviews";
 import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
 import coldFluImage from "@/assets/category-cold-flu.jpg";
@@ -40,7 +60,7 @@ interface Product {
   medicine_type?: string;
   expiry_date?: string;
   requires_prescription?: boolean;
-  quantity?: number;
+  stock_quantity?: number;
   average_rating?: number;
   review_count?: number;
   categories?: {
@@ -58,7 +78,8 @@ const categoryImages: Record<string, string> = {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isAuthenticated, signOut, checkAuth } = useAuth();
+  const location = useLocation();
+  const { isAuthenticated, signOut, checkAuth, user } = useAuth();
 
   useEffect(() => {
     checkAuth();
@@ -69,54 +90,53 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
-  const { wishlist: wishlistEnabled } = useFeatureFlags();
+  const { deliveryEnabled } = useFeatureFlags();
   const { loadWishlist, items: wishlistItems } = useWishlist();
-
-  const selectedCategory = searchParams.get("category");
+  const [showSearchPopup, setShowSearchPopup] = useState(false);
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
 
   useEffect(() => {
     fetchData();
     whatsappService.initialize();
-    if (wishlistEnabled) {
+    if (deliveryEnabled) {
       loadWishlist();
     }
-  }, [selectedCategory, wishlistEnabled]);
+  }, [deliveryEnabled]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       // Fetch categories
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from("categories")
-        .select("*")
-        .order("name");
+      const categoriesSnapshot = await getDocs(collection(db, "categories"));
+      const categoriesData = categoriesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Category[];
 
-      if (categoriesError) throw categoriesError;
-      setCategories(categoriesData || []);
+      // Sort categories by name
+      categoriesData.sort((a, b) => a.name.localeCompare(b.name));
+      setCategories(categoriesData);
 
-      // Fetch products
-      let query = supabase
-        .from("products")
-        .select("*, categories(name)")
-        .order("name");
+      // Fetch products (without category filter)
+      const q = query(collection(db, "products"), orderBy("name"));
 
-      if (selectedCategory) {
-        query = query.eq("category_id", selectedCategory);
-      }
+      const productsSnapshot = await getDocs(q);
+      const productsData = productsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Product[];
 
-      const { data: productsData, error: productsError } = await query;
-
-      if (productsError) throw productsError;
-      setProducts(productsData || []);
+      setProducts(productsData);
 
       // Fetch discount
-      const { data: settingsData, error: settingsError } = await supabase
-        .from("store_settings")
-        .select("discount_percentage")
-        .single();
+      const settingsRef = doc(db, "settings", "store");
+      const settingsSnap = await getDoc(settingsRef);
 
-      if (settingsError) throw settingsError;
-      setDiscountPercentage(settingsData?.discount_percentage || 0);
+      if (settingsSnap.exists()) {
+        setDiscountPercentage(settingsSnap.data().discount_percentage || 0);
+      }
     } catch (error: any) {
       toast.error("Failed to load store data");
       console.error(error);
@@ -134,7 +154,7 @@ const Index = () => {
     if (!query.trim()) return;
 
     const resultsCount = filteredProducts.length;
-    
+
     // Log the search
     await whatsappService.logSearch(query, resultsCount);
 
@@ -154,6 +174,15 @@ const Index = () => {
       clearTimeout(searchTimeout);
     }
 
+    // If there's text, show suggestions
+    if (value.trim()) {
+      setShowSuggestions(true);
+      fetchSuggestions(value);
+    } else {
+      setShowSuggestions(false);
+      setSuggestions([]);
+    }
+
     // Set new timeout for tracking
     const timeout = setTimeout(() => {
       trackSearch(value);
@@ -161,6 +190,65 @@ const Index = () => {
 
     setSearchTimeout(timeout);
   };
+
+  // Fetch autocomplete suggestions
+  const fetchSuggestions = async (searchTerm: string) => {
+    if (!searchTerm.trim()) return;
+    
+    try {
+      // Get products that start with the searchTerm
+      const productsQuery = query(
+        collection(db, "products"),
+        where("name", ">=", searchTerm),
+        where("name", "<=", searchTerm + "\uf8ff"),
+        limit(5)
+      );
+      
+      const querySnapshot = await getDocs(productsQuery);
+      const productsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as any)
+      })) as Product[];
+      
+      setSuggestions(productsData);
+    } catch (error) {
+      console.error("Failed to fetch suggestions:", error);
+    }
+  };
+
+  // Handle suggestion selection
+  const handleSuggestionSelect = (product: Product) => {
+    setSearchQuery(product.name);
+    setShowSuggestions(false);
+    setShowSearchPopup(true);
+    trackSearch(product.name);
+  };
+
+  // Handle search submission (Enter key or button click)
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      setShowSuggestions(false);
+      setShowSearchPopup(true);
+      trackSearch(searchQuery);
+    }
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showSuggestions) {
+        const searchContainer = document.querySelector('.relative.w-full');
+        if (searchContainer && !searchContainer.contains(event.target as Node)) {
+          setShowSuggestions(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSuggestions]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -174,79 +262,329 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1 sm:gap-2 cursor-pointer" onClick={() => navigate("/")}>
-              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
-                <Store className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
+      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
+              <div className="p-2 bg-white/10 rounded-lg">
+                <Store className="w-6 h-6" />
               </div>
-              <div className="hidden sm:block">
-                <h1 className="text-lg sm:text-xl font-bold">Kalyanam Pharmaceuticals</h1>
-                <p className="text-xs text-muted-foreground">Your Trusted Pharmacy</p>
-              </div>
-              <div className="block sm:hidden">
-                <h1 className="text-sm font-bold">Kalyanam</h1>
+              <div>
+                <h1 className="text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
+                <p className="text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
               </div>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2">
-              <NotificationBell />
-              {wishlistEnabled && (
-                <Button variant="outline" size="sm" onClick={() => navigate("/wishlist")} className="relative hidden sm:flex">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Wishlist
-                  {wishlistItems.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
-                      {wishlistItems.length}
-                    </span>
-                  )}
-                </Button>
-              )}
-              {wishlistEnabled && (
-                <Button variant="outline" size="icon" onClick={() => navigate("/wishlist")} className="relative sm:hidden">
-                  <Heart className="w-4 h-4" />
-                  {wishlistItems.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
-                      {wishlistItems.length}
-                    </span>
-                  )}
-                </Button>
-              )}
-              <ShoppingCart discountPercentage={discountPercentage} />
-              <UnavailableMedicinesSheet>
-                <div>
-                  <Button variant="outline" size="sm" className="hidden md:flex">
-                    <Package className="w-4 h-4 mr-2" />
-                    Track Medicines
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`rounded-full px-4 py-2 transition-colors font-medium ${
+                  location.pathname === "/" 
+                    ? "bg-white/20 text-white" 
+                    : "text-primary-foreground hover:bg-white/20"
+                }`}
+                onClick={() => navigate("/")}
+              >
+                Home
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                onClick={() => setShowReviews(true)}
+              >
+                Reviews
+              </Button>
+              {/* Show Track Unavailable Medicines only when delivery is enabled */}
+              {deliveryEnabled && (
+                <UnavailableMedicinesSheet>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                  >
+                    Track Unavailable Medicines
                   </Button>
-                  <Button variant="outline" size="icon" className="md:hidden">
-                    <Package className="w-4 h-4" />
-                  </Button>
+                </UnavailableMedicinesSheet>
+              )}
+            </nav>
+                
+            {/* Search Box - Hidden on mobile */}
+            <div className="hidden md:flex flex-1 max-w-md mx-4 relative">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
+                <Input
+                  type="search"
+                  placeholder="Search medicines..."
+                  className="pl-10 pr-12 py-2 w-full rounded-full bg-white/20 border-none text-primary-foreground placeholder:text-primary-foreground/70 focus-visible:ring-2 focus-visible:ring-white/50"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearchSubmit();
+                    }
+                  }}
+                />
+                <Button 
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 text-primary-foreground hover:bg-white/20 z-10"
+                  onClick={handleSearchSubmit}
+                >
+                  <Search className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              {/* Autocomplete Suggestions */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-60 overflow-y-auto">
+                  {suggestions.map((product) => (
+                    <div
+                      key={product.id}
+                      className="px-4 py-3 hover:bg-muted cursor-pointer flex items-center gap-3 border-b border-muted last:border-b-0"
+                      onClick={() => handleSuggestionSelect(product)}
+                    >
+                      {product.image_url ? (
+                        <img 
+                          src={product.image_url} 
+                          alt={product.name} 
+                          className="w-10 h-10 object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center flex-shrink-0">
+                          <Package className="w-5 h-5 text-primary" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm text-foreground truncate">{product.name}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-xs text-muted-foreground">
+                            ₹{product.original_price.toFixed(2)}
+                          </p>
+                          {!product.in_stock && (
+                            <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+                              Out of Stock
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </UnavailableMedicinesSheet>
-              {isAuthenticated ? (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => navigate("/owner")} className="hidden lg:flex">
-                    <ShieldCheck className="w-4 h-4 mr-2" />
-                    Dashboard
-                  </Button>
-                  <Button variant="outline" size="icon" onClick={() => navigate("/owner")} className="lg:hidden">
-                    <ShieldCheck className="w-4 h-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    signOut();
-                    navigate("/");
-                  }} className="hidden sm:flex">
-                    Logout
-                  </Button>
-                </>
-              ) : (
-                <Button variant="outline" size="sm" onClick={() => navigate("/auth")} className="hidden md:flex">
-                  <ShieldCheck className="w-4 h-4 mr-2" />
-                  Owner Login
-                </Button>
               )}
             </div>
+                
+            <div className="flex items-center gap-2">
+              {/* Owner Login/Logout buttons on the extreme right */}
+              <div className="hidden md:flex items-center gap-1">
+                {isAuthenticated ? (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                      onClick={() => navigate("/owner")}
+                    >
+                      Dashboard
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      className="rounded-full px-4 py-2 transition-colors font-medium flex items-center gap-2"
+                      onClick={async () => {
+                        await signOut();
+                        toast.success("Logged out successfully");
+                      }}
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Logout</span>
+                    </Button>
+                  </>
+                ) : (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                    onClick={() => navigate("/auth")}
+                  >
+                    Owner Login
+                  </Button>
+                )}
+              </div>
+              
+              <div className="hidden md:flex items-center gap-1">
+                {deliveryEnabled && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
+                    onClick={() => navigate("/wishlist")}
+                    title="Wishlist"
+                  >
+                    <Heart className="w-5 h-5" />
+                    {wishlistItems.length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                        {wishlistItems.length}
+                      </span>
+                    )}
+                  </Button>
+                )}
+              </div>
+        
+              <div title="Shopping Cart">
+                <ShoppingCart discountPercentage={discountPercentage} />
+              </div>
+              
+              {/* Mobile menu button */}
+              <Button variant="ghost" size="icon" className="md:hidden rounded-full p-2 text-primary-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="12" x2="20" y2="12"></line>
+                  <line x1="4" y1="6" x2="20" y2="6"></line>
+                  <line x1="4" y1="18" x2="20" y2="18"></line>
+                </svg>
+              </Button>
+            </div>
+          </div>
+          
+          {/* Mobile Search Box - Visible only on mobile */}
+          <div className="md:hidden mt-3 px-2 relative">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
+              <Input
+                type="search"
+                placeholder="Search medicines..."
+                className="pl-10 pr-12 py-2 w-full rounded-full bg-white/20 border-none text-primary-foreground placeholder:text-primary-foreground/70 focus-visible:ring-2 focus-visible:ring-white/50"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearchSubmit();
+                  }
+                }}
+              />
+              <Button 
+                size="icon"
+                variant="ghost"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 text-primary-foreground hover:bg-white/20 z-10"
+                onClick={handleSearchSubmit}
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {/* Autocomplete Suggestions */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-60 overflow-y-auto">
+                {suggestions.map((product) => (
+                  <div
+                    key={product.id}
+                    className="px-4 py-3 hover:bg-muted cursor-pointer flex items-center gap-3 border-b border-muted last:border-b-0"
+                    onClick={() => handleSuggestionSelect(product)}
+                  >
+                    {product.image_url ? (
+                      <img 
+                        src={product.image_url} 
+                        alt={product.name} 
+                        className="w-10 h-10 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center flex-shrink-0">
+                        <Package className="w-5 h-5 text-primary" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm text-foreground truncate">{product.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-muted-foreground">
+                          ₹{product.original_price.toFixed(2)}
+                        </p>
+                        {!product.in_stock && (
+                          <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+                            Out of Stock
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Mobile Navigation */}
+        <div className="md:hidden border-t border-white/20 bg-white/10">
+          <div className="container mx-auto px-4 py-2 flex justify-between">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={`rounded-full px-3 py-2 transition-colors font-medium text-sm ${
+                location.pathname === "/" 
+                  ? "bg-white/20 text-white" 
+                  : "text-primary-foreground hover:bg-white/20"
+              }`}
+              onClick={() => navigate("/")}
+            >
+              Home
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="rounded-full px-3 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium text-sm"
+              onClick={() => setShowReviews(true)}
+            >
+              Reviews
+            </Button>
+            {/* Use deliveryEnabled instead of wishlistEnabled */}
+            {deliveryEnabled && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="rounded-full px-3 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium text-sm"
+                onClick={() => navigate("/wishlist")}
+              >
+                Wishlist
+              </Button>
+            )}
+            {/* Owner Login/Logout Dropdown for mobile */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-full px-3 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium text-sm"
+                >
+                  <User className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {isAuthenticated ? (
+                  <>
+                    <DropdownMenuItem onClick={() => navigate("/owner")}>
+                      <User className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={async () => {
+                        await signOut();
+                        toast.success("Logged out successfully");
+                      }}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <DropdownMenuItem onClick={() => navigate("/auth")}>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Owner Login
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
@@ -254,18 +592,23 @@ const Index = () => {
       {/* Hero Banner */}
       <HeroBanner discountPercentage={discountPercentage} />
 
-      <div className="container mx-auto px-2 sm:px-4 py-8 sm:py-12">
+      {/* Search Popup */}
+      <SearchPopup 
+        searchQuery={searchQuery} 
+        isOpen={showSearchPopup} 
+        onClose={() => setShowSearchPopup(false)} 
+      />
+
+      <div className="container mx-auto px-4 py-12">
         {/* Categories Section */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold">Shop by Category</h2>
-            {selectedCategory && (
-              <Button variant="outline" onClick={() => navigate("/")}>
-                Clear Filter
-              </Button>
-            )}
+        <section className="mb-20">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">Explore by Category</h2>
+              <p className="text-muted-foreground">Browse our wide range of healthcare products</p>
+            </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {categories.map((category) => (
               <CategoryCard
                 key={category.id}
@@ -273,56 +616,118 @@ const Index = () => {
                 name={category.name}
                 description={category.description}
                 imageUrl={categoryImages[category.name]}
+                productCount={products.filter(p => p.category_id === category.id).length}
               />
             ))}
           </div>
         </section>
 
         {/* Search Bar and Filters */}
-        <section className="mb-8">
-          <div className="relative max-w-2xl mx-auto mb-6">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-            <Input
-              type="search"
-              placeholder="Search for medicines..."
-              className="pl-12 h-12 text-lg"
-              value={searchQuery}
-              onChange={handleSearchChange}
-            />
+        <section className="mb-16">
+          <div className="relative max-w-3xl mx-auto">
+            <div className="relative">
+              <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              <Input
+                type="search"
+                placeholder="Search for medicines, health products, brands..."
+                className="pl-14 pr-24 h-14 text-base rounded-2xl border-2 border-muted shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+                value={searchQuery}
+                onChange={handleSearchChange}
+              />
+              <Button 
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-xl px-6 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300"
+                onClick={handleSearchSubmit}
+              >
+                Search
+              </Button>
+            </div>
+            
+            <div className="mt-6 flex flex-wrap gap-3 justify-center">
+              <Button variant="outline" size="sm" className="rounded-full px-4 py-2 hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+                Popular
+              </Button>
+              <Button variant="outline" size="sm" className="rounded-full px-4 py-2 hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+                Offers
+              </Button>
+              <Button variant="outline" size="sm" className="rounded-full px-4 py-2 hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+                New Arrivals
+              </Button>
+              <Button variant="outline" size="sm" className="rounded-full px-4 py-2 hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+                Prescriptions
+              </Button>
+            </div>
+          </div>
+        </section>
+        
+        {/* Products Grid */}
+        <section className="mb-20">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">
+                All Products
+              </h2>
+              <p className="text-muted-foreground">
+                {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} available
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="rounded-full hidden sm:flex hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                  <line x1="4" y1="21" x2="4" y2="14"></line>
+                  <line x1="4" y1="10" x2="4" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12" y2="3"></line>
+                  <line x1="20" y1="21" x2="20" y2="16"></line>
+                  <line x1="20" y1="12" x2="20" y2="3"></line>
+                  <line x1="1" y1="14" x2="7" y2="14"></line>
+                  <line x1="9" y1="8" x2="15" y2="8"></line>
+                  <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+                Filter
+              </Button>
+              <Button variant="outline" size="sm" className="rounded-full hidden sm:flex hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                  <path d="m3 16 4 4 4-4"></path>
+                  <path d="M7 20V4"></path>
+                  <path d="m21 8-4-4-4 4"></path>
+                  <path d="M17 4v16"></path>
+                </svg>
+                Sort
+              </Button>
+              <Button variant="outline" size="icon" className="rounded-full sm:hidden hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="21" x2="4" y2="14"></line>
+                  <line x1="4" y1="10" x2="4" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12" y2="3"></line>
+                  <line x1="20" y1="21" x2="20" y2="16"></line>
+                  <line x1="20" y1="12" x2="20" y2="3"></line>
+                  <line x1="1" y1="14" x2="7" y2="14"></line>
+                  <line x1="9" y1="8" x2="15" y2="8"></line>
+                  <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+              </Button>
+            </div>
           </div>
           
-          <ProductFilters
-            onFilterChange={(filters) => {
-              // Apply filters to products
-              const filtered = products.filter((product) => {
-                const price = product.original_price * (1 - discountPercentage / 100);
-                const matchesPrice = price >= filters.priceRange[0] && price <= filters.priceRange[1];
-                const matchesBrand = filters.brand === 'all' || product.brand === filters.brand;
-                // Add more filter conditions here
-                return matchesPrice && matchesBrand;
-              });
-              setProducts(filtered);
-            }}
-            brands={["Brand 1", "Brand 2"]} // Replace with actual brands
-            medicineTypes={["Tablet", "Syrup", "Injection"]} // Replace with actual types
-            maxPrice={2000} // Replace with actual max price
-          />
-</section>
-        {/* Products Grid */}
-        <section>
-          <h2 className="text-3xl font-bold mb-6">
-            {selectedCategory
-              ? categories.find((c) => c.id === selectedCategory)?.name || "Products"
-              : "All Products"}
-          </h2>
           {loading ? (
-            <div className="text-center py-12">
+            <div className="text-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
               <p className="text-muted-foreground">Loading products...</p>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground text-lg">No products found</p>
+            <div className="text-center py-16 rounded-2xl bg-muted/50">
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.3-4.3"></path>
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">No products found</h3>
+              <p className="text-muted-foreground mb-6">Try adjusting your search or filter criteria</p>
+              <Button onClick={() => setSearchQuery("")} variant="default" className="rounded-full">
+                Clear Search
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -331,14 +736,16 @@ const Index = () => {
                   key={product.id}
                   id={product.id}
                   name={product.name}
-                  category={product.categories?.name || "Uncategorized"}
-                  originalPrice={product.original_price}
+                  original_price={product.original_price}
                   discountPercentage={discountPercentage}
-                  imageUrl={product.image_url}
-                  inStock={product.in_stock}
-                  quantity={product.quantity}
-                  averageRating={product.average_rating}
-                  reviewCount={product.review_count}
+                  image_url={product.image_url}
+                  in_stock={product.in_stock}
+                  quantity={product.stock_quantity || 0}
+                  requires_prescription={product.requires_prescription}
+                  onClick={() => {
+                    setSearchQuery(product.name);
+                    setShowSearchPopup(true);
+                  }}
                 />
               ))}
             </div>
@@ -346,22 +753,135 @@ const Index = () => {
         </section>
 
         {/* Product Recommendations */}
-        <ProductRecommendations />
+        <section className="mb-20">
+          <ProductRecommendations 
+            onProductClick={(productName) => {
+              setSearchQuery(productName);
+              setShowSearchPopup(true);
+            }}
+          />
+        </section>
       </div>
 
+      {/* Reviews Dialog */}
+      <Dialog open={showReviews} onOpenChange={setShowReviews}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Store Reviews</DialogTitle>
+          </DialogHeader>
+          <StoreReviews />
+        </DialogContent>
+      </Dialog>
+
       {/* Footer */}
-      <footer className="bg-muted mt-20 py-12">
-        <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Store className="w-6 h-6 text-primary" />
-            <span className="text-xl font-bold">Kalyanam Pharmaceuticals</span>
+      <footer className="bg-gradient-to-r from-primary/5 to-secondary/5 border-t">
+        <div className="container mx-auto px-4 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-secondary shadow-md">
+                  <Store className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Kalyanam Pharmaceuticals</h2>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Your trusted online medical store with quality products and detailed information. We deliver healthcare solutions right to your doorstep.
+              </p>
+              <div className="flex gap-3">
+                <Button variant="outline" size="icon" className="rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                  </svg>
+                </Button>
+                <Button variant="outline" size="icon" className="rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
+                  </svg>
+                </Button>
+                <Button variant="outline" size="icon" className="rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                  </svg>
+                </Button>
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-3">
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Home</a>
+                </li>
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">About Us</a>
+                </li>
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Products</a>
+                </li>
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Offers</a>
+                </li>
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Contact</a>
+                </li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Categories</h3>
+              <ul className="space-y-3">
+                {categories.slice(0, 5).map((category) => (
+                  <li key={category.id}>
+                    <a 
+                      href={`/?category=${category.id}`} 
+                      className="text-muted-foreground hover:text-primary transition-colors text-sm"
+                    >
+                      {category.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-1 flex-shrink-0">
+                    <path d="M20 10c0-4.4-3.6-8-8-8s-8 3.6-8 8 3.6 8 8 8 8-3.6 8-8z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <span className="text-sm">Mansarovar Yojna, 2/50, Kanpur Rd, Sector O, Mansarovar, Transport Nagar, Lucknow, Uttar Pradesh 226012</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                  <span className="text-sm">079053 82771</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                  </svg>
+                  <span className="text-sm">info@kalyanampharmacy.com</span>
+                </li>
+              </ul>
+            </div>
           </div>
-          <p className="text-muted-foreground">
-            Your trusted online medical store with quality products and detailed information.
-          </p>
-          <p className="text-sm text-muted-foreground mt-4">
-            © 2025 Kalyanam Pharmaceuticals. All rights reserved.
-          </p>
+          
+          <div className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-muted-foreground text-sm">
+              © 2025 Kalyanam Pharmaceuticals. All rights reserved.
+            </p>
+            <div className="flex gap-6">
+              <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Privacy Policy</a>
+              <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Terms of Service</a>
+              <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Shipping Policy</a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

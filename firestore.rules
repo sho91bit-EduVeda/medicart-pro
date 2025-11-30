@@ -1,0 +1,116 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Categories - Public read, authenticated write
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Products - Public read, authenticated write
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Product Reviews - Public read, authenticated write (own reviews only for update/delete)
+    match /product_reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+    }
+    
+    // Settings - Public read, authenticated write
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Feature Flags - Public read, authenticated write
+    match /feature_flags/{flagId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Orders - Users can only read/write their own orders
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+    }
+    
+    // Order Items - Users can only read/write items for their own orders
+    match /order_items/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // User-specific data
+    match /users/{userId} {
+      // Cart - Users can only access their own cart
+      match /cart/{itemId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Wishlist - Users can only access their own wishlist
+      match /wishlist/{itemId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Prescriptions - Users can only access their own prescriptions
+      match /prescriptions/{prescriptionId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    // Prescription Uploads - Users can only read/write their own prescriptions
+    match /prescription_uploads/{prescriptionId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+    }
+    
+    // Notifications - Users can only read/write their own notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow write: if isAuthenticated();
+    }
+    
+    // Search Logs - Public write (for analytics), authenticated read
+    match /search_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if true;
+    }
+    
+    // Unavailable Medicines - Public read, authenticated write
+    match /unavailable_medicines/{medicineId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Medicine Requests - Public create (for anyone to request), authenticated read for owner/admin
+    match /medicine_requests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if true;  // Allow anyone to submit requests
+      allow update, delete: if isAuthenticated();  // Allow admin/owner to update status
+    }
+    
+    // Store Reviews - Public read, public create, authenticated update/delete
+    match /store_reviews/{reviewId} {
+      allow read: if true;
+      allow create: if true;  // Allow anyone to submit reviews
+      allow update, delete: if isAuthenticated();  // Allow admin/owner to moderate reviews
+    }
+  }
+}

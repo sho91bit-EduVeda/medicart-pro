@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/integrations/firebase/config";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +17,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
 
-  const { isAuthenticated, checkAuth } = useAuth();
+  const { isAuthenticated, checkAuth, user } = useAuth();
 
   useEffect(() => {
     checkAuth();
@@ -34,24 +35,13 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+        await signInWithEmailAndPassword(auth, email, password);
         toast.success("Welcome back!");
         navigate("/");
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
-        if (error) throw error;
-        toast.success("Account created! Please sign in.");
-        setIsLogin(true);
+        await createUserWithEmailAndPassword(auth, email, password);
+        toast.success("Account created! You are now signed in.");
+        navigate("/");
       }
     } catch (error: any) {
       toast.error(error.message || "Authentication failed");
@@ -85,7 +75,7 @@ const Auth = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="owner@Kalyanam Pharmaceuticals.com"
+                placeholder="owner@kalyanampharmacy.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

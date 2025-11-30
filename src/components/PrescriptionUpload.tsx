@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db, storage } from "@/integrations/firebase/config";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { collection, addDoc } from "firebase/firestore";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -57,50 +59,38 @@ export function PrescriptionUpload({ orderId, onUploadComplete }: PrescriptionUp
     setError(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const user = auth.currentUser;
+
       if (!user) {
         throw new Error('You must be logged in to upload prescriptions');
       }
 
       // Generate unique file name
       const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `prescriptions/${fileName}`;
+      const fileName = `${user.uid}-${Date.now()}.${fileExt}`;
+      const storageRef = ref(storage, `prescriptions/${fileName}`);
 
-      // Upload file to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('prescriptions')
-        .upload(filePath, selectedFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      // Upload file to Firebase Storage
+      await uploadBytes(storageRef, selectedFile);
 
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('prescriptions')
-        .getPublicUrl(filePath);
+      // Get download URL
+      const publicUrl = await getDownloadURL(storageRef);
 
       // Save prescription record to database
-      const { error: dbError } = await supabase
-        .from('prescription_uploads')
-        .insert({
-          user_id: user.id,
-          order_id: orderId || null,
-          file_url: publicUrl,
-          file_name: selectedFile.name,
-          file_size: selectedFile.size,
-          file_type: selectedFile.type,
-          status: 'pending'
-        });
-
-      if (dbError) throw dbError;
+      await addDoc(collection(db, 'prescriptions'), {
+        user_id: user.uid,
+        order_id: orderId || null,
+        file_url: publicUrl,
+        file_name: selectedFile.name,
+        file_size: selectedFile.size,
+        file_type: selectedFile.type,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      });
 
       setUploadedUrl(publicUrl);
       toast.success('Prescription uploaded successfully');
-      
+
       if (onUploadComplete) {
         onUploadComplete(publicUrl);
       }

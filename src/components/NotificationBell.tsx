@@ -9,7 +9,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "./ui/dropdown-menu";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db } from "@/integrations/firebase/config";
+import { collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { toast } from "sonner";
@@ -33,66 +34,38 @@ export function NotificationBell() {
 
   useEffect(() => {
     if (isAuthenticated && notificationsEnabled) {
-      loadNotifications();
+      const user = auth.currentUser;
+      if (!user) return;
 
-      const channel = supabase
-        .channel('notifications')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'notifications',
-          },
-          () => {
-            loadNotifications();
-          }
-        )
-        .subscribe();
+      const q = query(
+        collection(db, 'notifications'),
+        where('user_id', '==', user.uid),
+        orderBy('created_at', 'desc'),
+        limit(10)
+      );
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const notificationsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Notification[];
+
+        setNotifications(notificationsData);
+        setUnreadCount(notificationsData.filter(n => !n.read).length);
+        setLoading(false);
+      }, (error) => {
+        console.error('Failed to subscribe to notifications:', error);
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
     }
   }, [isAuthenticated, notificationsEnabled]);
 
-  const loadNotifications = async () => {
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.read).length || 0);
-    } catch (error) {
-      console.error('Failed to load notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const markAsRead = async (notificationId: string) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
-      setNotifications(prev =>
-        prev.map(n => (n.id === notificationId ? { ...n, read: true } : n))
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      const notificationRef = doc(db, 'notifications', notificationId);
+      await updateDoc(notificationRef, { read: true });
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
     }
@@ -100,19 +73,18 @@ export function NotificationBell() {
 
   const markAllAsRead = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', user.id)
-        .eq('read', false);
+      const batch = writeBatch(db);
+      const unreadNotifications = notifications.filter(n => !n.read);
 
-      if (error) throw error;
+      unreadNotifications.forEach(notification => {
+        const notificationRef = doc(db, 'notifications', notification.id);
+        batch.update(notificationRef, { read: true });
+      });
 
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      setUnreadCount(0);
+      await batch.commit();
       toast.success('All notifications marked as read');
     } catch (error) {
       toast.error('Failed to mark notifications as read');
@@ -171,9 +143,8 @@ export function NotificationBell() {
             {notifications.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
-                className={`flex flex-col items-start p-4 cursor-pointer ${
-                  !notification.read ? 'bg-muted/50' : ''
-                }`}
+                className={`flex flex-col items-start p-4 cursor-pointer ${!notification.read ? 'bg-muted/50' : ''
+                  }`}
                 onClick={() => markAsRead(notification.id)}
               >
                 <div className="flex items-start gap-3 w-full">

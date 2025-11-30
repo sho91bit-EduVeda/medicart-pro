@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWishlist } from "@/hooks/useWishlist";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/config";
+import { doc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { useAuth } from "@/hooks/useAuth";
+import { SearchPopup } from "@/components/SearchPopup";
 
 interface Product {
   id: string;
@@ -15,7 +17,7 @@ interface Product {
   in_stock: boolean;
   average_rating?: number;
   review_count?: number;
-  quantity?: number;
+  stock_quantity?: number;
   categories?: {
     name: string;
   };
@@ -23,11 +25,13 @@ interface Product {
 
 export default function Wishlist() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { items: wishlistIds, loadWishlist } = useWishlist();
   const [products, setProducts] = useState<Product[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchPopup, setShowSearchPopup] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -48,21 +52,27 @@ export default function Wishlist() {
         return;
       }
 
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select('*, categories(name)')
-        .in('id', wishlistIds);
+      // Firestore doesn't support 'in' query for more than 10 items or document IDs directly in 'in' clause easily for this structure
+      // So we fetch all products and filter (not efficient for large datasets but works for small wishlist)
+      // Or better, fetch each document by ID
 
-      if (productsError) throw productsError;
+      const productsData: Product[] = [];
+      for (const id of wishlistIds) {
+        const docRef = doc(db, "products", id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          productsData.push({ id: docSnap.id, ...docSnap.data() } as Product);
+        }
+      }
 
-      setProducts(productsData || []);
+      setProducts(productsData);
 
-      const { data: settingsData } = await supabase
-        .from('store_settings')
-        .select('discount_percentage')
-        .maybeSingle();
+      const settingsRef = doc(db, "settings", "store");
+      const settingsSnap = await getDoc(settingsRef);
 
-      setDiscountPercentage(settingsData?.discount_percentage || 0);
+      if (settingsSnap.exists()) {
+        setDiscountPercentage(settingsSnap.data().discount_percentage || 0);
+      }
     } catch (error) {
       console.error('Failed to load wishlist:', error);
     } finally {
@@ -90,6 +100,13 @@ export default function Wishlist() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Search Popup */}
+        <SearchPopup 
+          searchQuery={searchQuery} 
+          isOpen={showSearchPopup} 
+          onClose={() => setShowSearchPopup(false)} 
+        />
+        
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -120,14 +137,15 @@ export default function Wishlist() {
                   key={product.id}
                   id={product.id}
                   name={product.name}
-                  category={product.categories?.name || 'Uncategorized'}
-                  originalPrice={product.original_price}
+                  original_price={product.original_price}
                   discountPercentage={discountPercentage}
-                  imageUrl={product.image_url}
-                  inStock={product.in_stock}
-                  quantity={product.quantity}
-                  averageRating={product.average_rating}
-                  reviewCount={product.review_count}
+                  image_url={product.image_url}
+                  in_stock={product.in_stock}
+                  quantity={product.stock_quantity || 0}
+                  onClick={() => {
+                    setSearchQuery(product.name);
+                    setShowSearchPopup(true);
+                  }}
                 />
               ))}
             </div>

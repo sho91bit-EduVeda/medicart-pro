@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { supabase } from '@/integrations/supabase/client';
+import { auth, db } from '@/integrations/firebase/config';
+import { collection, addDoc, doc, updateDoc, getDocs, query, where, orderBy, writeBatch } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 interface OrderItem {
@@ -63,7 +64,7 @@ export const useOrder = create<OrderStore>((set) => ({
     paymentMethod,
     notes
   ) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = auth.currentUser;
 
     if (!user) {
       toast.error('Please sign in to place an order');
@@ -72,44 +73,40 @@ export const useOrder = create<OrderStore>((set) => ({
 
     set({ isLoading: true });
     try {
-      // Create order
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          total_amount: totalAmount,
-          discount_applied: discountApplied,
-          delivery_address: deliveryAddress,
-          payment_method: paymentMethod,
-          payment_status: 'pending',
-          status: 'pending',
-          notes: notes || null
-        })
-        .select()
-        .single();
+      const orderNumber = `ORD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(Math.random() * 1000000)}`;
 
-      if (orderError) throw orderError;
+      const orderData = {
+        user_id: user.uid,
+        order_number: orderNumber,
+        total_amount: totalAmount,
+        discount_applied: discountApplied,
+        delivery_address: deliveryAddress,
+        payment_method: paymentMethod,
+        payment_status: 'pending',
+        status: 'pending',
+        notes: notes || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      // Insert order items
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(
-          items.map(item => ({
-            order_id: orderData.id,
-            product_id: item.product_id,
-            product_name: item.product_name,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            discount_percentage: item.discount_percentage,
-            subtotal: item.subtotal
-          }))
-        );
+      // Create order document
+      const orderRef = await addDoc(collection(db, 'orders'), orderData);
 
-      if (itemsError) throw itemsError;
+      // Create order items subcollection
+      const batch = writeBatch(db);
+      items.forEach(item => {
+        const itemRef = doc(collection(db, 'orders', orderRef.id, 'items'));
+        batch.set(itemRef, {
+          ...item,
+          order_id: orderRef.id
+        });
+      });
+      await batch.commit();
 
-      set({ currentOrder: orderData });
+      const newOrder = { id: orderRef.id, ...orderData } as Order;
+      set({ currentOrder: newOrder });
       toast.success('Order placed successfully!');
-      return orderData.id;
+      return orderRef.id;
     } catch (error: any) {
       console.error('Order creation error:', error);
       toast.error('Failed to create order');
@@ -120,7 +117,7 @@ export const useOrder = create<OrderStore>((set) => ({
   },
 
   getUserOrders: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = auth.currentUser;
 
     if (!user) {
       return [];
@@ -128,15 +125,19 @@ export const useOrder = create<OrderStore>((set) => ({
 
     set({ isLoading: true });
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      const q = query(
+        collection(db, 'orders'),
+        where('user_id', '==', user.uid),
+        orderBy('created_at', 'desc')
+      );
 
-      if (error) throw error;
+      const querySnapshot = await getDocs(q);
+      const orders = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Order[];
 
-      return data || [];
+      return orders;
     } catch (error: any) {
       console.error('Failed to fetch orders:', error);
       toast.error('Failed to load orders');
@@ -149,12 +150,11 @@ export const useOrder = create<OrderStore>((set) => ({
   updateOrderStatus: async (orderId: string, status: string) => {
     set({ isLoading: true });
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', orderId);
-
-      if (error) throw error;
+      const orderRef = doc(db, 'orders', orderId);
+      await updateDoc(orderRef, {
+        status,
+        updated_at: new Date().toISOString()
+      });
 
       toast.success('Order status updated');
       return true;

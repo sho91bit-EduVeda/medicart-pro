@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/config";
+import { doc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,30 +38,32 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
   const { toggleItem, isInWishlist, loadWishlist } = useWishlist();
-  const { shoppingCart, wishlist: wishlistEnabled } = useFeatureFlags();
+  const { deliveryEnabled } = useFeatureFlags(); // Use deliveryEnabled instead of wishlist
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch product
-        const { data: productData, error: productError } = await supabase
-          .from("products")
-          .select("*, categories(name)")
-          .eq("id", id)
-          .single();
+        if (!id) return;
 
-        if (productError) throw productError;
-        setProduct(productData);
+        // Fetch product
+        const docRef = doc(db, "products", id);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+          setProduct(null);
+        } else {
+          setProduct({ id: docSnap.id, ...docSnap.data() } as Product);
+        }
 
         // Fetch discount
-        const { data: settingsData, error: settingsError } = await supabase
-          .from("store_settings")
-          .select("discount_percentage")
-          .single();
+        const settingsRef = doc(db, "settings", "store");
+        const settingsSnap = await getDoc(settingsRef);
 
-        if (settingsError) throw settingsError;
-        setDiscountPercentage(settingsData.discount_percentage || 0);
+        if (settingsSnap.exists()) {
+          const settingsData = settingsSnap.data();
+          setDiscountPercentage(settingsData.discount_percentage || 0);
+        }
       } catch (error: any) {
         toast.error("Failed to load product details");
         console.error(error);
@@ -70,10 +73,10 @@ const ProductDetail = () => {
     };
 
     fetchData();
-    if (wishlistEnabled) {
+    if (deliveryEnabled) { // Use deliveryEnabled instead of wishlistEnabled
       loadWishlist();
     }
-  }, [id]);
+  }, [id, deliveryEnabled]); // Update dependency
 
   if (loading) {
     return (
@@ -178,13 +181,15 @@ const ProductDetail = () => {
                   </div>
                 )}
                 <div className="flex gap-2 mt-4">
-                  {shoppingCart && product.in_stock && (
+                  {/* Use deliveryEnabled instead of shoppingCart */}
+                  {deliveryEnabled && product.in_stock && (
                     <Button className="flex-1" size="lg" onClick={handleAddToCart}>
                       <ShoppingCart className="w-5 h-5 mr-2" />
                       Add to Cart
                     </Button>
                   )}
-                  {wishlistEnabled && (
+                  {/* Use deliveryEnabled instead of wishlistEnabled */}
+                  {deliveryEnabled && (
                     <Button
                       variant="outline"
                       size="lg"

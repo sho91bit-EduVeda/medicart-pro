@@ -1,4 +1,5 @@
-import { supabase } from '@/integrations/supabase/client';
+import { db } from '@/integrations/firebase/config';
+import { doc, getDoc, collection, addDoc, query, where, getDocs, updateDoc, setDoc, orderBy, limit } from 'firebase/firestore';
 
 export interface WhatsAppSettings {
   id: string;
@@ -32,16 +33,16 @@ class WhatsAppService {
 
   async initialize() {
     try {
-      const { data, error } = await supabase
-        .from('whatsapp_settings')
-        .select('*')
-        .eq('is_active', true)
-        .single();
+      const docRef = doc(db, 'settings', 'whatsapp');
+      const docSnap = await getDoc(docRef);
 
-      if (error) {
-        console.error('Failed to load WhatsApp settings:', error);
+      if (!docSnap.exists()) {
+        console.error('WhatsApp settings not found');
         return false;
       }
+
+      const data = docSnap.data() as WhatsAppSettings;
+      if (!data.is_active) return false;
 
       this.settings = data;
       return true;
@@ -62,9 +63,9 @@ class WhatsAppService {
 
     try {
       // Check if this is a test/development environment
-      const isTestMode = this.settings.api_key.includes('test') || 
-                        this.settings.api_key.includes('mock') ||
-                        this.settings.api_key.length < 20;
+      const isTestMode = this.settings.api_key.includes('test') ||
+        this.settings.api_key.includes('mock') ||
+        this.settings.api_key.length < 20;
 
       if (isTestMode) {
         // Mock response for testing
@@ -72,10 +73,10 @@ class WhatsAppService {
         console.log('To:', this.settings.phone_number);
         console.log('Message:', message);
         console.log('---');
-        
+
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // In test mode, always return success
         return true;
       }
@@ -83,7 +84,7 @@ class WhatsAppService {
       // Real WhatsApp Business API call
       const phoneNumberId = this.extractPhoneNumberId();
       const apiUrl = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
-      
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -126,18 +127,13 @@ class WhatsAppService {
 
   async logSearch(searchQuery: string, resultsCount: number): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('search_logs')
-        .insert({
-          search_query: searchQuery,
-          results_count: resultsCount,
-          user_ip: await this.getUserIP(),
-          user_agent: navigator.userAgent
-        });
-
-      if (error) {
-        console.error('Failed to log search:', error);
-      }
+      await addDoc(collection(db, 'search_logs'), {
+        search_query: searchQuery,
+        results_count: resultsCount,
+        user_ip: await this.getUserIP(),
+        user_agent: navigator.userAgent,
+        search_timestamp: new Date().toISOString()
+      });
     } catch (error) {
       console.error('Error logging search:', error);
     }
@@ -146,48 +142,32 @@ class WhatsAppService {
   async trackUnavailableMedicine(medicineName: string): Promise<void> {
     try {
       // Check if medicine already exists
-      const { data: existing, error: fetchError } = await supabase
-        .from('unavailable_medicines')
-        .select('*')
-        .eq('medicine_name', medicineName.toLowerCase())
-        .single();
+      const q = query(
+        collection(db, 'unavailable_medicines'),
+        where('medicine_name', '==', medicineName.toLowerCase())
+      );
+      const querySnapshot = await getDocs(q);
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Failed to check existing medicine:', fetchError);
-        return;
-      }
-
-      if (existing) {
+      if (!querySnapshot.empty) {
         // Update existing record
-        const { error: updateError } = await supabase
-          .from('unavailable_medicines')
-          .update({
-            search_count: existing.search_count + 1,
-            last_searched_at: new Date().toISOString()
-          })
-          .eq('id', existing.id);
+        const docRef = querySnapshot.docs[0].ref;
+        const existing = querySnapshot.docs[0].data();
 
-        if (updateError) {
-          console.error('Failed to update medicine count:', updateError);
-        }
+        await updateDoc(docRef, {
+          search_count: (existing.search_count || 0) + 1,
+          last_searched_at: new Date().toISOString()
+        });
       } else {
         // Insert new record
-        const { error: insertError } = await supabase
-          .from('unavailable_medicines')
-          .insert({
-            medicine_name: medicineName.toLowerCase(),
-            search_count: 1,
-            first_searched_at: new Date().toISOString(),
-            last_searched_at: new Date().toISOString()
-          });
+        await addDoc(collection(db, 'unavailable_medicines'), {
+          medicine_name: medicineName.toLowerCase(),
+          search_count: 1,
+          first_searched_at: new Date().toISOString(),
+          last_searched_at: new Date().toISOString(),
+          status: 'pending'
+        });
 
-        if (insertError) {
-          console.error('Failed to insert new medicine:', insertError);
-        }
-      }
-
-      // Send WhatsApp notification for new unavailable medicine
-      if (!existing) {
+        // Send WhatsApp notification for new unavailable medicine
         await this.sendNotification(
           `🔍 New Medicine Search Alert!\n\n` +
           `Medicine: ${medicineName}\n` +
@@ -203,17 +183,13 @@ class WhatsAppService {
 
   async getUnavailableMedicines(): Promise<UnavailableMedicine[]> {
     try {
-      const { data, error } = await supabase
-        .from('unavailable_medicines')
-        .select('*')
-        .order('search_count', { ascending: false });
+      const q = query(collection(db, 'unavailable_medicines'), orderBy('search_count', 'desc'));
+      const querySnapshot = await getDocs(q);
 
-      if (error) {
-        console.error('Failed to fetch unavailable medicines:', error);
-        return [];
-      }
-
-      return data || [];
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as UnavailableMedicine));
     } catch (error) {
       console.error('Error fetching unavailable medicines:', error);
       return [];
@@ -222,19 +198,12 @@ class WhatsAppService {
 
   async updateMedicineStatus(id: string, status: 'pending' | 'in_progress' | 'resolved', notes?: string): Promise<boolean> {
     try {
-      const { error } = await supabase
-        .from('unavailable_medicines')
-        .update({
-          status,
-          notes,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) {
-        console.error('Failed to update medicine status:', error);
-        return false;
-      }
+      const docRef = doc(db, 'unavailable_medicines', id);
+      await updateDoc(docRef, {
+        status,
+        notes,
+        updated_at: new Date().toISOString()
+      });
 
       return true;
     } catch (error) {
@@ -253,20 +222,19 @@ class WhatsAppService {
     }
   }
 
-  async getSearchLogs(limit: number = 50): Promise<SearchLog[]> {
+  async getSearchLogs(limitCount: number = 50): Promise<SearchLog[]> {
     try {
-      const { data, error } = await supabase
-        .from('search_logs')
-        .select('*')
-        .order('search_timestamp', { ascending: false })
-        .limit(limit);
+      const q = query(
+        collection(db, 'search_logs'),
+        orderBy('search_timestamp', 'desc'),
+        limit(limitCount)
+      );
+      const querySnapshot = await getDocs(q);
 
-      if (error) {
-        console.error('Failed to fetch search logs:', error);
-        return [];
-      }
-
-      return data || [];
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as SearchLog));
     } catch (error) {
       console.error('Error fetching search logs:', error);
       return [];

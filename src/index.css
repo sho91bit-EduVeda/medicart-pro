@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,110 +11,127 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 215 25% 15%;
+    --foreground: 220 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 220 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 220 15% 15%;
 
-    --primary: 37 91% 55%;
+    /* Updated primary brand color - modern healthcare blue */
+    --primary: 210 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 345 70% 38%;
+    /* Updated secondary accent - vibrant teal */
+    --secondary: 170 80% 40%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 15% 50%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 10% 45%;
 
-    --accent: 152 60% 48%;
+    /* Updated accent color - warm orange for CTAs */
+    --accent: 25 100% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 210 100% 45%;
+    --border: 215 20% 90%;
+    --input: 215 20% 90%;
+    --ring: 210 100% 50%;
 
     --radius: 0.75rem;
 
     /* Medical Store Theme */
-    --medical-orange: 37 91% 55%;
-    --medical-maroon: 345 70% 38%;
-    --trust-gold: 42 87% 55%;
-    --price-red: 0 84% 60%;
+    --medical-blue: 210 100% 50%;
+    --medical-teal: 170 80% 40%;
+    --medical-orange: 25 100% 50%;
+    --medical-purple: 270 70% 60%;
 
-    /* Gradients */
-    --gradient-header: linear-gradient(135deg, hsl(37 91% 55%) 0%, hsl(42 87% 55%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(37 40% 98%) 100%);
+    /* Updated Gradients */
+    --gradient-header: linear-gradient(135deg, hsl(210 100% 55%) 0%, hsl(170 80% 45%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%);
+    --gradient-button: linear-gradient(135deg, hsl(210 100% 50%) 0%, hsl(25 100% 50%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(210 100% 60% / 0.1) 0%, hsl(170 80% 50% / 0.1) 100%);
 
     /* Shadows */
-    --shadow-card: 0 2px 8px hsl(37 15% 15% / 0.08);
-    --shadow-hover: 0 4px 16px hsl(37 91% 55% / 0.15);
+    --shadow-sm: 0 1px 2px 0 hsl(215 20% 15% / 0.05);
+    --shadow: 0 4px 12px 0 hsl(215 20% 15% / 0.1);
+    --shadow-md: 0 6px 16px 0 hsl(215 20% 15% / 0.15);
+    --shadow-lg: 0 10px 24px 0 hsl(215 20% 15% / 0.2);
+    --shadow-xl: 0 20px 32px 0 hsl(215 20% 15% / 0.25);
+    --shadow-card: 0 4px 12px hsl(215 20% 15% / 0.08);
+    --shadow-hover: 0 8px 20px hsl(210 100% 50% / 0.2);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-transform: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-opacity: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-foreground: 220 15% 25%;
+    --sidebar-primary: 210 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 30% 95%;
+    --sidebar-accent-foreground: 220 15% 15%;
+    --sidebar-border: 215 20% 90%;
+    --sidebar-ring: 210 100% 50%;
   }
 
   .dark {
-    --background: 215 30% 10%;
-    --foreground: 0 0% 98%;
+    --background: 220 20% 8%;
+    --foreground: 0 0% 95%;
 
-    --card: 215 30% 12%;
-    --card-foreground: 0 0% 98%;
+    --card: 220 20% 12%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 215 30% 12%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 220 20% 12%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 37 91% 55%;
+    /* Updated primary brand color - modern healthcare blue */
+    --primary: 210 100% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 345 70% 38%;
+    /* Updated secondary accent - vibrant teal */
+    --secondary: 170 80% 50%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 215 30% 18%;
-    --muted-foreground: 215 15% 65%;
-
-    --accent: 152 60% 48%;
+    /* Updated accent color - warm orange for CTAs */
+    --accent: 25 100% 60%;
     --accent-foreground: 0 0% 100%;
+
+    --muted: 215 20% 20%;
+    --muted-foreground: 215 10% 65%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 30% 18%;
-    --input: 215 30% 18%;
-    --ring: 210 100% 50%;
+    --border: 215 20% 20%;
+    --input: 215 20% 20%;
+    --ring: 210 100% 60%;
     
-    --gradient-header: linear-gradient(135deg, hsl(210 100% 35%) 0%, hsl(215 85% 45%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(215 30% 12%) 0%, hsl(215 30% 15%) 100%);
-    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.3);
-    --shadow-hover: 0 4px 16px hsl(210 100% 50% / 0.25);
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --gradient-header: linear-gradient(135deg, hsl(210 100% 50%) 0%, hsl(170 80% 50%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(220 20% 12%) 0%, hsl(220 20% 15%) 100%);
+    --gradient-button: linear-gradient(135deg, hsl(210 100% 60%) 0%, hsl(25 100% 60%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(210 100% 60% / 0.2) 0%, hsl(170 80% 50% / 0.2) 100%);
+    
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.1);
+    --shadow: 0 4px 12px 0 hsl(0 0% 0% / 0.2);
+    --shadow-md: 0 6px 16px 0 hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 10px 24px 0 hsl(0 0% 0% / 0.4);
+    --shadow-xl: 0 20px 32px 0 hsl(0 0% 0% / 0.5);
+    --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.3);
+    --shadow-hover: 0 8px 20px hsl(210 100% 60% / 0.3);
+    
+    --sidebar-background: 220 20% 10%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 210 100% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 215 20% 20%;
+    --sidebar-ring: 210 100% 60%;
   }
 }
 
@@ -123,6 +142,47 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  h1 {
+    @apply text-4xl font-bold;
+  }
+  
+  h2 {
+    @apply text-3xl font-bold;
+  }
+  
+  h3 {
+    @apply text-2xl font-bold;
+  }
+  
+  h4 {
+    @apply text-xl font-semibold;
+  }
+  
+  h5 {
+    @apply text-lg font-semibold;
+  }
+  
+  h6 {
+    @apply text-base font-semibold;
+  }
+  
+  p {
+    @apply text-base leading-relaxed;
+  }
+  
+  .lead {
+    @apply text-lg text-muted-foreground;
+  }
+  
+  .small {
+    @apply text-sm;
+  }
+  
+  .muted {
+    @apply text-muted-foreground;
   }
 }
 
@@ -133,5 +193,26 @@ All colors MUST be HSL.
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+  
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+  
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+  
+  @keyframes fade-in-up {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

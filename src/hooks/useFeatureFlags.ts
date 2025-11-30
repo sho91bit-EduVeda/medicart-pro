@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { FeatureFlags, defaultFeatureFlags } from '../config/featureFlags';
-import { supabase } from '@/integrations/supabase/client';
+import { db } from '@/integrations/firebase/config';
+import { collection, query, where, getDocs, updateDoc, addDoc, writeBatch, doc } from 'firebase/firestore';
 
 interface FeatureFlagsStore extends FeatureFlags {
   toggleFeature: (feature: keyof FeatureFlags) => void;
@@ -11,18 +12,13 @@ interface FeatureFlagsStore extends FeatureFlags {
 }
 
 const flagNameMapping: Record<keyof FeatureFlags, string> = {
-  shoppingCart: 'shopping_cart',
-  orderManagement: 'order_management',
   productReviews: 'product_reviews',
-  wishlist: 'wishlist',
   advancedSearch: 'advanced_search',
   productRecommendations: 'product_recommendations',
   notifications: 'notifications',
-  bulkOrders: 'bulk_orders',
   prescriptionUpload: 'prescription_upload',
   liveChat: 'live_chat',
-  loyaltyProgram: 'loyalty_program',
-  guestCheckout: 'guest_checkout',
+  deliveryEnabled: 'delivery_enabled', // Controls all delivery-related features including wishlist and loyalty program
 };
 
 export const useFeatureFlags = create<FeatureFlagsStore>()(
@@ -35,12 +31,19 @@ export const useFeatureFlags = create<FeatureFlagsStore>()(
 
         const dbFlagName = flagNameMapping[feature];
         try {
-          const { error } = await supabase
-            .from('feature_flags')
-            .update({ enabled: newValue })
-            .eq('flag_name', dbFlagName);
+          const q = query(collection(db, 'feature_flags'), where('flag_name', '==', dbFlagName));
+          const querySnapshot = await getDocs(q);
 
-          if (error) throw error;
+          if (!querySnapshot.empty) {
+            const docRef = querySnapshot.docs[0].ref;
+            await updateDoc(docRef, { enabled: newValue });
+          } else {
+            // If it doesn't exist, create it (optional, but good for safety)
+            await addDoc(collection(db, 'feature_flags'), {
+              flag_name: dbFlagName,
+              enabled: newValue
+            });
+          }
         } catch (error) {
           console.error('Failed to update feature flag in database:', error);
         }
@@ -53,29 +56,34 @@ export const useFeatureFlags = create<FeatureFlagsStore>()(
           enabled: state[key as keyof FeatureFlags],
         }));
 
-        for (const update of updates) {
-          try {
-            const { error } = await supabase
-              .from('feature_flags')
-              .update({ enabled: update.enabled })
-              .eq('flag_name', update.flag_name);
+        const batch = writeBatch(db);
 
-            if (error) throw error;
-          } catch (error) {
-            console.error(`Failed to sync ${update.flag_name}:`, error);
+        // This is a bit complex because we need to find the doc ID for each flag name
+        // For efficiency, we'll fetch all flags first
+        try {
+          const querySnapshot = await getDocs(collection(db, 'feature_flags'));
+          const existingFlags = new Map(querySnapshot.docs.map(doc => [doc.data().flag_name, doc.ref]));
+
+          for (const update of updates) {
+            if (existingFlags.has(update.flag_name)) {
+              batch.update(existingFlags.get(update.flag_name)!, { enabled: update.enabled });
+            } else {
+              const newDocRef = doc(collection(db, 'feature_flags'));
+              batch.set(newDocRef, { flag_name: update.flag_name, enabled: update.enabled });
+            }
           }
+          await batch.commit();
+        } catch (error) {
+          console.error('Failed to sync feature flags:', error);
         }
       },
       loadFromDatabase: async () => {
         try {
-          const { data, error } = await supabase
-            .from('feature_flags')
-            .select('flag_name, enabled');
-
-          if (error) throw error;
+          const querySnapshot = await getDocs(collection(db, 'feature_flags'));
+          const data = querySnapshot.docs.map(doc => doc.data());
 
           const updates: Partial<FeatureFlags> = {};
-          data?.forEach((flag) => {
+          data.forEach((flag) => {
             const localKey = Object.entries(flagNameMapping).find(
               ([_, dbName]) => dbName === flag.flag_name
             )?.[0] as keyof FeatureFlags;

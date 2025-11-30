@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '@/integrations/supabase/client';
+import { auth, db } from '@/integrations/firebase/config';
+import { doc, setDoc, deleteDoc, getDoc, getDocs, collection, query } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 interface CartItem {
@@ -35,7 +36,7 @@ export const useCart = create<CartStore>()(
       isLoading: false,
 
       addItem: async (productId: string, quantity = 1) => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = auth.currentUser;
 
         if (!user) {
           toast.error('Please sign in to add items to cart');
@@ -51,16 +52,27 @@ export const useCart = create<CartStore>()(
             return;
           }
 
-          const { data, error } = await supabase
-            .from('shopping_cart')
-            .insert([{ user_id: user.id, product_id: productId, quantity }])
-            .select('*, products:product_id(name, original_price, image_url, in_stock, requires_prescription)')
-            .single();
+          // Fetch product details first
+          const productDoc = await getDoc(doc(db, 'products', productId));
+          if (!productDoc.exists()) {
+            throw new Error('Product not found');
+          }
+          const productData = productDoc.data();
 
-          if (error) throw error;
+          const cartItemRef = doc(db, 'users', user.uid, 'cart', productId);
+          await setDoc(cartItemRef, {
+            product_id: productId,
+            quantity,
+            added_at: new Date().toISOString()
+          });
 
           set(state => ({
-            items: [...state.items, { ...data, product: data.products as any }]
+            items: [...state.items, {
+              id: productId,
+              product_id: productId,
+              quantity,
+              product: productData as any
+            }]
           }));
 
           toast.success('Added to cart');
@@ -73,19 +85,13 @@ export const useCart = create<CartStore>()(
       },
 
       removeItem: async (productId: string) => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = auth.currentUser;
 
         if (!user) return;
 
         set({ isLoading: true });
         try {
-          const { error } = await supabase
-            .from('shopping_cart')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('product_id', productId);
-
-          if (error) throw error;
+          await deleteDoc(doc(db, 'users', user.uid, 'cart', productId));
 
           set(state => ({
             items: state.items.filter(item => item.product_id !== productId)
@@ -106,19 +112,14 @@ export const useCart = create<CartStore>()(
           return;
         }
 
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = auth.currentUser;
 
         if (!user) return;
 
         set({ isLoading: true });
         try {
-          const { error } = await supabase
-            .from('shopping_cart')
-            .update({ quantity })
-            .eq('user_id', user.id)
-            .eq('product_id', productId);
-
-          if (error) throw error;
+          const cartItemRef = doc(db, 'users', user.uid, 'cart', productId);
+          await setDoc(cartItemRef, { quantity }, { merge: true });
 
           set(state => ({
             items: state.items.map(item =>
@@ -134,18 +135,17 @@ export const useCart = create<CartStore>()(
       },
 
       clearCart: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = auth.currentUser;
 
         if (!user) return;
 
         set({ isLoading: true });
         try {
-          const { error } = await supabase
-            .from('shopping_cart')
-            .delete()
-            .eq('user_id', user.id);
+          const q = query(collection(db, 'users', user.uid, 'cart'));
+          const snapshot = await getDocs(q);
 
-          if (error) throw error;
+          const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+          await Promise.all(deletePromises);
 
           set({ items: [] });
         } catch (error: any) {
@@ -157,7 +157,7 @@ export const useCart = create<CartStore>()(
       },
 
       loadCart: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = auth.currentUser;
 
         if (!user) {
           set({ items: [] });
@@ -166,14 +166,23 @@ export const useCart = create<CartStore>()(
 
         set({ isLoading: true });
         try {
-          const { data, error } = await supabase
-            .from('shopping_cart')
-            .select('*, products:product_id(name, original_price, image_url, in_stock, requires_prescription)')
-            .eq('user_id', user.id);
+          const q = query(collection(db, 'users', user.uid, 'cart'));
+          const snapshot = await getDocs(q);
 
-          if (error) throw error;
+          const items = await Promise.all(snapshot.docs.map(async (cartDoc) => {
+            const data = cartDoc.data();
+            const productDoc = await getDoc(doc(db, 'products', data.product_id));
+            const productData = productDoc.exists() ? productDoc.data() : null;
 
-          set({ items: data.map(item => ({ ...item, product: item.products as any })) || [] });
+            return {
+              id: cartDoc.id,
+              product_id: data.product_id,
+              quantity: data.quantity,
+              product: productData as any
+            };
+          }));
+
+          set({ items });
         } catch (error: any) {
           console.error('Failed to load cart:', error);
         } finally {

@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Prescription uploads - Users can only upload/access their own prescriptions
+    match /prescriptions/{userId}/{fileName} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Product images - Public read, authenticated write
+    match /products/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // General uploads - Authenticated users only
+    match /{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+  }
+}

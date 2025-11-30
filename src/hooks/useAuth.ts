@@ -1,20 +1,31 @@
 import { create } from 'zustand';
-import { supabase } from '@/integrations/supabase/client';
+import { auth } from '@/integrations/firebase/config';
+import { onAuthStateChanged, signOut as firebaseSignOut, User } from 'firebase/auth';
 
 interface AuthState {
   isAuthenticated: boolean;
+  isLoading: boolean;
+  user: User | null;
   checkAuth: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 export const useAuth = create<AuthState>((set) => ({
   isAuthenticated: false,
+  isLoading: true,
+  user: null,
   checkAuth: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    set({ isAuthenticated: !!session });
+    set({ isLoading: true });
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        set({ isAuthenticated: !!user, isLoading: false, user });
+        unsubscribe();
+        resolve();
+      });
+    });
   },
   signOut: async () => {
-    await supabase.auth.signOut();
-    set({ isAuthenticated: false });
+    await firebaseSignOut(auth);
+    set({ isAuthenticated: false, user: null });
   },
 }));

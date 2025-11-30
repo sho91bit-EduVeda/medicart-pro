@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '@/integrations/supabase/client';
+import { auth, db } from '@/integrations/firebase/config';
+import { doc, setDoc, deleteDoc, getDocs, collection } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 interface WishlistStore {
@@ -20,7 +21,7 @@ export const useWishlist = create<WishlistStore>()(
       isLoading: false,
 
       addItem: async (productId: string) => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = auth.currentUser;
 
         if (!user) {
           toast.error('Please sign in to add to wishlist');
@@ -29,11 +30,11 @@ export const useWishlist = create<WishlistStore>()(
 
         set({ isLoading: true });
         try {
-          const { error } = await supabase
-            .from('wishlist')
-            .insert([{ user_id: user.id, product_id: productId }]);
-
-          if (error) throw error;
+          const wishlistRef = doc(db, 'users', user.uid, 'wishlist', productId);
+          await setDoc(wishlistRef, {
+            product_id: productId,
+            added_at: new Date().toISOString()
+          });
 
           set(state => ({
             items: [...state.items, productId]
@@ -41,31 +42,21 @@ export const useWishlist = create<WishlistStore>()(
 
           toast.success('Added to wishlist');
         } catch (error: any) {
-          if (error.code === '23505') {
-            toast.info('Already in wishlist');
-          } else {
-            toast.error('Failed to add to wishlist');
-            console.error(error);
-          }
+          toast.error('Failed to add to wishlist');
+          console.error(error);
         } finally {
           set({ isLoading: false });
         }
       },
 
       removeItem: async (productId: string) => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = auth.currentUser;
 
         if (!user) return;
 
         set({ isLoading: true });
         try {
-          const { error } = await supabase
-            .from('wishlist')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('product_id', productId);
-
-          if (error) throw error;
+          await deleteDoc(doc(db, 'users', user.uid, 'wishlist', productId));
 
           set(state => ({
             items: state.items.filter(id => id !== productId)
@@ -94,7 +85,7 @@ export const useWishlist = create<WishlistStore>()(
       },
 
       loadWishlist: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = auth.currentUser;
 
         if (!user) {
           set({ items: [] });
@@ -103,14 +94,10 @@ export const useWishlist = create<WishlistStore>()(
 
         set({ isLoading: true });
         try {
-          const { data, error } = await supabase
-            .from('wishlist')
-            .select('product_id')
-            .eq('user_id', user.id);
+          const querySnapshot = await getDocs(collection(db, 'users', user.uid, 'wishlist'));
+          const items = querySnapshot.docs.map(doc => doc.id);
 
-          if (error) throw error;
-
-          set({ items: data?.map(item => item.product_id) || [] });
+          set({ items });
         } catch (error: any) {
           console.error('Failed to load wishlist:', error);
         } finally {
