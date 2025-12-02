@@ -97,7 +97,10 @@ export function MobileMenu({ onSearchClick }: MobileMenuProps) {
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Store className="w-6 h-6" />
-            <span>Kalyanam Pharmaceuticals</span>
+            <div>
+              <div>Kalyanam</div>
+              <div className="text-[0.6rem] text-muted-foreground uppercase tracking-wider">Pharmaceuticals</div>
+            </div>
           </SheetTitle>
         </SheetHeader>
         

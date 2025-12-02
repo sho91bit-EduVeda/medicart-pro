@@ -271,8 +271,15 @@ const Index = () => {
                 <Store className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
-                <p className="text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
+                {/* Desktop view - Full business name */}
+                <h1 className="text-2xl font-bold hidden sm:block">Kalyanam Pharmaceuticals</h1>
+                <p className="text-sm text-primary-foreground/90 hidden sm:block">Your Trusted Healthcare Partner</p>
+                
+                {/* Mobile view - Shortened business name */}
+                <div className="sm:hidden">
+                  <h1 className="text-xl font-bold">Kalyanam</h1>
+                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
+                </div>
               </div>
             </div>
             

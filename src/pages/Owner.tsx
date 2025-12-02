@@ -471,10 +471,8 @@ const Owner = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold hidden sm:block">Dashboard</h1>
-                {/* Mobile view - Shortened business name */}
                 <div className="sm:hidden">
-                  <h1 className="text-xl font-bold">Kalyanam</h1>
-                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
+                  <h1 className="text-xl font-bold">Dashboard</h1>
                 </div>
                 <p className="text-sm text-primary-foreground/90 hidden sm:block">Manage your medical store</p>
               </div>
@@ -518,9 +516,8 @@ const Owner = () => {
                     <SheetTitle className="flex items-center gap-2">
                       <Package className="w-6 h-6" />
                       <span className="hidden sm:inline">Dashboard</span>
-                      <span className="sm:hidden">Kalyanam</span>
+                      <span className="sm:hidden text-xl">Dashboard</span>
                     </SheetTitle>
-                    <p className="text-[0.6rem] text-muted-foreground sm:hidden uppercase tracking-wider">Pharmaceuticals</p>
                     <p className="text-sm text-muted-foreground hidden sm:block">Manage your medical store</p>
                   </SheetHeader>
                   
