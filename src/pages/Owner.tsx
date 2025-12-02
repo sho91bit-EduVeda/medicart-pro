@@ -19,6 +19,14 @@ import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import SidebarBackground from "@/components/svgs/SidebarBackground";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
 import { NotificationBell } from "@/components/NotificationBell";
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger 
+} from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 
 interface Category {
   id: string;
@@ -462,33 +470,128 @@ const Owner = () => {
                 <Package className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Owner Dashboard</h1>
-                <p className="text-sm text-primary-foreground/90">Manage your medical store</p>
+                <h1 className="text-2xl font-bold hidden sm:block">Dashboard</h1>
+                {/* Mobile view - Shortened business name */}
+                <div className="sm:hidden">
+                  <h1 className="text-xl font-bold">Kalyanam</h1>
+                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
+                </div>
+                <p className="text-sm text-primary-foreground/90 hidden sm:block">Manage your medical store</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* View Store Button - Visible on mobile and desktop */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="md:hidden text-primary-foreground hover:bg-white/20 rounded-full"
+                onClick={() => navigate("/")}
+              >
+                <Store className="w-5 h-5" />
+              </Button>
+              
               {/* Notification Bell */}
               <NotificationBell />
               
-              <Button variant="secondary" onClick={seedDatabase} className="flex items-center gap-2">
+              <Button variant="secondary" onClick={seedDatabase} className="flex items-center gap-2 hidden md:flex">
                 <Database className="w-4 h-4" />
                 <span className="hidden sm:inline">Seed DB</span>
               </Button>
-              <Button variant="default" onClick={() => navigate("/")} className="flex items-center gap-2">
+              <Button variant="default" onClick={() => navigate("/")} className="flex items-center gap-2 hidden md:flex">
                 <Store className="w-4 h-4" />
                 <span className="hidden sm:inline">View Store</span>
               </Button>
-              <Button variant="destructive" onClick={handleLogout} className="flex items-center gap-2">
+              <Button variant="destructive" onClick={handleLogout} className="flex items-center gap-2 hidden md:flex">
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>
               </Button>
+              
+              {/* Mobile menu trigger - Moved to the extreme right */}
+              <Sheet>
+                <SheetTrigger asChild className="md:hidden">
+                  <Button variant="ghost" size="icon" className="text-primary-foreground">
+                    <Menu className="w-6 h-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[340px]">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                      <Package className="w-6 h-6" />
+                      <span className="hidden sm:inline">Dashboard</span>
+                      <span className="sm:hidden">Kalyanam</span>
+                    </SheetTitle>
+                    <p className="text-[0.6rem] text-muted-foreground sm:hidden uppercase tracking-wider">Pharmaceuticals</p>
+                    <p className="text-sm text-muted-foreground hidden sm:block">Manage your medical store</p>
+                  </SheetHeader>
+                  
+                  <div className="mt-6 flex flex-col gap-2">
+                    {navigationItems.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Button
+                          key={item.id}
+                          variant={activeSection === item.id ? "default" : "ghost"}
+                          className="justify-start gap-3 py-6 text-left"
+                          onClick={() => {
+                            setActiveSection(item.id);
+                            // Close the sheet using the proper Radix UI API
+                            document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
+                          }}
+                        >
+                          <Icon className="w-5 h-5" />
+                          <span className="font-medium">{item.label}</span>
+                        </Button>
+                      );
+                    })}
+                    
+                    <div className="mt-4 pt-4 border-t">
+                      <Button 
+                        variant="secondary" 
+                        onClick={() => {
+                          seedDatabase();
+                          // Close the sheet
+                          document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
+                        }} 
+                        className="w-full justify-start gap-3 py-6 text-left"
+                      >
+                        <Database className="w-5 h-5" />
+                        <span className="font-medium">Seed Database</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          navigate("/");
+                          // Close the sheet
+                          document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
+                        }} 
+                        className="w-full justify-start gap-3 py-6 text-left mt-2"
+                      >
+                        <Store className="w-5 h-5" />
+                        <span className="font-medium">View Store</span>
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        onClick={() => {
+                          handleLogout();
+                          // Close the sheet
+                          document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
+                        }} 
+                        className="w-full justify-start gap-3 py-6 text-left mt-2"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        <span className="font-medium">Logout</span>
+                      </Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>
       </header>
 
       <div className="flex flex-1">
-        {/* Sidebar Navigation */}
+        {/* Sidebar Navigation - Hidden on mobile */}
         <nav className="w-64 bg-sidebar-background border-r p-4 hidden md:block relative overflow-hidden">
           <SidebarBackground />
           <div className="relative z-10 space-y-3">
@@ -510,7 +613,7 @@ const Owner = () => {
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-4 sm:p-6 overflow-auto">
           <div className="max-w-6xl mx-auto">
             {/* Delivery Status Banner */}
             {!deliveryEnabled && (
@@ -532,9 +635,9 @@ const Owner = () => {
               </div>
             )}
 
-            {/* Mobile Navigation */}
+            {/* Mobile Navigation - Improved for better accessibility */}
             <div className="md:hidden mb-6">
-              <div className="flex gap-2 overflow-x-auto pb-2">
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {navigationItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -546,7 +649,7 @@ const Owner = () => {
                       onClick={() => setActiveSection(item.id)}
                     >
                       <Icon className="w-4 h-4" />
-                      <span>{item.label}</span>
+                      <span className="whitespace-nowrap">{item.label}</span>
                     </Button>
                   );
                 })}
@@ -761,7 +864,7 @@ const Owner = () => {
                           </div>
                           <div className="flex gap-2">
                             <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
-                              <SelectTrigger className="w-[180px]">
+                              <SelectTrigger className="w-[120px] sm:w-[180px]">
                                 <SelectValue placeholder="All Categories" />
                               </SelectTrigger>
                               <SelectContent>
@@ -774,7 +877,7 @@ const Owner = () => {
                               </SelectContent>
                             </Select>
                             <Select value={stockStatusFilter} onValueChange={(value: any) => setStockStatusFilter(value)}>
-                              <SelectTrigger className="w-[180px]">
+                              <SelectTrigger className="w-[120px] sm:w-[180px]">
                                 <SelectValue placeholder="All Status" />
                               </SelectTrigger>
                               <SelectContent>
@@ -1168,7 +1271,7 @@ const Owner = () => {
                         step="1"
                         value={discountPercentage}
                         onChange={(e) => setDiscountPercentage(parseFloat(e.target.value) || 0)}
-                        className="max-w-xs"
+                        className="max-w-[120px] sm:max-w-xs"
                       />
                       <span className="text-2xl font-bold text-primary">{discountPercentage}%</span>
                     </div>
