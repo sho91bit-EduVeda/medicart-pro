@@ -72,20 +72,7 @@ const StoreReviewForm: React.FC<StoreReviewFormProps> = ({ onClose, onSubmit }) 
     onClose();
   };
 
-  if (!isAuthenticated) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Sign In Required</CardTitle>
-          <CardDescription>Please sign in to leave a store review</CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Button onClick={onClose}>Close</Button>
-        </CardFooter>
-      </Card>
-    );
-  }
-
+  // Remove the authentication check that was preventing non-authenticated users from submitting reviews
   // Confirmation dialog
   if (showConfirmation) {
     return (

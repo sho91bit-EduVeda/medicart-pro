@@ -25,10 +25,10 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     
-    // Product Reviews - Public read, authenticated write (own reviews only for update/delete)
+    // Product Reviews - Public read, public create (anonymous reviews allowed)
     match /product_reviews/{reviewId} {
       allow read: if true;
-      allow create: if isAuthenticated();
+      allow create: if true;  // Allow anyone to submit reviews
       allow update, delete: if isAuthenticated() && resource.data.user_id == request.auth.uid;
     }
     

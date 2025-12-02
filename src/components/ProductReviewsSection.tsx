@@ -68,40 +68,43 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
   };
 
   const submitReview = async () => {
-    if (!isAuthenticated) {
-      toast.error('Please sign in to leave a review');
-      return;
-    }
-
     setSubmitting(true);
     try {
       const user = auth.currentUser;
-      if (!user) throw new Error('Not authenticated');
+      
+      // Check if authenticated user already reviewed this product
+      if (user) {
+        const q = query(
+          collection(db, 'product_reviews'),
+          where('product_id', '==', productId),
+          where('user_id', '==', user.uid)
+        );
+        const existingReviews = await getDocs(q);
 
-      // Check if user already reviewed
-      const q = query(
-        collection(db, 'product_reviews'),
-        where('product_id', '==', productId),
-        where('user_id', '==', user.uid)
-      );
-      const existingReviews = await getDocs(q);
-
-      if (!existingReviews.empty) {
-        toast.error('You have already reviewed this product');
-        setSubmitting(false);
-        return;
+        if (!existingReviews.empty) {
+          toast.error('You have already reviewed this product');
+          setSubmitting(false);
+          return;
+        }
       }
 
-      await addDoc(collection(db, 'product_reviews'), {
+      // Create review document - for anonymous users, we won't store user_id
+      const reviewData: any = {
         product_id: productId,
-        user_id: user.uid,
         rating,
         title,
         comment,
         verified_purchase: false, // Logic to check verification can be added later
         helpful_count: 0,
         created_at: new Date().toISOString()
-      });
+      };
+
+      // Only add user_id if user is authenticated
+      if (user) {
+        reviewData.user_id = user.uid;
+      }
+
+      await addDoc(collection(db, 'product_reviews'), reviewData);
 
       toast.success('Review submitted successfully');
       setShowForm(false);
@@ -147,7 +150,7 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
 
           <Separator orientation="vertical" className="h-20" />
 
-          <Button onClick={() => setShowForm(!showForm)} disabled={!isAuthenticated}>
+          <Button onClick={() => setShowForm(!showForm)}>
             Write a Review
           </Button>
         </div>
@@ -201,58 +204,59 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
             </CardContent>
           </Card>
         )}
-      </div>
 
-      <div className="space-y-4">
         {loading ? (
-          <div className="text-center py-8">Loading reviews...</div>
-        ) : reviews.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No reviews yet. Be the first to review this product!
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : (
-          reviews.map((review) => (
-            <Card key={review.id}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-4 h-4 ${star <= review.rating
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                          }`}
-                      />
-                    ))}
-                    {review.verified_purchase && (
-                      <Badge variant="secondary" className="text-xs">
-                        Verified Purchase
-                      </Badge>
-                    )}
+          <div className="space-y-6">
+            {reviews.map((review) => (
+              <div key={review.id} className="border rounded-lg p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-medium">
+                        {review.user_id ? "Verified Customer" : "Anonymous User"}
+                      </span>
+                      {review.verified_purchase && (
+                        <Badge variant="secondary">Verified Purchase</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 mb-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-4 h-4 ${star <= review.rating
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                            }`}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground">
                     {new Date(review.created_at).toLocaleDateString()}
-                  </span>
+                  </div>
                 </div>
-
+                
                 {review.title && (
                   <h4 className="font-semibold mb-2">{review.title}</h4>
                 )}
-
+                
                 {review.comment && (
-                  <p className="text-muted-foreground mb-3">{review.comment}</p>
+                  <p className="text-muted-foreground">{review.comment}</p>
                 )}
-
-                <div className="flex items-center gap-2 text-sm">
-                  <Button variant="ghost" size="sm" className="h-8">
-                    <ThumbsUp className="w-3 h-3 mr-1" />
+                
+                <div className="flex items-center gap-2 mt-3 text-sm">
+                  <Button variant="ghost" size="sm" className="gap-1">
+                    <ThumbsUp className="w-4 h-4" />
                     Helpful ({review.helpful_count})
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
