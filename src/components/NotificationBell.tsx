@@ -23,6 +23,7 @@ interface Notification {
   read: boolean;
   action_url: string | null;
   created_at: string;
+  user_id?: string; // Make user_id optional
 }
 
 export function NotificationBell() {
@@ -37,9 +38,9 @@ export function NotificationBell() {
       const user = auth.currentUser;
       if (!user) return;
 
+      // Query for notifications - show user-specific notifications and all medicine request notifications
       const q = query(
         collection(db, 'notifications'),
-        where('user_id', '==', user.uid),
         orderBy('created_at', 'desc'),
         limit(10)
       );
@@ -50,8 +51,13 @@ export function NotificationBell() {
           ...doc.data()
         })) as Notification[];
 
-        setNotifications(notificationsData);
-        setUnreadCount(notificationsData.filter(n => !n.read).length);
+        // Filter notifications: show user-specific notifications and all medicine request notifications
+        const filteredNotifications = notificationsData.filter(notification => 
+          notification.user_id === user.uid || notification.type === 'medicine_request'
+        );
+
+        setNotifications(filteredNotifications);
+        setUnreadCount(filteredNotifications.filter(n => !n.read).length);
         setLoading(false);
       }, (error) => {
         console.error('Failed to subscribe to notifications:', error);
@@ -100,6 +106,8 @@ export function NotificationBell() {
         return '🔔';
       case 'promotion':
         return '🎉';
+      case 'medicine_request':
+        return '💊';
       default:
         return '💬';
     }
@@ -110,10 +118,10 @@ export function NotificationBell() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="relative">
+        <Button variant="ghost" size="icon" className="relative rounded-full text-primary-foreground hover:bg-white/20">
           <Bell className="w-4 h-4" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+            <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full bg-white text-primary">
               {unreadCount}
             </Badge>
           )}

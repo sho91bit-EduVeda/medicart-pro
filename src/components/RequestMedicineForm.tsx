@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { whatsappService } from '@/services/whatsappService';
 import { db } from '@/integrations/firebase/config';
 import { collection, addDoc } from 'firebase/firestore';
+import { auth } from '@/integrations/firebase/config';
 
 interface RequestMedicineFormProps {
   medicineName?: string;
@@ -28,7 +29,7 @@ const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName 
 
     try {
       // Save to Firebase
-      await addDoc(collection(db, 'medicine_requests'), {
+      const requestRef = await addDoc(collection(db, 'medicine_requests'), {
         customer_name: name,
         email,
         phone,
@@ -50,6 +51,22 @@ const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName 
         `Time: ${new Date().toLocaleString()}\n\n` +
         `A customer has requested availability of a medicine.`
       );
+
+      // Create notification for owner
+      try {
+        await addDoc(collection(db, 'notifications'), {
+          type: 'medicine_request',
+          title: 'New Medicine Request',
+          message: `Customer ${name} requested ${medicine}`,
+          read: false,
+          action_url: `/owner#requests`, // Link to requests section
+          created_at: new Date().toISOString(),
+          // We'll add user_id for the owner when we implement owner identification
+        });
+      } catch (notificationError) {
+        console.error('Failed to create notification:', notificationError);
+        // Don't fail the whole request if notification creation fails
+      }
 
       toast.success('Request submitted successfully! We will contact you when the medicine becomes available.');
       

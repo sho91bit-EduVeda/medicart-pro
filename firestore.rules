@@ -82,8 +82,12 @@ service cloud.firestore {
     }
     
     // Notifications - Users can only read/write their own notifications
+    // Exception: Medicine request notifications can be read by any authenticated user
     match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow read: if isAuthenticated() && (
+        resource.data.user_id == request.auth.uid ||
+        (resource.data.type == 'medicine_request' && isAuthenticated())
+      );
       allow write: if isAuthenticated();
     }
     

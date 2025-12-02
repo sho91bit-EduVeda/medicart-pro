@@ -18,6 +18,7 @@ import { seedDatabase } from "@/utils/seedData";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import SidebarBackground from "@/components/svgs/SidebarBackground";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
+import { NotificationBell } from "@/components/NotificationBell";
 
 interface Category {
   id: string;
@@ -466,6 +467,9 @@ const Owner = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Notification Bell */}
+              <NotificationBell />
+              
               <Button variant="secondary" onClick={seedDatabase} className="flex items-center gap-2">
                 <Database className="w-4 h-4" />
                 <span className="hidden sm:inline">Seed DB</span>

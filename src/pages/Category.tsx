@@ -15,6 +15,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import UnavailableMedicinesSheet from "@/components/UnavailableMedicinesSheet";
 import { SearchPopup } from "@/components/SearchPopup";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
+import { MobileMenu } from "@/components/MobileMenu";
+import { NotificationBell } from "@/components/NotificationBell";
 
 interface Product {
   id: string;
@@ -336,6 +338,9 @@ const CategoryPage = () => {
             </div>
                 
             <div className="flex items-center gap-2">
+              {/* Notification Bell */}
+              <NotificationBell />
+              
               {/* Owner Login/Logout buttons on the extreme right */}
               <div className="hidden md:flex items-center gap-1">
                 {isAuthenticated ? (
@@ -396,14 +401,8 @@ const CategoryPage = () => {
                 <ShoppingCart discountPercentage={discountPercentage} />
               </div>
               
-              {/* Mobile menu button */}
-              <Button variant="ghost" size="icon" className="md:hidden rounded-full p-2 text-primary-foreground">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="4" y1="12" x2="20" y2="12"></line>
-                  <line x1="4" y1="6" x2="20" y2="6"></line>
-                  <line x1="4" y1="18" x2="20" y2="18"></line>
-                </svg>
-              </Button>
+              {/* Mobile menu button - REPLACED WITH MOBILE MENU COMPONENT */}
+              <MobileMenu />
             </div>
           </div>
           
@@ -470,68 +469,6 @@ const CategoryPage = () => {
                 ))}
               </div>
             )}
-          </div>
-          
-          {/* Mobile Navigation */}
-          <div className="md:hidden border-t border-white/20 bg-white/10 mt-3">
-            <div className="container mx-auto px-4 py-2 flex justify-between">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="rounded-full px-3 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium text-sm"
-                onClick={() => navigate("/")}
-              >
-                Home
-              </Button>
-              {/* Use deliveryEnabled instead of wishlistEnabled */}
-              {deliveryEnabled && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-full px-3 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium text-sm"
-                  onClick={() => navigate("/wishlist")}
-                >
-                  Wishlist
-                </Button>
-              )}
-              {/* Owner Login/Logout for mobile */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="rounded-full px-3 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium text-sm"
-                  >
-                    <User className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  {isAuthenticated ? (
-                    <>
-                      <DropdownMenuItem onClick={() => navigate("/owner")}>
-                        <User className="w-4 h-4 mr-2" />
-                        Dashboard
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={async () => {
-                          await signOut();
-                          toast.success("Logged out successfully");
-                        }}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Logout
-                      </DropdownMenuItem>
-                    </>
-                  ) : (
-                    <DropdownMenuItem onClick={() => navigate("/auth")}>
-                      <LogIn className="w-4 h-4 mr-2" />
-                      Owner Login
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
           </div>
         </div>
       </header>
