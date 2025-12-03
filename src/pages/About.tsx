@@ -12,27 +12,29 @@ const About = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg">
         <div className="container mx-auto px-4 py-4">
-          <div 
-            className="flex items-center gap-3 cursor-pointer" 
-            onClick={() => navigate("/")}
-          >
-            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10 shadow-lg">
-              <KalyanamLogo className="w-8 h-8" />
+          <div className="flex items-center justify-between">
+            <div 
+              className="flex items-center gap-3 cursor-pointer" 
+              onClick={() => navigate("/")}
+            >
+              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10 shadow-lg">
+                <KalyanamLogo className="w-8 h-8" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
+                <p className="text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
-              <p className="text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
-            </div>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+              onClick={() => navigate("/")}
+            >
+              Back to Home
+            </Button>
           </div>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
-            onClick={() => navigate("/")}
-          >
-            Back to Home
-          </Button>
         </div>
       </header>
 
