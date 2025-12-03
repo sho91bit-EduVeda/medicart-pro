@@ -26,10 +26,11 @@ import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 
 interface MobileMenuProps {
   onSearchClick?: () => void;
-  onReviewsClick?: () => void; // Add this prop
+  onReviewsClick?: () => void;
+  onOwnerLoginClick?: () => void; // Add this prop
 }
 
-export function MobileMenu({ onSearchClick, onReviewsClick }: MobileMenuProps) {
+export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,8 +83,16 @@ export function MobileMenu({ onSearchClick, onReviewsClick }: MobileMenuProps) {
       id: "dashboard",
       label: isAuthenticated ? "Dashboard" : "Owner Login",
       icon: User,
-      action: () => handleNavigation(isAuthenticated ? "/owner" : "/auth"),
-      active: location.pathname === "/owner" || location.pathname === "/auth"
+      action: isAuthenticated ? 
+        () => handleNavigation("/owner") : 
+        () => {
+          // For unauthenticated users, close the menu and trigger the login popup
+          setOpen(false);
+          if (onOwnerLoginClick) {
+            onOwnerLoginClick();
+          }
+        },
+      active: location.pathname === "/owner"
     }
   ];
 

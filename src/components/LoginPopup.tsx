@@ -166,13 +166,6 @@ export const LoginPopup = ({ trigger }: LoginPopupProps) => {
                 </Button>
               </form>
               
-              {/* Hint for owners - subtle text at the bottom */}
-              {!showSignupOption && isLogin && (
-                <p className="text-center text-xs text-muted-foreground mt-4">
-                  Long press close button or press Ctrl+Shift+S for owner signup
-                </p>
-              )}
-              
               <div className="mt-4 text-center text-sm">
                 {isLogin ? (
                   <>

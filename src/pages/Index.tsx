@@ -46,6 +46,12 @@ import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
 import coldFluImage from "@/assets/category-cold-flu.jpg";
 import antibioticsImage from "@/assets/category-antibiotics.jpg";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Category {
   id: string;
@@ -454,8 +460,11 @@ const Index = () => {
                 <ShoppingCart discountPercentage={discountPercentage} />
               </div>
               
-              {/* Mobile menu button - Pass onReviewsClick prop */}
-              <MobileMenu onReviewsClick={() => setShowReviews(true)} />
+              {/* Mobile menu button - Pass onReviewsClick and onOwnerLoginClick props */}
+              <MobileMenu 
+                onReviewsClick={() => setShowReviews(true)}
+                onOwnerLoginClick={() => document.getElementById('mobile-owner-login-trigger')?.click()}
+              />
             </div>
           </div>
           
@@ -530,6 +539,15 @@ const Index = () => {
           <AnnouncementMarquee />
         </div>
       </header>
+
+      {/* Hidden LoginPopup trigger for mobile */}
+      <div className="hidden">
+        <LoginPopup
+          trigger={
+            <button id="mobile-owner-login-trigger" />
+          }
+        />
+      </div>
 
       {/* Hero Banner */}
       <HeroBanner discountPercentage={discountPercentage} />
@@ -840,9 +858,25 @@ const Index = () => {
           </div>
           
           <div className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-muted-foreground text-sm">
-              © 2025 Kalyanam Pharmaceuticals. All rights reserved.
-            </p>
+            <div className="flex flex-col items-center md:items-start gap-1">
+              <p className="text-muted-foreground text-sm">
+                © 2025 Kalyanam Pharmaceuticals. All rights reserved.
+              </p>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-muted-foreground text-sm cursor-help underline decoration-dashed">
+                      Created By Shobhit Shukla (+91-9643000619)
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-xs text-muted-foreground">
+                      If you need to move your business online as well, contact here.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="flex gap-6">
               <button 
                 onClick={() => navigate("/privacy-policy")}

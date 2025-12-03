@@ -5,8 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, Mail, MapPin, Clock, Send } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, Send, Home } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const Contact = () => {
   const navigate = useNavigate();
@@ -31,16 +37,47 @@ const Contact = () => {
     setIsSubmitting(true);
     
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success("Message sent successfully! We'll get back to you soon.");
-      setFormData({
-        name: "",
-        email: "",
-        subject: "",
-        message: ""
+      // Prepare form data for FormSubmit
+      const formBody = new FormData();
+      formBody.append("_replyto", formData.email);
+      formBody.append("_subject", `New Contact Message: ${formData.subject}`);
+      formBody.append("_template", "table");
+      formBody.append("Name", formData.name);
+      formBody.append("Email", formData.email);
+      formBody.append("Subject", formData.subject);
+      formBody.append("Message", formData.message);
+      
+      // Add honey pot field for spam protection (corrected name)
+      formBody.append("_honeypot", "");
+      
+      // Add redirect URL after successful submission
+      formBody.append("_redirect", window.location.href);
+      
+      // Send form data to FormSubmit
+      const response = await fetch("https://formsubmit.co/shbhtshukla930@gmail.com", {
+        method: "POST",
+        body: formBody,
+        headers: {
+          "Accept": "application/json"
+        }
       });
+      
+      console.log("FormSubmit response:", response);
+      
+      if (response.ok) {
+        toast.success("Message sent successfully! We'll get back to you soon.");
+        setFormData({
+          name: "",
+          email: "",
+          subject: "",
+          message: ""
+        });
+      } else {
+        console.error("FormSubmit error:", response.statusText);
+        throw new Error(`Failed to send message: ${response.statusText}`);
+      }
     } catch (error) {
+      console.error("Form submission error:", error);
       toast.error("Failed to send message. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -72,7 +109,8 @@ const Contact = () => {
               className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
               onClick={() => navigate("/")}
             >
-              Back to Home
+              <Home className="w-4 h-4 mr-2" />
+              Home
             </Button>
           </div>
         </div>
@@ -257,6 +295,9 @@ const Contact = () => {
                     />
                   </div>
                   
+                  {/* Honey pot field for spam protection (hidden) */}
+                  <input type="text" name="_honeypot" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+                  
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? (
                       <div className="flex items-center gap-2">
@@ -276,6 +317,53 @@ const Contact = () => {
           </div>
         </div>
       </div>
+      
+      {/* Footer */}
+      <footer className="bg-gradient-to-r from-primary/5 to-secondary/5 border-t mt-12">
+        <div className="container mx-auto px-4 py-8">
+          <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex flex-col items-center md:items-start gap-1">
+              <p className="text-muted-foreground text-sm">
+                © 2025 Kalyanam Pharmaceuticals. All rights reserved.
+              </p>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-muted-foreground text-sm cursor-help underline decoration-dashed">
+                      Created By Shobhit Shukla (+91-9643000619)
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-xs text-muted-foreground">
+                      If you need to move your business online as well, contact here.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <div className="flex gap-6">
+              <button 
+                onClick={() => navigate("/privacy-policy")}
+                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+              >
+                Privacy Policy
+              </button>
+              <button 
+                onClick={() => navigate("/terms-of-service")}
+                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+              >
+                Terms of Service
+              </button>
+              <button 
+                onClick={() => navigate("/shipping-policy")}
+                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+              >
+                Shipping Policy
+              </button>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

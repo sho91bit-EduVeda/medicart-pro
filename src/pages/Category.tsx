@@ -405,8 +405,10 @@ const CategoryPage = () => {
                 <ShoppingCart discountPercentage={discountPercentage} />
               </div>
               
-              {/* Mobile menu button - REPLACED WITH MOBILE MENU COMPONENT */}
-              <MobileMenu />
+              {/* Mobile menu button - Pass onOwnerLoginClick prop */}
+              <MobileMenu 
+                onOwnerLoginClick={() => document.getElementById('mobile-owner-login-trigger')?.click()}
+              />
             </div>
           </div>
           
@@ -476,6 +478,15 @@ const CategoryPage = () => {
           </div>
         </div>
       </header>
+
+      {/* Hidden LoginPopup trigger for mobile */}
+      <div className="hidden">
+        <LoginPopup
+          trigger={
+            <button id="mobile-owner-login-trigger" />
+          }
+        />
+      </div>
 
       {/* Search Popup */}
       <SearchPopup 
