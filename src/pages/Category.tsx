@@ -17,6 +17,7 @@ import RequestMedicineSheet from "@/components/RequestMedicineSheet";
 import { MobileMenu } from "@/components/MobileMenu";
 import { SearchPopup } from "@/components/SearchPopup";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
+import { LoginPopup } from "@/components/LoginPopup";
 
 interface Product {
   id: string;
@@ -367,14 +368,17 @@ const CategoryPage = () => {
                     </Button>
                   </>
                 ) : (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
-                    onClick={() => navigate("/auth")}
-                  >
-                    Owner Login
-                  </Button>
+                  <LoginPopup
+                    trigger={
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                      >
+                        Owner Login
+                      </Button>
+                    }
+                  />
                 )}
               </div>
               

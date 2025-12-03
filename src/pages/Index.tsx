@@ -41,6 +41,7 @@ import RequestMedicineSheet from "@/components/RequestMedicineSheet";
 import { MobileMenu } from "@/components/MobileMenu";
 import AnnouncementMarquee from "@/components/AnnouncementMarquee";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
+import { LoginPopup } from "@/components/LoginPopup";
 import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
 import coldFluImage from "@/assets/category-cold-flu.jpg";
@@ -416,14 +417,17 @@ const Index = () => {
                     </Button>
                   </>
                 ) : (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
-                    onClick={() => navigate("/auth")}
-                  >
-                    Owner Login
-                  </Button>
+                  <LoginPopup
+                    trigger={
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                      >
+                        Owner Login
+                      </Button>
+                    }
+                  />
                 )}
               </div>
               
