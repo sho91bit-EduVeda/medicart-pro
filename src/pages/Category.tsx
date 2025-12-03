@@ -12,9 +12,8 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { ShoppingCart } from "@/components/ShoppingCart";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import UnavailableMedicinesSheet from "@/components/UnavailableMedicinesSheet";
-import { SearchPopup } from "@/components/SearchPopup";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
+import { SearchPopup } from "@/components/SearchPopup";
 import { MobileMenu } from "@/components/MobileMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 
@@ -258,6 +257,18 @@ const CategoryPage = () => {
                     Track Unavailable Medicines
                   </Button>
                 </UnavailableMedicinesSheet>
+              )}
+              {/* Show Request Medicine only when delivery is enabled */}
+              {deliveryEnabled && (
+                <RequestMedicineSheet>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                  >
+                    Request Medicine
+                  </Button>
+                </RequestMedicineSheet>
               )}
               {/* Request Medicine Button */}
               <RequestMedicineSheet>

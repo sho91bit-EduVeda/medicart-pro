@@ -14,14 +14,14 @@ interface ShoppingCartProps {
 
 export function ShoppingCart({ discountPercentage }: ShoppingCartProps) {
   const { items, isLoading, loadCart, removeItem, updateQuantity, getItemCount, getTotal } = useCart();
-  const { deliveryEnabled } = useFeatureFlags(); // Use deliveryEnabled instead of shoppingCart
+  const { deliveryEnabled } = useFeatureFlags(); // Use deliveryEnabled to control in-store pickup cart visibility
   const navigate = useNavigate();
 
   useEffect(() => {
     loadCart();
   }, []);
 
-  // Use deliveryEnabled to control shopping cart visibility
+  // Use deliveryEnabled to control in-store pickup cart visibility
   if (!deliveryEnabled) return null;
 
   const itemCount = getItemCount();
@@ -51,7 +51,7 @@ export function ShoppingCart({ discountPercentage }: ShoppingCartProps) {
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>Shopping Cart ({itemCount} items)</SheetTitle>
+          <SheetTitle>In-Store Pickup Cart ({itemCount} items)</SheetTitle>
         </SheetHeader>
 
         <div className="flex flex-col h-full py-6">
@@ -59,7 +59,7 @@ export function ShoppingCart({ discountPercentage }: ShoppingCartProps) {
             <div className="flex-1 flex items-center justify-center text-center">
               <div>
                 <CartIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">Your cart is empty</p>
+                <p className="text-muted-foreground">Your in-store pickup cart is empty</p>
               </div>
             </div>
           ) : (
@@ -151,7 +151,7 @@ export function ShoppingCart({ discountPercentage }: ShoppingCartProps) {
                 </div>
 
                 <Button className="w-full rounded-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" size="lg" onClick={() => navigate('/checkout')}>
-                  Proceed to Checkout
+                  Proceed to In-Store Pickup
                 </Button>
               </div>
             </>

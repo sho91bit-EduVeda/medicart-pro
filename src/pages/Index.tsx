@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ProductCard from "@/components/ProductCard";
 import CategoryCard from "@/components/CategoryCard";
-import UnavailableMedicinesSheet from "@/components/UnavailableMedicinesSheet";
 import { ProductFilters, FilterOptions } from "@/components/ProductFilters";
 import { StockStatus } from "@/components/StockStatus";
 import { ShieldCheck, Search, Store, Package, Heart, User, LogOut, LogIn, Pill, Star } from "lucide-react";
@@ -39,6 +38,7 @@ import {
 import StoreReviewForm from "@/components/StoreReviewForm";
 import StoreReviews from "@/components/StoreReviews";
 import { MobileMenu } from "@/components/MobileMenu";
+import RequestMedicineSheet from "@/components/RequestMedicineSheet";
 import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
 import coldFluImage from "@/assets/category-cold-flu.jpg";
@@ -272,13 +272,13 @@ const Index = () => {
               </div>
               <div>
                 {/* Desktop view - Full business name */}
-                <h1 className="text-2xl font-bold hidden sm:block">Kalyanam Pharmaceuticals</h1>
+                <h1 className="text-2xl font-bold hidden sm:block">Kalyanam Pharmacy</h1>
                 <p className="text-sm text-primary-foreground/90 hidden sm:block">Your Trusted Healthcare Partner</p>
                 
                 {/* Mobile view - Shortened business name */}
                 <div className="sm:hidden">
                   <h1 className="text-xl font-bold">Kalyanam</h1>
-                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
+                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmacy</p>
                 </div>
               </div>
             </div>
@@ -305,6 +305,18 @@ const Index = () => {
               >
                 Reviews
               </Button>
+              {/* Show Request Medicine only when delivery is enabled */}
+              {deliveryEnabled && (
+                <RequestMedicineSheet>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                  >
+                    Request Medicine
+                  </Button>
+                </RequestMedicineSheet>
+              )}
               {/* Show Track Unavailable Medicines only when delivery is enabled */}
               {deliveryEnabled && (
                 <UnavailableMedicinesSheet>
@@ -713,10 +725,10 @@ const Index = () => {
                 <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-secondary shadow-md">
                   <Store className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Kalyanam Pharmaceuticals</h2>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Kalyanam Pharmacy</h2>
               </div>
               <p className="text-muted-foreground text-sm">
-                Your trusted online medical store with quality products and detailed information. We deliver healthcare solutions right to your doorstep.
+                Your trusted local medical store with quality products and detailed information. Visit us during our store hours for all your healthcare needs.
               </p>
               <div className="flex gap-3">
                 <Button variant="outline" size="icon" className="rounded-full">
@@ -805,12 +817,12 @@ const Index = () => {
           
           <div className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-muted-foreground text-sm">
-              © 2025 Kalyanam Pharmaceuticals. All rights reserved.
+              © 2025 Kalyanam Pharmacy. All rights reserved.
             </p>
             <div className="flex gap-6">
               <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Privacy Policy</a>
               <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Terms of Service</a>
-              <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Shipping Policy</a>
+              <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Store Hours</a>
             </div>
           </div>
         </div>

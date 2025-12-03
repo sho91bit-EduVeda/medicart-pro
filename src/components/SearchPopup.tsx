@@ -1,19 +1,31 @@
 import { useState, useEffect } from "react";
-import { auth, db } from "@/integrations/firebase/config";
-import { collection, query, where, getDocs, doc, getDoc, limit, addDoc, orderBy } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Phone, ShoppingCart, Heart, Star, PackagePlus } from "lucide-react";
-import { useCart } from "@/hooks/useCart";
-import { useWishlist } from "@/hooks/useWishlist";
-import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { 
+  ShoppingCart, 
+  Heart, 
+  Star, 
+  Phone, 
+  PackagePlus 
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useCart } from "@/hooks/useCart";
+import { db } from "@/integrations/firebase/config";
+import { collection, query, where, orderBy, limit, getDocs, addDoc, doc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
+import { auth } from "@/integrations/firebase/config";
 
 interface Product {
   id: string;
@@ -37,20 +49,23 @@ interface SearchPopupProps {
 
 export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'details' }: SearchPopupProps) {
   const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const { addItem } = useCart();
   const { toggleItem, isInWishlist } = useWishlist();
-  const { deliveryEnabled } = useFeatureFlags();
   const { isAuthenticated } = useAuth();
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [activeTab, setActiveTab] = useState<'details' | 'reviews'>(initialTab);
+  const { items: wishlistItems, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlist();
+  const { addItem: addToCart } = useCart();
+  
+  const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('details');
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [rating, setRating] = useState(5);
-  const [title, setTitle] = useState("");
-  const [comment, setComment] = useState("");
+  const [rating, setRating] = useState(0);
+  const [title, setTitle] = useState('');
+  const [comment, setComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [averageRating, setAverageRating] = useState(0);
 
   // When the popup opens or initialTab changes, update the active tab
   useEffect(() => {
@@ -311,8 +326,8 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                   <div className="flex items-center gap-2 mb-4">
                     <Badge variant="destructive">Out of Stock</Badge>
                     <RequestMedicineSheet medicineName={selectedProduct.name}>
-                      <Button variant="outline" size="sm" className="flex items-center gap-1">
-                        <PackagePlus className="w-4 h-4" />
+                      <Button className="flex-1" size="lg">
+                        <PackagePlus className="w-5 h-5 mr-2" />
                         Request Availability
                       </Button>
                     </RequestMedicineSheet>
@@ -365,22 +380,22 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                         </div>
                       )}
                       <div className="flex gap-2 mt-4">
-                        {deliveryEnabled && selectedProduct.in_stock && (
-                          <Button className="flex-1" size="lg" onClick={() => handleAddToCart(selectedProduct)}>
-                            <ShoppingCart className="w-5 h-5 mr-2" />
-                            Add to Cart
-                          </Button>
+                        {selectedProduct.in_stock && (
+                          <RequestMedicineSheet medicineName={selectedProduct.name}>
+                            <Button className="flex-1" size="lg">
+                              <PackagePlus className="w-5 h-5 mr-2" />
+                              Request Availability
+                            </Button>
+                          </RequestMedicineSheet>
                         )}
-                        {deliveryEnabled && (
+                        <RequestMedicineSheet medicineName={selectedProduct.name}>
                           <Button
                             variant="outline"
                             size="lg"
-                            onClick={() => handleWishlistToggle(selectedProduct)}
-                            className={isWishlisted ? 'border-red-500 text-red-500' : ''}
                           >
-                            <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-red-500' : ''}`} />
+                            <PackagePlus className="w-5 h-5" />
                           </Button>
-                        )}
+                        </RequestMedicineSheet>
                       </div>
                     </CardContent>
                   </Card>
@@ -607,16 +622,14 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                           <Button size="sm" onClick={() => handleViewDetails(product)}>
                             View Details
                           </Button>
-                          {deliveryEnabled && (
+                          <RequestMedicineSheet medicineName={product.name}>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleWishlistToggle(product)}
-                              className={isWishlisted ? 'border-red-500 text-red-500' : ''}
                             >
-                              <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500' : ''}`} />
+                              <PackagePlus className="w-4 h-4" />
                             </Button>
-                          )}
+                          </RequestMedicineSheet>
                         </div>
                       </div>
                     </CardContent>

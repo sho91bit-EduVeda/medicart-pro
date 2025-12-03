@@ -99,7 +99,7 @@ export function MobileMenu({ onSearchClick }: MobileMenuProps) {
             <Store className="w-6 h-6" />
             <div>
               <div>Kalyanam</div>
-              <div className="text-[0.6rem] text-muted-foreground uppercase tracking-wider">Pharmaceuticals</div>
+              <div className="text-[0.6rem] text-muted-foreground uppercase tracking-wider">Pharmacy</div>
             </div>
           </SheetTitle>
         </SheetHeader>

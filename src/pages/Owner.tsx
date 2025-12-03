@@ -18,6 +18,7 @@ import { seedDatabase } from "@/utils/seedData";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import SidebarBackground from "@/components/svgs/SidebarBackground";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
+import RequestDetailsModal from "@/components/RequestDetailsModal";
 import { NotificationBell } from "@/components/NotificationBell";
 import { 
   Sheet, 
@@ -66,6 +67,40 @@ const Owner = () => {
   // Medicine requests state
   const [requests, setRequests] = useState<MedicineRequest[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
+  // Medicine requests filter and sort state
+  const [requestSearchQuery, setRequestSearchQuery] = useState("");
+  const [requestStatusFilter, setRequestStatusFilter] = useState<"all" | "pending" | "in_progress" | "resolved">("all");
+  const [requestSortBy, setRequestSortBy] = useState<"created_at" | "medicine_name" | "customer_name">("created_at");
+  const [requestSortOrder, setRequestSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Filter and sort medicine requests
+  const filteredAndSortedRequests = requests.filter(request => {
+    // Search filter
+    const matchesSearch = request.medicine_name.toLowerCase().includes(requestSearchQuery.toLowerCase()) ||
+                         request.customer_name.toLowerCase().includes(requestSearchQuery.toLowerCase());
+    
+    // Status filter
+    const matchesStatus = requestStatusFilter === "all" || request.status === requestStatusFilter;
+    
+    return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    let comparison = 0;
+    
+    switch (requestSortBy) {
+      case "medicine_name":
+        comparison = a.medicine_name.localeCompare(b.medicine_name);
+        break;
+      case "customer_name":
+        comparison = a.customer_name.localeCompare(b.customer_name);
+        break;
+      case "created_at":
+      default:
+        comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        break;
+    }
+    
+    return requestSortOrder === "asc" ? comparison : -comparison;
+  });
 
   // Filter products based on search and filter criteria
   const filteredProducts = products.filter(product => {
@@ -446,6 +481,27 @@ const Owner = () => {
       toast.error("Failed to load orders");
     } finally {
       setOrdersLoading(false);
+    }
+  };
+
+  // Add state for the request details modal
+  const [selectedRequest, setSelectedRequest] = useState<MedicineRequest | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleUpdateRequestStatus = async (requestId: string, newStatus: MedicineRequest['status']) => {
+    try {
+      const requestRef = doc(db, "medicine_requests", requestId);
+      await updateDoc(requestRef, {
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      });
+      
+      toast.success("Request status updated successfully!");
+      // Refresh requests list
+      fetchMedicineRequests();
+    } catch (error) {
+      console.error("Failed to update request status:", error);
+      toast.error("Failed to update request status");
     }
   };
 
@@ -1007,27 +1063,23 @@ const Owner = () => {
                     Order Management
                   </CardTitle>
                   <CardDescription>
-                    {deliveryEnabled 
-                      ? "Manage customer orders and deliveries" 
-                      : "Manage customer in-store pickup orders"}
+                    Manage customer in-store pickup orders
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
                     {/* Delivery Status Banner */}
-                    {!deliveryEnabled && (
-                      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <h4 className="font-semibold text-yellow-800">In-Store Pickup Mode</h4>
-                            <p className="text-sm text-yellow-700 mt-1">
-                              Orders are for in-store pickup only. Enable delivery in Feature Flags to manage deliveries.
-                            </p>
-                          </div>
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-semibold text-yellow-800">In-Store Pickup Mode</h4>
+                          <p className="text-sm text-yellow-700 mt-1">
+                            Orders are for in-store pickup only.
+                          </p>
                         </div>
                       </div>
-                    )}
+                    </div>
 
                     {/* Orders List */}
                     <div className="space-y-4">
@@ -1040,9 +1092,7 @@ const Owner = () => {
                           <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                           <h3 className="text-lg font-medium mb-2">No orders yet</h3>
                           <p className="text-muted-foreground">
-                            {deliveryEnabled 
-                              ? "Orders will appear here when customers place them." 
-                              : "Pickup orders will appear here when customers place them."}
+                            Pickup orders will appear here when customers place them.
                           </p>
                         </div>
                       ) : (
@@ -1068,9 +1118,7 @@ const Owner = () => {
                                     {new Date(order.created_at).toLocaleDateString()} • ₹{order.total_amount.toFixed(2)}
                                   </p>
                                   <p className="text-sm mt-1">
-                                    {deliveryEnabled 
-                                      ? `${order.delivery_address?.full_name || 'N/A'} • ${order.delivery_address?.city || 'N/A'}` 
-                                      : `${order.delivery_address?.full_name || 'N/A'} • In-Store Pickup`}
+                                    {order.delivery_address?.full_name || 'N/A'} • In-Store Pickup
                                   </p>
                                 </div>
                                 
@@ -1100,17 +1148,10 @@ const Owner = () => {
                               
                               {/* Delivery/Pickup Info */}
                               <div className="mt-3 pt-3 border-t text-sm">
-                                {deliveryEnabled ? (
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Truck className="w-4 h-4" />
-                                    <span>Delivery to {order.delivery_address?.city || 'N/A'}</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Store className="w-4 h-4" />
-                                    <span>In-Store Pickup</span>
-                                  </div>
-                                )}
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Store className="w-4 h-4" />
+                                  <span>In-Store Pickup</span>
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -1150,16 +1191,71 @@ const Owner = () => {
                       </RequestMedicineSheet>
                     </div>
                     
+                    {/* Filter and Sort Controls */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Search requests..."
+                          value={requestSearchQuery}
+                          onChange={(e) => setRequestSearchQuery(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Select value={requestStatusFilter} onValueChange={(value: any) => setRequestStatusFilter(value)}>
+                          <SelectTrigger className="w-[120px] sm:w-[180px]">
+                            <SelectValue placeholder="All Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="resolved">Resolved</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={requestSortBy} onValueChange={(value: any) => setRequestSortBy(value)}>
+                          <SelectTrigger className="w-[120px] sm:w-[180px]">
+                            <SelectValue placeholder="Sort By" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="created_at">Date</SelectItem>
+                            <SelectItem value="medicine_name">Medicine</SelectItem>
+                            <SelectItem value="customer_name">Customer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setRequestSortOrder(requestSortOrder === "asc" ? "desc" : "asc")}
+                          className="flex items-center gap-2"
+                        >
+                          {requestSortOrder === "asc" ? "↑" : "↓"}
+                        </Button>
+                        {(requestSearchQuery || requestStatusFilter !== "all") && (
+                          <Button 
+                            variant="outline" 
+                            onClick={() => {
+                              setRequestSearchQuery("");
+                              setRequestStatusFilter("all");
+                            }}
+                          >
+                            Reset
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    
                     {requestsLoading ? (
                       <div className="flex justify-center py-8">
                         <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                       </div>
-                    ) : requests.length === 0 ? (
+                    ) : filteredAndSortedRequests.length === 0 ? (
                       <div className="border rounded-lg p-6 text-center">
                         <Mail className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No requests yet</h3>
+                        <h3 className="text-lg font-medium mb-2">No requests found</h3>
                         <p className="text-muted-foreground mb-4">
-                          When customers request medicines that are not currently available, they will appear here.
+                          {requests.length === 0 
+                            ? "When customers request medicines that are not currently available, they will appear here."
+                            : "No requests match your current filters. Try adjusting your search or filter criteria."}
                         </p>
                         <RequestMedicineSheet>
                           <Button variant="secondary" className="flex items-center gap-2 mx-auto">
@@ -1170,7 +1266,7 @@ const Owner = () => {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {requests.map((request) => (
+                        {filteredAndSortedRequests.map((request) => (
                           <div key={request.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                               <div className="flex-1">
@@ -1200,22 +1296,25 @@ const Owner = () => {
                                   variant="outline" 
                                   size="sm"
                                   onClick={() => {
-                                    // TODO: Implement request details view
-                                    toast.info("Request details feature coming soon");
+                                    setSelectedRequest(request);
+                                    setIsModalOpen(true);
                                   }}
                                 >
                                   View Details
                                 </Button>
-                                <Button 
-                                  variant="default" 
-                                  size="sm"
-                                  onClick={() => {
-                                    // TODO: Implement request status update
-                                    toast.info("Request status update feature coming soon");
-                                  }}
+                                <Select 
+                                  value={request.status} 
+                                  onValueChange={(value: any) => handleUpdateRequestStatus(request.id, value)}
                                 >
-                                  Update Status
-                                </Button>
+                                  <SelectTrigger className="w-[120px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="in_progress">In Progress</SelectItem>
+                                    <SelectItem value="resolved">Resolved</SelectItem>
+                                  </SelectContent>
+                                </Select>
                                 <Button 
                                   variant="destructive" 
                                   size="sm"
@@ -1306,6 +1405,12 @@ const Owner = () => {
           </div>
         </main>
       </div>
+      <RequestDetailsModal
+        request={selectedRequest}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onUpdate={fetchMedicineRequests}
+      />
     </div>
   );
 };

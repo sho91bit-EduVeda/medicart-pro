@@ -6,6 +6,7 @@ export interface FeatureFlags {
   prescriptionUpload: boolean;
   liveChat: boolean;
   deliveryEnabled: boolean; // Controls all delivery-related features including wishlist and loyalty program
+  storeClosed: boolean; // When true, store is manually marked as closed by owner
 }
 
 export const defaultFeatureFlags: FeatureFlags = {
@@ -16,4 +17,5 @@ export const defaultFeatureFlags: FeatureFlags = {
   prescriptionUpload: true,
   liveChat: false,
   deliveryEnabled: false, // Delivery is disabled by default
+  storeClosed: false, // Store is open by default
 };

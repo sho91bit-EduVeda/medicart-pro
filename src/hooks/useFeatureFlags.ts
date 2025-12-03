@@ -19,6 +19,7 @@ const flagNameMapping: Record<keyof FeatureFlags, string> = {
   prescriptionUpload: 'prescription_upload',
   liveChat: 'live_chat',
   deliveryEnabled: 'delivery_enabled', // Controls all delivery-related features including wishlist and loyalty program
+  storeClosed: 'store_closed', // Manual store closure flag
 };
 
 export const useFeatureFlags = create<FeatureFlagsStore>()(

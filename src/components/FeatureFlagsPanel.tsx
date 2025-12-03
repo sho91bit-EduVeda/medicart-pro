@@ -5,7 +5,7 @@ import { Button } from "./ui/button"
 import { useFeatureFlags } from "../hooks/useFeatureFlags"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { AlertTriangle } from "lucide-react"
+import { AlertTriangle, Store } from "lucide-react"
 
 export function FeatureFlagsPanel() {
   const {
@@ -15,7 +15,8 @@ export function FeatureFlagsPanel() {
     notifications,
     prescriptionUpload,
     liveChat,
-    deliveryEnabled, // Controls all delivery-related features including wishlist and loyalty program
+    deliveryEnabled, // Controls all in-store features including wishlist and loyalty program
+    storeClosed, // Manual store closure flag
     toggleFeature,
     resetFeatures,
     syncWithDatabase
@@ -85,7 +86,7 @@ export function FeatureFlagsPanel() {
         <div className="flex items-center justify-between">
           <div>
             <Label htmlFor="notifications">Notifications</Label>
-            <p className="text-xs text-muted-foreground">Push notifications for orders and stock</p>
+            <p className="text-xs text-muted-foreground">Push notifications for orders and medicine requests</p>
           </div>
           <Switch
             id="notifications"
@@ -118,11 +119,11 @@ export function FeatureFlagsPanel() {
           />
         </div>
 
-        {/* Delivery Toggle - Controls all delivery-related features including wishlist and loyalty program */}
+        {/* In-Store Pickup Toggle - Controls all in-store features including wishlist and loyalty program */}
         <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg border border-primary/20">
           <div>
-            <Label htmlFor="delivery-enabled" className="text-primary">Delivery Service</Label>
-            <p className="text-xs text-muted-foreground">Enable all delivery-related features (shopping cart, order management, bulk orders, guest checkout, wishlist, loyalty program)</p>
+            <Label htmlFor="delivery-enabled" className="text-primary">In-Store Pickup Service</Label>
+            <p className="text-xs text-muted-foreground">Enable all in-store features (order management, bulk orders, guest checkout, wishlist, loyalty program)</p>
           </div>
           <Switch
             id="delivery-enabled"
@@ -132,17 +133,36 @@ export function FeatureFlagsPanel() {
           />
         </div>
         
-        {/* Delivery Info Box */}
+        {/* Store Closed Toggle - Allows owner to manually mark store as closed */}
+        <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-200">
+          <div className="flex items-start gap-3">
+            <Store className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <Label htmlFor="store-closed" className="text-orange-800">Manual Store Closure</Label>
+              <p className="text-xs text-orange-700 mt-1">
+                When enabled, the store will show as CLOSED regardless of time. 
+                Use this when the store is unexpectedly closed for the day.
+              </p>
+            </div>
+          </div>
+          <Switch
+            id="store-closed"
+            checked={storeClosed}
+            onCheckedChange={() => toggleFeature('storeClosed')}
+            className="data-[state=checked]:bg-orange-600"
+          />
+        </div>
+        
+        {/* In-Store Info Box */}
         {!deliveryEnabled && (
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="font-semibold text-yellow-800">Delivery Features Disabled</h4>
+                <h4 className="font-semibold text-yellow-800">In-Store Features Disabled</h4>
                 <p className="text-sm text-yellow-700 mt-1">
                   When enabled, the following features will be activated:
                   <ul className="list-disc list-inside mt-1 space-y-1">
-                    <li>Shopping Cart</li>
                     <li>Order Management</li>
                     <li>Bulk Orders</li>
                     <li>Guest Checkout</li>

@@ -4,13 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { 
   ShieldCheck, 
   Clock, 
-  Truck, 
+  Store,
   Heart, 
   Pill, 
   Stethoscope,
   ChevronDown,
   ChevronUp,
-  Store,
   Star
 } from "lucide-react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
@@ -26,7 +25,23 @@ import StoreReviewForm from "@/components/StoreReviewForm";
 export const HeroBanner = ({ discountPercentage }: { discountPercentage: number }) => {
   const [expandedFeature, setExpandedFeature] = useState<number | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
-  const { deliveryEnabled } = useFeatureFlags(); // Use the new feature flag
+  const { deliveryEnabled, storeClosed } = useFeatureFlags(); // Use the new feature flags
+
+  // Function to check if store is currently open (based on time)
+  const isStoreOpenByTime = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    // Store hours: 8 AM (8) to 11 PM (23)
+    return currentHour >= 8 && currentHour < 23;
+  };
+
+  // Function to check if store is actually open (considering manual closure)
+  const isStoreActuallyOpen = () => {
+    // If manually closed by owner, return false regardless of time
+    if (storeClosed) return false;
+    // Otherwise check based on time
+    return isStoreOpenByTime();
+  };
 
   const features = [
     {
@@ -35,29 +50,15 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
       description: "All our products are sourced directly from manufacturers with authenticity guarantee",
       details: "We verify every supplier and maintain strict quality control standards to ensure you receive only genuine medications."
     },
-    ...(deliveryEnabled ? [{
+    {
       icon: Clock,
-      title: "Express Delivery",
-      description: "Get your medicines within 2 hours in emergency cases",
-      details: "Our priority delivery service ensures critical medications reach you when you need them most. Available 24/7 for urgent requirements."
-    }] : []),
-    ...(deliveryEnabled ? [{
-      icon: Truck,
-      title: "Free Delivery Above ₹499",
-      description: "Nationwide delivery with no hidden charges",
-      details: "Enjoy free doorstep delivery on all orders above ₹499. For orders below this amount, a nominal delivery fee of ₹49 applies."
-    }] : [])
+      title: "Store Hours: 8 AM - 11 PM",
+      description: "Visit our pharmacy during business hours for immediate assistance",
+      details: "Our physical store is open daily from 8 AM to 11 PM. Speak with our pharmacists for personalized advice and immediate assistance.",
+      // Add status badge to this feature
+      status: isStoreActuallyOpen() ? "OPEN" : "CLOSED"
+    }
   ];
-
-  // Add a static feature when delivery is disabled
-  if (!deliveryEnabled) {
-    features.push({
-      icon: Store,
-      title: "In-Store Pickup Available",
-      description: "Visit our pharmacy for immediate pickup of your medications",
-      details: "Our physical store is open daily from 9 AM to 9 PM. Speak with our pharmacists for personalized advice and immediate assistance."
-    });
-  }
 
   const toggleFeature = (index: number) => {
     setExpandedFeature(expandedFeature === index ? null : index);
@@ -79,29 +80,8 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
             </h1>
             
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Quality medicines and healthcare products delivered to your doorstep with complete privacy and professional care.
+              Quality medicines and healthcare products available at our physical store with complete privacy and professional care.
             </p>
-            
-            {/* Show Explore Medicines and Upload Prescription buttons only when delivery is enabled */}
-            {deliveryEnabled && (
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button 
-                  size="lg" 
-                  className="rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground hover:from-primary/90 hover:to-accent/90 font-semibold px-8 py-6 text-lg shadow-lg transition-all duration-300 hover:shadow-xl"
-                >
-                  <Pill className="w-5 h-5 mr-2" />
-                  Explore Medicines
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="rounded-full font-semibold px-8 py-6 text-lg border-2 hover:bg-primary/5"
-                >
-                  <Stethoscope className="w-5 h-5 mr-2" />
-                  Upload Prescription
-                </Button>
-              </div>
-            )}
             
             <div className="flex flex-wrap items-center gap-4 pt-4">
               {discountPercentage > 0 && (
@@ -154,7 +134,21 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
-                        <h3 className="font-bold text-lg">{feature.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-lg">{feature.title}</h3>
+                          {/* Show OPEN/CLOSED badge for store hours */}
+                          {index === 1 && (
+                            <Badge 
+                              className={`rounded-full px-2 py-1 text-xs font-medium ${
+                                isStoreActuallyOpen() 
+                                  ? "bg-green-100 text-green-800" 
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {isStoreActuallyOpen() ? "OPEN" : "CLOSED"}
+                            </Badge>
+                          )}
+                        </div>
                         {expandedFeature === index ? (
                           <ChevronUp className="w-5 h-5 text-muted-foreground" />
                         ) : (

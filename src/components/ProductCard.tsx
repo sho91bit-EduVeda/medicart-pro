@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, ShoppingCart, PackagePlus } from "lucide-react";
+import { Heart, PackagePlus } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";
-import { useCart } from "@/hooks/useCart";
 import { StockStatus } from "@/components/StockStatus";
-import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
 
 interface ProductCardProps {
@@ -30,12 +28,9 @@ export default function ProductCard({
   discountPercentage = 0,
   onClick,
 }: ProductCardProps) {
-  const { deliveryEnabled } = useFeatureFlags(); // Only use deliveryEnabled
-  const { items, addItem } = useCart();
   const { items: wishlistItems, addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlist();
   
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
     setIsWishlisted(isInWishlist(id));
@@ -51,17 +46,6 @@ export default function ProductCard({
       await addToWishlist(id);
     }
     setIsWishlisted(!isWishlisted);
-  };
-
-  const handleQuickAdd = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setIsAdding(true);
-    try {
-      await addItem(id);
-    } finally {
-      setIsAdding(false);
-    }
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -99,40 +83,17 @@ export default function ProductCard({
           <StockStatus quantity={quantity} />
         </div>
 
-        {/* Use deliveryEnabled for wishlist functionality */}
-        {deliveryEnabled && (
-          <Button
-            size="icon"
-            variant="secondary"
-            className={`absolute top-4 left-4 rounded-full shadow-lg transition-all duration-300 ${
-              isWishlisted 
-                ? 'bg-red-500 hover:bg-red-600 text-white opacity-100' 
-                : 'bg-background/80 hover:bg-red-500 hover:text-white opacity-0 group-hover:opacity-100'
-            }`}
-            onClick={handleWishlistToggle}
-          >
-            <Heart
-              className={`w-4 h-4 ${
-                isWishlisted ? 'fill-current' : ''
-              }`}
-            />
-          </Button>
-        )}
-
-        {/* Use deliveryEnabled for shopping cart functionality */}
-        {deliveryEnabled && in_stock && (
-          <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
+        <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <RequestMedicineSheet medicineName={name}>
             <Button
               size="sm"
-              onClick={handleQuickAdd}
-              disabled={isAdding}
               className="rounded-full shadow-lg bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
             >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              {isAdding ? 'Adding...' : 'Add'}
+              <PackagePlus className="w-4 h-4 mr-2" />
+              Request
             </Button>
-          </div>
-        )}
+          </RequestMedicineSheet>
+        </div>
       </div>
       
       <div className="p-4">
@@ -158,31 +119,22 @@ export default function ProductCard({
           </span>
         )}
         
-        {/* Use deliveryEnabled for shopping cart functionality */}
-        {deliveryEnabled && in_stock && (
-          <Button 
-            className="w-full rounded-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
-            onClick={handleQuickAdd}
-            disabled={isAdding}
-          >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            {isAdding ? 'Adding to Cart...' : 'Add to Cart'}
-          </Button>
-        )}
-        
-        {!in_stock && (
-          <div className="flex flex-col gap-2">
-            <Button variant="outline" className="w-full rounded-full" disabled>
-              Out of Stock
+        <div className="flex flex-col gap-2">
+          <RequestMedicineSheet medicineName={name}>
+            <Button 
+              className="w-full rounded-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+            >
+              <PackagePlus className="w-4 h-4 mr-2" />
+              Request Availability
             </Button>
-            <RequestMedicineSheet medicineName={name}>
-              <Button variant="secondary" className="w-full rounded-full flex items-center gap-2">
-                <PackagePlus className="w-4 h-4" />
-                Request Availability
-              </Button>
-            </RequestMedicineSheet>
-          </div>
-        )}
+          </RequestMedicineSheet>
+          <RequestMedicineSheet medicineName={name}>
+            <Button variant="secondary" className="w-full rounded-full flex items-center gap-2">
+              <PackagePlus className="w-4 h-4" />
+              Request Different Variant
+            </Button>
+          </RequestMedicineSheet>
+        </div>
       </div>
     </div>
   );
