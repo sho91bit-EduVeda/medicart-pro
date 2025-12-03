@@ -88,6 +88,10 @@ const Owner = () => {
   const [requestSortBy, setRequestSortBy] = useState<"created_at" | "medicine_name" | "customer_name">("created_at");
   const [requestSortOrder, setRequestSortOrder] = useState<"asc" | "desc">("desc");
 
+  // State for selected request and modal
+  const [selectedRequest, setSelectedRequest] = useState<MedicineRequest | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Filter and sort medicine requests
   const filteredAndSortedRequests = requests.filter(request => {
     // Search filter
@@ -840,10 +844,6 @@ const Owner = () => {
     }
   };
 
-  // Add state for the request details modal
-  const [selectedRequest, setSelectedRequest] = useState<MedicineRequest | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
   const handleUpdateRequestStatus = async (requestId: string, newStatus: MedicineRequest['status']) => {
     try {
       const requestRef = doc(db, "medicine_requests", requestId);
@@ -874,6 +874,37 @@ const Owner = () => {
     { id: "features", label: "Features", icon: Package },
   ];
 
+  // Effect to handle medicine request notifications
+  useEffect(() => {
+    const handleOpenRequest = (event: CustomEvent) => {
+      const requestId = event.detail;
+      // Find the request by ID
+      const request = requests.find(r => r.id === requestId);
+      if (request) {
+        setSelectedRequest(request);
+        setIsModalOpen(true);
+        // Switch to requests tab if not already there
+        setActiveSection("requests");
+      }
+    };
+
+    // Add event listener for opening medicine requests
+    window.addEventListener('openMedicineRequest', handleOpenRequest as EventListener);
+
+    // Check if we need to open a specific request on initial load (for navigation from main page)
+    const hash = window.location.hash;
+    if (hash === '#requests') {
+      // Clear the hash
+      window.history.replaceState(null, '', window.location.pathname);
+      // Set the active section to requests
+      setActiveSection("requests");
+    }
+
+    return () => {
+      window.removeEventListener('openMedicineRequest', handleOpenRequest as EventListener);
+    };
+  }, [requests]);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -900,18 +931,19 @@ const Owner = () => {
                 className="md:hidden text-primary-foreground hover:bg-white/20 rounded-full"
                 onClick={() => navigate("/")}
               >
-                <KalyanamLogo className="w-6 h-6" />
+                <Store className="w-6 h-6" />
               </Button>
               
               {/* Notification Bell */}
               <NotificationBell />
+
               
               <Button variant="secondary" onClick={seedDatabase} className="flex items-center gap-2 hidden md:flex">
                 <Database className="w-4 h-4" />
                 <span className="hidden sm:inline">Seed DB</span>
               </Button>
               <Button variant="default" onClick={() => navigate("/")} className="flex items-center gap-2 hidden md:flex">
-                <KalyanamLogo className="w-5 h-5" />
+                <Store className="w-5 h-5" />
                 <span className="hidden sm:inline">View Store</span>
               </Button>
               <Button variant="destructive" onClick={handleLogout} className="flex items-center gap-2 hidden md:flex">
@@ -978,7 +1010,7 @@ const Owner = () => {
                         }} 
                         className="w-full justify-start gap-3 py-6 text-left mt-2"
                       >
-                        <KalyanamLogo className="w-5 h-5" />
+                        <Store className="w-5 h-5" />
                         <span className="font-medium">View Store</span>
                       </Button>
                       <Button 

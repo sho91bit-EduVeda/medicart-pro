@@ -13,9 +13,8 @@ export function StockStatus({
   lowStockThreshold = 10,
   className 
 }: StockStatusProps) {
-  const { stockStatus } = useFeatureFlags()
-
-  if (!stockStatus) return null
+  const { productReviews } = useFeatureFlags() // Using an existing flag as placeholder
+  // For now, we'll always show stock status since there's no specific flag for it
 
   const getStatusColor = (quantity: number): string => {
     if (quantity === 0) return "bg-red-100 text-red-800"
@@ -33,7 +32,7 @@ export function StockStatus({
     <Badge
       variant="secondary"
       className={cn(
-        "text-sm font-medium",
+        "text-sm font-medium whitespace-nowrap",
         getStatusColor(quantity),
         className
       )}

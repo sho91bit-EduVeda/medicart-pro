@@ -10,10 +10,11 @@ import {
   DropdownMenuSeparator,
 } from "./ui/dropdown-menu";
 import { auth, db } from "@/integrations/firebase/config";
-import { collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { toast } from "sonner";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface Notification {
   id: string;
@@ -26,52 +27,147 @@ interface Notification {
   user_id?: string; // Make user_id optional
 }
 
+interface MedicineRequest {
+  id: string;
+  customer_name: string;
+  email: string;
+  phone: string;
+  medicine_name: string;
+  message: string;
+  status: 'pending' | 'in_progress' | 'resolved';
+  created_at: string;
+  updated_at: string;
+}
+
 export function NotificationBell() {
   const { isAuthenticated } = useAuth();
   const { notifications: notificationsEnabled } = useFeatureFlags();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
+  // Check if user is on the owner dashboard
+  const isOwnerDashboard = location.pathname.startsWith('/owner');
+
+  // Combined effect to fetch both user notifications and medicine requests
   useEffect(() => {
-    if (isAuthenticated && notificationsEnabled) {
-      const user = auth.currentUser;
-      if (!user) return;
+    if (!isAuthenticated || !notificationsEnabled) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
 
-      // Query for notifications - show user-specific notifications and all medicine request notifications
-      const q = query(
-        collection(db, 'notifications'),
-        orderBy('created_at', 'desc'),
-        limit(10)
+    const user = auth.currentUser;
+    if (!user) return;
+
+    console.log('Setting up combined notifications subscription for user:', user.uid);
+    
+    // Track both notification sources
+    let userNotifications: Notification[] = [];
+    let medicineRequestNotifications: Notification[] = [];
+
+    // Function to combine and update notifications
+    const updateCombinedNotifications = () => {
+      const combined = [...medicineRequestNotifications, ...userNotifications];
+      // Limit to 10 notifications
+      const finalNotifications = combined.slice(0, 10);
+      
+      setNotifications(finalNotifications);
+      const unread = finalNotifications.filter(n => !n.read).length;
+      setUnreadCount(unread);
+      setLoading(false);
+    };
+
+    // Subscribe to user-specific notifications
+    const userNotificationsQuery = query(
+      collection(db, 'notifications'),
+      orderBy('created_at', 'desc'),
+      limit(10)
+    );
+
+    const unsubscribeUserNotifications = onSnapshot(userNotificationsQuery, (snapshot) => {
+      console.log('Received user notifications snapshot, doc count:', snapshot.docs.length);
+      const notificationsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Notification[];
+
+      // Filter notifications: show user-specific notifications only
+      userNotifications = notificationsData.filter(notification => 
+        notification.user_id === user.uid
       );
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const notificationsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Notification[];
+      console.log('Filtered user notifications:', userNotifications);
+      updateCombinedNotifications();
+    }, (error) => {
+      console.error('Failed to subscribe to user notifications:', error);
+      setLoading(false);
+    });
 
-        // Filter notifications: show user-specific notifications and all medicine request notifications
-        const filteredNotifications = notificationsData.filter(notification => 
-          notification.user_id === user.uid || notification.type === 'medicine_request'
-        );
+    // Subscribe to medicine requests (simplified query)
+    const medicineRequestsQuery = query(
+      collection(db, 'medicine_requests'),
+      orderBy('created_at', 'desc'),
+      limit(5)
+    );
 
-        setNotifications(filteredNotifications);
-        setUnreadCount(filteredNotifications.filter(n => !n.read).length);
-        setLoading(false);
-      }, (error) => {
-        console.error('Failed to subscribe to notifications:', error);
-        setLoading(false);
-      });
+    const unsubscribeMedicineRequests = onSnapshot(medicineRequestsQuery, (snapshot) => {
+      console.log('Received medicine requests snapshot, doc count:', snapshot.docs.length);
+      // Get all requests
+      const allRequests = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as MedicineRequest)
+      }));
+      
+      console.log('All requests:', allRequests);
+      
+      // Filter for pending requests
+      const requests = allRequests.filter(request => request.status === 'pending');
+      console.log('Filtered pending requests:', requests);
 
-      return () => unsubscribe();
-    }
+      // Convert medicine requests to notification format
+      medicineRequestNotifications = requests.map(request => ({
+        id: `request-${request.id}`,
+        type: 'medicine_request',
+        title: 'New Medicine Request',
+        message: `${request.customer_name} requested ${request.medicine_name}`,
+        read: false,
+        action_url: null,
+        created_at: request.created_at
+      }));
+
+      console.log('Request notifications:', medicineRequestNotifications);
+      updateCombinedNotifications();
+    }, (error) => {
+      console.error('Failed to subscribe to medicine requests:', error);
+    });
+
+    // Cleanup function
+    return () => {
+      unsubscribeUserNotifications();
+      unsubscribeMedicineRequests();
+    };
   }, [isAuthenticated, notificationsEnabled]);
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const notificationRef = doc(db, 'notifications', notificationId);
-      await updateDoc(notificationRef, { read: true });
+      // Check if this is a medicine request notification
+      if (notificationId.startsWith('request-')) {
+        // For medicine requests, we don't mark them as read in the database
+        // Instead, we just update the local state
+        setNotifications(prev => 
+          prev.map(n => 
+            n.id === notificationId ? { ...n, read: true } : n
+          )
+        );
+        setUnreadCount(prev => prev - 1);
+      } else {
+        // For regular notifications, update in database
+        const notificationRef = doc(db, 'notifications', notificationId);
+        await updateDoc(notificationRef, { read: true });
+      }
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
     }
@@ -82,8 +178,9 @@ export function NotificationBell() {
       const user = auth.currentUser;
       if (!user) return;
 
+      // Mark user notifications as read in database
       const batch = writeBatch(db);
-      const unreadNotifications = notifications.filter(n => !n.read);
+      const unreadNotifications = notifications.filter(n => !n.read && !n.id.startsWith('request-'));
 
       unreadNotifications.forEach(notification => {
         const notificationRef = doc(db, 'notifications', notification.id);
@@ -91,6 +188,11 @@ export function NotificationBell() {
       });
 
       await batch.commit();
+      
+      // Update local state to mark all as read
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+      
       toast.success('All notifications marked as read');
     } catch (error) {
       toast.error('Failed to mark notifications as read');
@@ -153,7 +255,18 @@ export function NotificationBell() {
                 key={notification.id}
                 className={`flex flex-col items-start p-4 cursor-pointer ${!notification.read ? 'bg-muted/50' : ''
                   }`}
-                onClick={() => markAsRead(notification.id)}
+                onClick={() => {
+                  markAsRead(notification.id);
+                  // If this is a medicine request, navigate to owner dashboard requests section
+                  if (notification.type === 'medicine_request') {
+                    // Extract request ID from notification ID
+                    const requestId = notification.id.replace('request-', '');
+                    // Dispatch event to open the request in the owner dashboard
+                    window.dispatchEvent(new CustomEvent('openMedicineRequest', { detail: requestId }));
+                    // Navigate to owner dashboard requests section
+                    navigate('/owner#requests');
+                  }
+                }}
               >
                 <div className="flex items-start gap-3 w-full">
                   <span className="text-2xl">{getNotificationIcon(notification.type)}</span>

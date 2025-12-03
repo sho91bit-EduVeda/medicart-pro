@@ -61,6 +61,9 @@ export default function ProductCard({
 
   const discountedPrice = original_price * (1 - discountPercentage / 100);
 
+  // Show request button only when out of stock
+  const showRequestButton = quantity === 0;
+
   return (
     <div 
       className="group relative bg-card rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
@@ -83,17 +86,19 @@ export default function ProductCard({
           <StockStatus quantity={quantity} />
         </div>
 
-        <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <RequestMedicineSheet medicineName={name}>
-            <Button
-              size="sm"
-              className="rounded-full shadow-lg bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
-            >
-              <PackagePlus className="w-4 h-4 mr-2" />
-              Request
-            </Button>
-          </RequestMedicineSheet>
-        </div>
+        {showRequestButton && (
+          <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <RequestMedicineSheet medicineName={name}>
+              <Button
+                size="sm"
+                className="rounded-full shadow-lg bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+              >
+                <PackagePlus className="w-4 h-4 mr-2" />
+                Request
+              </Button>
+            </RequestMedicineSheet>
+          </div>
+        )}
       </div>
       
       <div className="p-4">
@@ -119,22 +124,24 @@ export default function ProductCard({
           </span>
         )}
         
-        <div className="flex flex-col gap-2">
-          <RequestMedicineSheet medicineName={name}>
-            <Button 
-              className="w-full rounded-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
-            >
-              <PackagePlus className="w-4 h-4 mr-2" />
-              Request Availability
-            </Button>
-          </RequestMedicineSheet>
-          <RequestMedicineSheet medicineName={name}>
-            <Button variant="secondary" className="w-full rounded-full flex items-center gap-2">
-              <PackagePlus className="w-4 h-4" />
-              Request Different Variant
-            </Button>
-          </RequestMedicineSheet>
+        {/* Show stock status prominently */}
+        <div className="mb-3">
+          <StockStatus quantity={quantity} />
         </div>
+        
+        {/* Show request button only when out of stock */}
+        {showRequestButton && (
+          <div className="flex flex-col gap-2">
+            <RequestMedicineSheet medicineName={name}>
+              <Button 
+                className="w-full rounded-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+              >
+                <PackagePlus className="w-4 h-4 mr-2" />
+                Request Availability
+              </Button>
+            </RequestMedicineSheet>
+          </div>
+        )}
       </div>
     </div>
   );

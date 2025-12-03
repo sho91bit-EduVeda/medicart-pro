@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Award, Users, Clock, Package, Store } from "lucide-react";
+import { Heart, Award, Users, Clock, Package, Store, Home } from "lucide-react";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 
 const About = () => {
@@ -28,11 +28,12 @@ const About = () => {
             
             <Button 
               variant="ghost" 
-              size="sm" 
-              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+              size="sm"
+              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium flex items-center gap-2"
               onClick={() => navigate("/")}
             >
-              Back to Home
+              <Home className="w-4 h-4" />
+              <span>Home</span>
             </Button>
           </div>
         </div>
