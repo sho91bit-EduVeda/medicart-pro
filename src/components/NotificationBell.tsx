@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
 } from "./ui/dropdown-menu";
 import { auth, db } from "@/integrations/firebase/config";
-import { collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc, writeBatch, getDocs } from "firebase/firestore";
+import { collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { toast } from "sonner";
@@ -34,14 +34,8 @@ export function NotificationBell() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    console.log('NotificationBell useEffect triggered');
-    console.log('isAuthenticated:', isAuthenticated);
-    console.log('notificationsEnabled:', notificationsEnabled);
-    
     if (isAuthenticated && notificationsEnabled) {
       const user = auth.currentUser;
-      console.log('Current user:', user);
-      
       if (!user) return;
 
       // Query for notifications - show user-specific notifications and all medicine request notifications
@@ -51,43 +45,22 @@ export function NotificationBell() {
         limit(10)
       );
 
-      // Also try a direct get to see if there are any permission issues
-      getDocs(collection(db, 'notifications'))
-        .then(snapshot => {
-          console.log('Direct get of all notifications - count:', snapshot.size);
-          snapshot.docs.forEach(doc => {
-            console.log('Notification doc:', doc.id, doc.data());
-          });
-        })
-        .catch(error => {
-          console.error('Failed to get notifications via direct get:', error);
-          console.error('Direct get error code:', error.code);
-          console.error('Direct get error message:', error.message);
-        });
-
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        console.log('onSnapshot triggered, docs count:', snapshot.size);
         const notificationsData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Notification[];
-
-        console.log('All notifications from Firestore:', notificationsData);
 
         // Filter notifications: show user-specific notifications and all medicine request notifications
         const filteredNotifications = notificationsData.filter(notification => 
           notification.user_id === user.uid || notification.type === 'medicine_request'
         );
 
-        console.log('Filtered notifications:', filteredNotifications);
-
         setNotifications(filteredNotifications);
         setUnreadCount(filteredNotifications.filter(n => !n.read).length);
         setLoading(false);
       }, (error) => {
         console.error('Failed to subscribe to notifications:', error);
-        console.error('Subscription error code:', error.code);
-        console.error('Subscription error message:', error.message);
         setLoading(false);
       });
 
@@ -140,10 +113,7 @@ export function NotificationBell() {
     }
   };
 
-  if (!isAuthenticated || !notificationsEnabled) {
-    console.log('NotificationBell hidden - isAuthenticated:', isAuthenticated, 'notificationsEnabled:', notificationsEnabled);
-    return null;
-  }
+  if (!isAuthenticated || !notificationsEnabled) return null;
 
   return (
     <DropdownMenu>

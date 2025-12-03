@@ -22,12 +22,14 @@ import {
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
+import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 
 interface MobileMenuProps {
   onSearchClick?: () => void;
+  onReviewsClick?: () => void; // Add this prop
 }
 
-export function MobileMenu({ onSearchClick }: MobileMenuProps) {
+export function MobileMenu({ onSearchClick, onReviewsClick }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,7 +64,10 @@ export function MobileMenu({ onSearchClick }: MobileMenuProps) {
       id: "reviews",
       label: "Reviews",
       icon: Star,
-      action: () => handleNavigation("/reviews"),
+      action: onReviewsClick ? () => {
+        onReviewsClick();
+        setOpen(false);
+      } : () => handleNavigation("/reviews"),
       active: location.pathname === "/reviews"
     },
     ...(deliveryEnabled ? [{
@@ -95,10 +100,12 @@ export function MobileMenu({ onSearchClick }: MobileMenuProps) {
       </SheetTrigger>
       <SheetContent side="left" className="w-[300px] sm:w-[340px]">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <Store className="w-6 h-6" />
+          <SheetTitle className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10 shadow">
+              <KalyanamLogo className="w-8 h-8" />
+            </div>
             <div>
-              <div>Kalyanam</div>
+              <div className="text-lg font-bold">Kalyanam</div>
               <div className="text-[0.6rem] text-muted-foreground uppercase tracking-wider">Pharmacy</div>
             </div>
           </SheetTitle>

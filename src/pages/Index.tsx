@@ -37,8 +37,10 @@ import {
 } from "@/components/ui/dialog";
 import StoreReviewForm from "@/components/StoreReviewForm";
 import StoreReviews from "@/components/StoreReviews";
-import { MobileMenu } from "@/components/MobileMenu";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
+import { MobileMenu } from "@/components/MobileMenu";
+import AnnouncementMarquee from "@/components/AnnouncementMarquee";
+import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
 import coldFluImage from "@/assets/category-cold-flu.jpg";
@@ -267,18 +269,18 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
-              <div className="p-2 bg-white/10 rounded-lg">
-                <Store className="w-6 h-6" />
+              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10 shadow-lg">
+                <KalyanamLogo className="w-8 h-8" />
               </div>
               <div>
                 {/* Desktop view - Full business name */}
-                <h1 className="text-2xl font-bold hidden sm:block">Kalyanam Pharmacy</h1>
+                <h1 className="text-2xl font-bold hidden sm:block">Kalyanam Pharmaceuticals</h1>
                 <p className="text-sm text-primary-foreground/90 hidden sm:block">Your Trusted Healthcare Partner</p>
                 
                 {/* Mobile view - Shortened business name */}
                 <div className="sm:hidden">
                   <h1 className="text-xl font-bold">Kalyanam</h1>
-                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmacy</p>
+                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
                 </div>
               </div>
             </div>
@@ -305,7 +307,7 @@ const Index = () => {
               >
                 Reviews
               </Button>
-              {/* Show Request Medicine only when delivery is enabled */}
+              {/* Show Track Unavailable Medicines only when delivery is enabled */}
               {deliveryEnabled && (
                 <RequestMedicineSheet>
                   <Button 
@@ -313,21 +315,9 @@ const Index = () => {
                     size="sm" 
                     className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
                   >
-                    Request Medicine
-                  </Button>
-                </RequestMedicineSheet>
-              )}
-              {/* Show Track Unavailable Medicines only when delivery is enabled */}
-              {deliveryEnabled && (
-                <UnavailableMedicinesSheet>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
-                  >
                     Track Unavailable Medicines
                   </Button>
-                </UnavailableMedicinesSheet>
+                </RequestMedicineSheet>
               )}
             </nav>
                 
@@ -460,8 +450,8 @@ const Index = () => {
                 <ShoppingCart discountPercentage={discountPercentage} />
               </div>
               
-              {/* Mobile menu button - REPLACED WITH MOBILE MENU COMPONENT */}
-              <MobileMenu />
+              {/* Mobile menu button - Pass onReviewsClick prop */}
+              <MobileMenu onReviewsClick={() => setShowReviews(true)} />
             </div>
           </div>
           
@@ -529,6 +519,11 @@ const Index = () => {
               </div>
             )}
           </div>
+        </div>
+      
+        {/* Announcement Marquee - Fixed at the bottom of the header */}
+        <div className="sticky top-0 z-40">
+          <AnnouncementMarquee />
         </div>
       </header>
 
@@ -725,10 +720,10 @@ const Index = () => {
                 <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-secondary shadow-md">
                   <Store className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Kalyanam Pharmacy</h2>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Kalyanam Pharmaceuticals</h2>
               </div>
               <p className="text-muted-foreground text-sm">
-                Your trusted local medical store with quality products and detailed information. Visit us during our store hours for all your healthcare needs.
+                Your trusted online medical store with quality products and detailed information. We deliver healthcare solutions right to your doorstep.
               </p>
               <div className="flex gap-3">
                 <Button variant="outline" size="icon" className="rounded-full">
@@ -755,19 +750,44 @@ const Index = () => {
               <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Home</a>
+                  <button 
+                    onClick={() => navigate("/")}
+                    className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                  >
+                    Home
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">About Us</a>
+                  <button 
+                    onClick={() => navigate("/about")}
+                    className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                  >
+                    About Us
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Products</a>
+                  <button 
+                    onClick={() => navigate("/products")}
+                    className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                  >
+                    Products
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Offers</a>
+                  <button 
+                    onClick={() => navigate("/offers")}
+                    className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                  >
+                    Offers
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Contact</a>
+                  <button 
+                    onClick={() => navigate("/contact")}
+                    className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                  >
+                    Contact
+                  </button>
                 </li>
               </ul>
             </div>
@@ -777,12 +797,12 @@ const Index = () => {
               <ul className="space-y-3">
                 {categories.slice(0, 5).map((category) => (
                   <li key={category.id}>
-                    <a 
-                      href={`/?category=${category.id}`} 
-                      className="text-muted-foreground hover:text-primary transition-colors text-sm"
+                    <button 
+                      onClick={() => navigate(`/category/${category.id}`)}
+                      className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
                     >
                       {category.name}
-                    </a>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -817,12 +837,27 @@ const Index = () => {
           
           <div className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-muted-foreground text-sm">
-              © 2025 Kalyanam Pharmacy. All rights reserved.
+              © 2025 Kalyanam Pharmaceuticals. All rights reserved.
             </p>
             <div className="flex gap-6">
-              <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Privacy Policy</a>
-              <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Terms of Service</a>
-              <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Store Hours</a>
+              <button 
+                onClick={() => navigate("/privacy-policy")}
+                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+              >
+                Privacy Policy
+              </button>
+              <button 
+                onClick={() => navigate("/terms-of-service")}
+                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+              >
+                Terms of Service
+              </button>
+              <button 
+                onClick={() => navigate("/shipping-policy")}
+                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+              >
+                Shipping Policy
+              </button>
             </div>
           </div>
         </div>

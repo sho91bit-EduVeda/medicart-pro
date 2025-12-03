@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { db } from "@/integrations/firebase/config";
-import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, orderBy, limit, getDocs, doc, getDoc, DocumentData } from "firebase/firestore";
 import ProductCard from "./ProductCard";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
@@ -16,6 +16,7 @@ interface Product {
   categories?: {
     name: string;
   };
+  category_id?: string;
 }
 
 interface ProductRecommendationsProps {
@@ -45,35 +46,55 @@ export function ProductRecommendations({
   const loadRecommendations = async () => {
     setLoading(true);
     try {
-      let q = query(
-        collection(db, 'products'),
-        where('in_stock', '==', true),
-        orderBy('average_rating', 'desc'),
-        limit(limitCount)
-      );
-
+      // Simplified query without composite index requirement
+      let q;
+      
       if (categoryId) {
+        // Query by category first, then filter in stock and sort by rating client-side
         q = query(
           collection(db, 'products'),
-          where('in_stock', '==', true),
           where('category_id', '==', categoryId),
-          orderBy('average_rating', 'desc'),
-          limit(limitCount)
+          limit(limitCount * 3) // Get more items to filter later
+        );
+      } else {
+        // General query, get products and filter/sort client-side
+        q = query(
+          collection(db, 'products'),
+          limit(limitCount * 3) // Get more items to filter later
         );
       }
 
       const querySnapshot = await getDocs(q);
-      let productsData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Product[];
+      let productsData = querySnapshot.docs.map(doc => {
+        const data = doc.data() as DocumentData;
+        return {
+          id: doc.id,
+          name: data.name || '',
+          original_price: data.original_price || 0,
+          image_url: data.image_url,
+          in_stock: data.in_stock || false,
+          average_rating: data.average_rating,
+          review_count: data.review_count,
+          stock_quantity: data.stock_quantity,
+          categories: data.categories,
+          category_id: data.category_id
+        } as Product;
+      });
 
-      // Client-side filtering for currentProductId since Firestore doesn't support != in combination with other filters easily in all cases or to keep it simple
+      // Client-side filtering for in_stock and sorting by rating
+      productsData = productsData
+        .filter(product => product.in_stock)
+        .sort((a, b) => {
+          const ratingA = a.average_rating || 0;
+          const ratingB = b.average_rating || 0;
+          return ratingB - ratingA;
+        })
+        .slice(0, limitCount); // Limit to the requested count
+
+      // Client-side filtering for currentProductId
       if (currentProductId) {
         productsData = productsData.filter(p => p.id !== currentProductId);
       }
-
-      // If we filtered out a product, we might have less than limit, but that's acceptable for recommendations
 
       setProducts(productsData);
 

@@ -60,6 +60,19 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## New Features
+
+### Offers Management
+Owners can now manage special offers and discounts through the dashboard:
+- Create, edit, and delete offers
+- Enable/disable offers with a toggle switch
+- Set discount percentages, validity dates, and terms
+- Customers see only enabled offers on the public offers page
+
+## Firebase Setup
+
+This application uses Firebase for backend services. See [FIREBASE_SETUP.md](FIREBASE_SETUP.md) for detailed setup instructions.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/e8739f61-78ee-4786-8800-94d091bdde8b) and click on Share -> Publish.

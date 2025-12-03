@@ -19,10 +19,11 @@ import {
 
 interface StoreReviewFormProps {
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit: (rating: number) => void;
+  showOnlyForm?: boolean;
 }
 
-const StoreReviewForm: React.FC<StoreReviewFormProps> = ({ onClose, onSubmit }) => {
+const StoreReviewForm: React.FC<StoreReviewFormProps> = ({ onClose, onSubmit, showOnlyForm = false }) => {
   const { isAuthenticated, user } = useAuth();
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState('');
@@ -68,7 +69,7 @@ const StoreReviewForm: React.FC<StoreReviewFormProps> = ({ onClose, onSubmit }) 
 
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
-    onSubmit();
+    onSubmit(rating);
     onClose();
   };
 

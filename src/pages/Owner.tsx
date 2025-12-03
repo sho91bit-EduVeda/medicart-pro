@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/integrations/firebase/config";
-import { collection, getDocs, addDoc, doc, getDoc, setDoc, query, orderBy, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, getDoc, setDoc, query, orderBy, deleteDoc, updateDoc, where } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +10,9 @@ import { FeatureFlagsPanel } from "@/components/FeatureFlagsPanel";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail } from "lucide-react";
+import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ExcelUpload } from "@/components/ExcelUpload";
 import { seedDatabase } from "@/utils/seedData";
@@ -20,6 +21,7 @@ import SidebarBackground from "@/components/svgs/SidebarBackground";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
 import RequestDetailsModal from "@/components/RequestDetailsModal";
 import { NotificationBell } from "@/components/NotificationBell";
+import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 import { 
   Sheet, 
   SheetContent, 
@@ -42,6 +44,19 @@ interface MedicineRequest {
   medicine_name: string;
   message: string;
   status: 'pending' | 'in_progress' | 'resolved';
+  created_at: string;
+  updated_at: string;
+}
+
+interface Offer {
+  id: string;
+  title: string;
+  description: string;
+  discount: string;
+  validity: string;
+  category: string;
+  terms: string;
+  enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -134,6 +149,30 @@ const Owner = () => {
   const [imageUrl, setImageUrl] = useState("");
   const [inStock, setInStock] = useState(true);
 
+  // Category form state
+  const [categoryName, setCategoryName] = useState("");
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+
+  // Announcements form state
+  const [announcementText, setAnnouncementText] = useState("");
+  const [announcementPriority, setAnnouncementPriority] = useState<"normal" | "high">("normal");
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+
+  // Offers state
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [offersLoading, setOffersLoading] = useState(false);
+  
+  // Offer form state
+  const [offerTitle, setOfferTitle] = useState("");
+  const [offerDescription, setOfferDescription] = useState("");
+  const [offerDiscount, setOfferDiscount] = useState("");
+  const [offerValidity, setOfferValidity] = useState("");
+  const [offerCategory, setOfferCategory] = useState("");
+  const [offerTerms, setOfferTerms] = useState("");
+  const [offerEnabled, setOfferEnabled] = useState(true);
+  const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
+
   useEffect(() => {
     checkAuth();
     fetchCategories();
@@ -159,6 +198,20 @@ const Owner = () => {
   useEffect(() => {
     if (activeSection === "manage-products") {
       fetchProducts();
+    }
+  }, [activeSection]);
+
+  // Fetch announcements when announcements section is active
+  useEffect(() => {
+    if (activeSection === "announcements") {
+      fetchAnnouncements();
+    }
+  }, [activeSection]);
+
+  // Fetch offers when offers section is active
+  useEffect(() => {
+    if (activeSection === "offers") {
+      fetchOffers();
     }
   }, [activeSection]);
 
@@ -222,6 +275,309 @@ const Owner = () => {
     } catch (error) {
       console.error("Failed to load discount settings:", error);
       toast.error("Failed to load discount settings");
+    }
+  };
+
+  const fetchAnnouncements = async () => {
+    setAnnouncementsLoading(true);
+    try {
+      const q = query(
+        collection(db, "announcements"),
+        orderBy("created_at", "desc")
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const announcementsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as any)
+      }));
+      
+      setAnnouncements(announcementsData);
+    } catch (error) {
+      console.error("Failed to fetch announcements:", error);
+      toast.error("Failed to load announcements");
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  };
+
+  // Offer management functions
+  const fetchOffers = async () => {
+    setOffersLoading(true);
+    try {
+      const q = query(
+        collection(db, "offers"),
+        orderBy("created_at", "desc")
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const offersData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as any)
+      })) as Offer[];
+      
+      setOffers(offersData);
+    } catch (error) {
+      console.error("Failed to fetch offers:", error);
+      toast.error("Failed to load offers");
+    } finally {
+      setOffersLoading(false);
+    }
+  };
+  
+  const handleAddOffer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!offerTitle.trim()) {
+      toast.error("Offer title is required");
+      return;
+    }
+    
+    if (!offerDiscount.trim()) {
+      toast.error("Discount value is required");
+      return;
+    }
+    
+    if (!offerValidity) {
+      toast.error("Validity date is required");
+      return;
+    }
+    
+    try {
+      await addDoc(collection(db, "offers"), {
+        title: offerTitle.trim(),
+        description: offerDescription.trim(),
+        discount: offerDiscount.trim(),
+        validity: offerValidity,
+        category: offerCategory.trim(),
+        terms: offerTerms.trim(),
+        enabled: offerEnabled,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+      toast.success("Offer added successfully!");
+      resetOfferForm();
+      fetchOffers();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add offer");
+    }
+  };
+  
+  const handleEditOffer = (offer: Offer) => {
+    setEditingOfferId(offer.id);
+    setOfferTitle(offer.title);
+    setOfferDescription(offer.description);
+    setOfferDiscount(offer.discount);
+    setOfferValidity(offer.validity);
+    setOfferCategory(offer.category);
+    setOfferTerms(offer.terms);
+    setOfferEnabled(offer.enabled);
+  };
+  
+  const handleUpdateOffer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingOfferId) return;
+    
+    // Validate required fields
+    if (!offerTitle.trim()) {
+      toast.error("Offer title is required");
+      return;
+    }
+    
+    if (!offerDiscount.trim()) {
+      toast.error("Discount value is required");
+      return;
+    }
+    
+    if (!offerValidity) {
+      toast.error("Validity date is required");
+      return;
+    }
+    
+    try {
+      const offerRef = doc(db, "offers", editingOfferId);
+      await updateDoc(offerRef, {
+        title: offerTitle.trim(),
+        description: offerDescription.trim(),
+        discount: offerDiscount.trim(),
+        validity: offerValidity,
+        category: offerCategory.trim(),
+        terms: offerTerms.trim(),
+        enabled: offerEnabled,
+        updated_at: new Date().toISOString()
+      });
+
+      toast.success("Offer updated successfully!");
+      setEditingOfferId(null);
+      resetOfferForm();
+      fetchOffers();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update offer");
+    }
+  };
+  
+  const handleDeleteOffer = async (offerId: string, offerTitle: string) => {
+    try {
+      await deleteDoc(doc(db, "offers", offerId));
+      toast.success(`Offer "${offerTitle}" deleted successfully!`);
+      fetchOffers();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete offer");
+    }
+  };
+  
+  const handleToggleOffer = async (offerId: string, enabled: boolean) => {
+    try {
+      const offerRef = doc(db, "offers", offerId);
+      await updateDoc(offerRef, {
+        enabled: !enabled,
+        updated_at: new Date().toISOString()
+      });
+      
+      toast.success(`Offer ${!enabled ? 'enabled' : 'disabled'} successfully!`);
+      fetchOffers();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update offer status");
+    }
+  };
+  
+  const resetOfferForm = () => {
+    setOfferTitle("");
+    setOfferDescription("");
+    setOfferDiscount("");
+    setOfferValidity("");
+    setOfferCategory("");
+    setOfferTerms("");
+    setOfferEnabled(true);
+    setEditingOfferId(null);
+  };
+  
+  const handleCancelOfferEdit = () => {
+    resetOfferForm();
+  };
+
+  // Category management functions
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!categoryName.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "categories"), {
+        name: categoryName.trim(),
+        created_at: new Date().toISOString()
+      });
+
+      toast.success("Category added successfully!");
+      setCategoryName("");
+      // Refresh categories list
+      fetchCategories();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add category");
+    }
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setEditingCategoryId(category.id);
+    setCategoryName(category.name);
+  };
+
+  const handleUpdateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingCategoryId) return;
+    
+    if (!categoryName.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+
+    try {
+      const categoryRef = doc(db, "categories", editingCategoryId);
+      await updateDoc(categoryRef, {
+        name: categoryName.trim(),
+        updated_at: new Date().toISOString()
+      });
+
+      toast.success("Category updated successfully!");
+      setEditingCategoryId(null);
+      setCategoryName("");
+      // Refresh categories list
+      fetchCategories();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update category");
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
+    // Check if category has products
+    try {
+      const productsQuery = query(
+        collection(db, "products"),
+        where("category_id", "==", categoryId)
+      );
+      
+      const productsSnapshot = await getDocs(productsQuery);
+      
+      if (productsSnapshot.size > 0) {
+        toast.error(`Cannot delete category "${categoryName}" because it has ${productsSnapshot.size} product(s). Delete the products first.`);
+        return;
+      }
+
+      await deleteDoc(doc(db, "categories", categoryId));
+      toast.success(`Category "${categoryName}" deleted successfully!`);
+      // Refresh categories list
+      fetchCategories();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete category");
+    }
+  };
+
+  const handleCancelCategoryEdit = () => {
+    setEditingCategoryId(null);
+    setCategoryName("");
+  };
+
+  // Announcement management functions
+  const handleAddAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!announcementText.trim()) {
+      toast.error("Announcement text is required");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "announcements"), {
+        text: announcementText.trim(),
+        priority: announcementPriority,
+        created_at: new Date().toISOString()
+      });
+
+      toast.success("Announcement added successfully!");
+      setAnnouncementText("");
+      setAnnouncementPriority("normal");
+      // Refresh announcements list
+      fetchAnnouncements();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add announcement");
+    }
+  };
+
+  const handleDeleteAnnouncement = async (announcementId: string) => {
+    try {
+      await deleteDoc(doc(db, "announcements", announcementId));
+      toast.success("Announcement deleted successfully!");
+      // Refresh announcements list
+      fetchAnnouncements();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete announcement");
     }
   };
 
@@ -505,10 +861,13 @@ const Owner = () => {
     }
   };
 
-  // Navigation items
+  // Update navigation items to include Offers
   const navigationItems = [
     { id: "add-product", label: "Add Product", icon: Plus },
     { id: "manage-products", label: "Manage Products", icon: Package },
+    { id: "manage-categories", label: "Manage Categories", icon: Package },
+    { id: "offers", label: "Manage Offers", icon: Percent }, // Added Offers section
+    { id: "announcements", label: "Announcements", icon: Bell },
     { id: "orders", label: "Orders", icon: Package },
     { id: "requests", label: "Medicine Requests", icon: Mail },
     { id: "settings", label: "Settings", icon: Settings },
@@ -522,8 +881,8 @@ const Owner = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <Package className="w-6 h-6" />
+              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10 shadow-lg">
+                <KalyanamLogo className="w-8 h-8" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold hidden sm:block">Dashboard</h1>
@@ -541,7 +900,7 @@ const Owner = () => {
                 className="md:hidden text-primary-foreground hover:bg-white/20 rounded-full"
                 onClick={() => navigate("/")}
               >
-                <Store className="w-5 h-5" />
+                <KalyanamLogo className="w-6 h-6" />
               </Button>
               
               {/* Notification Bell */}
@@ -552,7 +911,7 @@ const Owner = () => {
                 <span className="hidden sm:inline">Seed DB</span>
               </Button>
               <Button variant="default" onClick={() => navigate("/")} className="flex items-center gap-2 hidden md:flex">
-                <Store className="w-4 h-4" />
+                <KalyanamLogo className="w-5 h-5" />
                 <span className="hidden sm:inline">View Store</span>
               </Button>
               <Button variant="destructive" onClick={handleLogout} className="flex items-center gap-2 hidden md:flex">
@@ -570,7 +929,7 @@ const Owner = () => {
                 <SheetContent side="left" className="w-[300px] sm:w-[340px]">
                   <SheetHeader>
                     <SheetTitle className="flex items-center gap-2">
-                      <Package className="w-6 h-6" />
+                      <KalyanamLogo className="w-8 h-8" />
                       <span className="hidden sm:inline">Dashboard</span>
                       <span className="sm:hidden text-xl">Dashboard</span>
                     </SheetTitle>
@@ -619,7 +978,7 @@ const Owner = () => {
                         }} 
                         className="w-full justify-start gap-3 py-6 text-left mt-2"
                       >
-                        <Store className="w-5 h-5" />
+                        <KalyanamLogo className="w-5 h-5" />
                         <span className="font-medium">View Store</span>
                       </Button>
                       <Button 
@@ -1381,6 +1740,434 @@ const Owner = () => {
                         "Update Discount"
                       )}
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeSection === "manage-categories" && (
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Manage Categories</CardTitle>
+                  <CardDescription>Add, edit, or delete product categories</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Category Form */}
+                  <Card className="border border-dashed bg-muted/30">
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        {editingCategoryId ? "Edit Category" : "Add New Category"}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <form onSubmit={editingCategoryId ? handleUpdateCategory : handleAddCategory} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="category-name">Category Name</Label>
+                          <Input
+                            id="category-name"
+                            value={categoryName}
+                            onChange={(e) => setCategoryName(e.target.value)}
+                            placeholder="Enter category name"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="submit" disabled={loading}>
+                            {loading ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                                <span>{editingCategoryId ? "Updating..." : "Adding..."}</span>
+                              </div>
+                            ) : editingCategoryId ? (
+                              "Update Category"
+                            ) : (
+                              "Add Category"
+                            )}
+                          </Button>
+                          {editingCategoryId && (
+                            <Button type="button" variant="outline" onClick={handleCancelCategoryEdit}>
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+
+                  {/* Categories List */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">Existing Categories</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {categories.length} category{categories.length !== 1 ? 'es' : ''} in your store
+                      </p>
+                    </div>
+                    
+                    {categories.length === 0 ? (
+                      <div className="text-center py-8 border border-dashed rounded-lg">
+                        <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No categories yet</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Add your first category to organize your products.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {categories.map((category) => (
+                          <Card key={category.id} className="flex items-center justify-between p-4">
+                            <div>
+                              <h4 className="font-medium">{category.name}</h4>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditCategory(category)}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteCategory(category.id, category.name)}
+                              >
+                                <Trash className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Offers Management Section */}
+            {activeSection === "offers" && (
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    <Percent className="w-6 h-6" />
+                    Manage Offers
+                  </CardTitle>
+                  <CardDescription>
+                    Create and manage special offers and discounts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Offer Form */}
+                  <Card className="border border-dashed bg-muted/30">
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        {editingOfferId ? "Edit Offer" : "Create New Offer"}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <form onSubmit={editingOfferId ? handleUpdateOffer : handleAddOffer} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="offer-title">Offer Title <span className="text-destructive">*</span></Label>
+                            <Input
+                              id="offer-title"
+                              value={offerTitle}
+                              onChange={(e) => setOfferTitle(e.target.value)}
+                              placeholder="e.g., Summer Health Sale"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="offer-discount">Discount <span className="text-destructive">*</span></Label>
+                            <Input
+                              id="offer-discount"
+                              value={offerDiscount}
+                              onChange={(e) => setOfferDiscount(e.target.value)}
+                              placeholder="e.g., 20% or BOGO"
+                              required
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="offer-description">Description</Label>
+                          <Textarea
+                            id="offer-description"
+                            value={offerDescription}
+                            onChange={(e) => setOfferDescription(e.target.value)}
+                            placeholder="Brief description of the offer"
+                            rows={2}
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="offer-validity">Validity Date <span className="text-destructive">*</span></Label>
+                            <Input
+                              id="offer-validity"
+                              type="date"
+                              value={offerValidity}
+                              onChange={(e) => setOfferValidity(e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="offer-category">Category</Label>
+                            <Input
+                              id="offer-category"
+                              value={offerCategory}
+                              onChange={(e) => setOfferCategory(e.target.value)}
+                              placeholder="e.g., Vitamins & Supplements"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="offer-terms">Terms & Conditions</Label>
+                          <Textarea
+                            id="offer-terms"
+                            value={offerTerms}
+                            onChange={(e) => setOfferTerms(e.target.value)}
+                            placeholder="Terms and conditions for this offer"
+                            rows={3}
+                          />
+                        </div>
+                        
+                        <div className="flex items-center gap-3 pt-2">
+                          <Switch
+                            id="offer-enabled"
+                            checked={offerEnabled}
+                            onCheckedChange={setOfferEnabled}
+                          />
+                          <Label htmlFor="offer-enabled" className="font-medium">
+                            Offer Enabled
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Toggle to enable or disable this offer
+                          </p>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button type="submit" disabled={loading}>
+                            {loading ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                                <span>{editingOfferId ? "Updating..." : "Creating..."}</span>
+                              </div>
+                            ) : editingOfferId ? (
+                              "Update Offer"
+                            ) : (
+                              "Create Offer"
+                            )}
+                          </Button>
+                          {editingOfferId && (
+                            <Button type="button" variant="outline" onClick={handleCancelOfferEdit}>
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+
+                  {/* Offers List */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">Current Offers</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {offers.length} offer{offers.length !== 1 ? 's' : ''} in your store
+                      </p>
+                    </div>
+                    
+                    {offersLoading ? (
+                      <div className="flex justify-center py-8">
+                        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : offers.length === 0 ? (
+                      <div className="text-center py-8 border border-dashed rounded-lg">
+                        <Percent className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No offers yet</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Create your first offer to attract customers.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {offers.map((offer) => (
+                          <Card key={offer.id} className="p-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h4 className="font-medium">{offer.title}</h4>
+                                  <Badge variant={offer.enabled ? "default" : "secondary"}>
+                                    {offer.enabled ? "Enabled" : "Disabled"}
+                                  </Badge>
+                                  <Badge variant="secondary">
+                                    {offer.discount} OFF
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  {offer.description}
+                                </p>
+                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                  <span>Valid till: {offer.validity}</span>
+                                  {offer.category && <span>• Category: {offer.category}</span>}
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditOffer(offer)}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant={offer.enabled ? "secondary" : "default"}
+                                  size="sm"
+                                  onClick={() => handleToggleOffer(offer.id, offer.enabled)}
+                                >
+                                  {offer.enabled ? "Disable" : "Enable"}
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteOffer(offer.id, offer.title)}
+                                >
+                                  <Trash className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            {offer.terms && (
+                              <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+                                <span className="font-medium">Terms:</span> {offer.terms}
+                              </div>
+                            )}
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {activeSection === "announcements" && (
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Manage Announcements</CardTitle>
+                  <CardDescription>Create and manage announcements that appear at the top of the store homepage</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Announcement Form */}
+                  <Card className="border border-dashed bg-muted/30">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Create New Announcement</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <form onSubmit={handleAddAnnouncement} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="announcement-text">Announcement Text</Label>
+                          <Textarea
+                            id="announcement-text"
+                            value={announcementText}
+                            onChange={(e) => setAnnouncementText(e.target.value)}
+                            placeholder="Enter your announcement text"
+                            rows={3}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Priority Level</Label>
+                          <div className="flex gap-4">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                id="priority-normal"
+                                name="priority"
+                                value="normal"
+                                checked={announcementPriority === "normal"}
+                                onChange={() => setAnnouncementPriority("normal")}
+                                className="h-4 w-4 text-primary"
+                              />
+                              <Label htmlFor="priority-normal">Normal</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                id="priority-high"
+                                name="priority"
+                                value="high"
+                                checked={announcementPriority === "high"}
+                                onChange={() => setAnnouncementPriority("high")}
+                                className="h-4 w-4 text-primary"
+                              />
+                              <Label htmlFor="priority-high">High (will show a visual indicator)</Label>
+                            </div>
+                          </div>
+                        </div>
+                        <Button type="submit" disabled={loading}>
+                          {loading ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                              <span>Adding...</span>
+                            </div>
+                          ) : (
+                            "Add Announcement"
+                          )}
+                        </Button>
+                      </form>
+                    </CardContent>
+                  </Card>
+
+                  {/* Announcements List */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">Current Announcements</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {announcements.length} announcement{announcements.length !== 1 ? 's' : ''} currently active
+                      </p>
+                    </div>
+                    
+                    {announcementsLoading ? (
+                      <div className="flex justify-center py-8">
+                        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : announcements.length === 0 ? (
+                      <div className="text-center py-8 border border-dashed rounded-lg">
+                        <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No announcements yet</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Create your first announcement to display important information to customers.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {announcements.map((announcement) => (
+                          <Card key={announcement.id} className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h4 className="font-medium">{announcement.text}</h4>
+                                  {announcement.priority === "high" && (
+                                    <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                                      High Priority
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  Posted: {new Date(announcement.created_at).toLocaleDateString()} at {new Date(announcement.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </p>
+                              </div>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteAnnouncement(announcement.id)}
+                              >
+                                <Trash className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

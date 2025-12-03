@@ -1,21 +1,22 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { db } from "@/integrations/firebase/config";
 import { collection, getDocs, query, where, orderBy, doc, getDoc, limit } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import ProductCard from "@/components/ProductCard";
+import { Search, Package, PackagePlus, Heart, User, LogOut, Store, ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
+import { whatsappService } from "@/services/whatsappService";
+import { ShoppingCart } from "@/components/ShoppingCart";
+import { NotificationBell } from "@/components/NotificationBell";
+import { useAuth } from "@/hooks/useAuth";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
-import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, Package, Store, Search, Heart, LogOut, User, LogIn, PackagePlus } from "lucide-react";
-import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { ShoppingCart } from "@/components/ShoppingCart";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
-import { SearchPopup } from "@/components/SearchPopup";
 import { MobileMenu } from "@/components/MobileMenu";
-import { NotificationBell } from "@/components/NotificationBell";
+import { SearchPopup } from "@/components/SearchPopup";
+import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 
 interface Product {
   id: string;
@@ -227,8 +228,8 @@ const CategoryPage = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
-              <div className="p-2 bg-white/10 rounded-lg">
-                <Store className="w-6 h-6" />
+              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10 shadow-lg">
+                <KalyanamLogo className="w-8 h-8" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
@@ -248,25 +249,13 @@ const CategoryPage = () => {
               </Button>
               {/* Show Track Unavailable Medicines only when delivery is enabled */}
               {deliveryEnabled && (
-                <UnavailableMedicinesSheet>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
-                  >
-                    Track Unavailable Medicines
-                  </Button>
-                </UnavailableMedicinesSheet>
-              )}
-              {/* Show Request Medicine only when delivery is enabled */}
-              {deliveryEnabled && (
                 <RequestMedicineSheet>
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
                   >
-                    Request Medicine
+                    Track Unavailable Medicines
                   </Button>
                 </RequestMedicineSheet>
               )}

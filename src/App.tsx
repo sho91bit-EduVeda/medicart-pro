@@ -11,6 +11,13 @@ import Wishlist from "./pages/Wishlist";
 import Checkout from "./pages/Checkout";
 import CategoryPage from "./pages/Category";
 import Reviews from "./pages/Reviews";
+import Contact from "./pages/Contact";
+import About from "./pages/About";
+import Products from "./pages/Products";
+import Offers from "./pages/Offers";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import ShippingPolicy from "./pages/ShippingPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +37,13 @@ const App = () => (
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/category/:id" element={<CategoryPage />} />
           <Route path="/reviews" element={<Reviews />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/offers" element={<Offers />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/shipping-policy" element={<ShippingPolicy />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

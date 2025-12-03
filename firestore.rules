@@ -44,6 +44,18 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     
+    // Announcements - Public read, authenticated write
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Offers - Public read (only enabled), authenticated write
+    match /offers/{offerId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
     // Orders - Users can only read/write their own orders
     match /orders/{orderId} {
       allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
