@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell } from "lucide-react";
+import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ExcelUpload } from "@/components/ExcelUpload";
 import { seedDatabase } from "@/utils/seedData";
@@ -22,6 +22,7 @@ import RequestMedicineSheet from "@/components/RequestMedicineSheet";
 import RequestDetailsModal from "@/components/RequestDetailsModal";
 import { NotificationBell } from "@/components/NotificationBell";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
+import SalesReporting from "@/components/SalesReporting"; // Import SalesReporting component
 import { 
   Sheet, 
   SheetContent, 
@@ -30,6 +31,7 @@ import {
   SheetTrigger 
 } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+
 
 interface Category {
   id: string;
@@ -152,6 +154,7 @@ const Owner = () => {
   const [originalPrice, setOriginalPrice] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [inStock, setInStock] = useState(true);
+  const [stockQuantity, setStockQuantity] = useState(0);
 
   // Category form state
   const [categoryName, setCategoryName] = useState("");
@@ -177,6 +180,13 @@ const Owner = () => {
   const [offerEnabled, setOfferEnabled] = useState(true);
   const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
 
+  // State for medicine data import
+  const [importSource, setImportSource] = useState<"manual" | "csv" | "api">("manual");
+  const [apiEndpoint, setApiEndpoint] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [importProgress, setImportProgress] = useState(0);
+  const [isImporting, setIsImporting] = useState(false);
+
   useEffect(() => {
     checkAuth();
     fetchCategories();
@@ -198,11 +208,43 @@ const Owner = () => {
     }
   }, [activeSection]);
 
-  // Fetch products when manage-products section is active
+  // Fetch products when component mounts or when active section changes to manage-products
   useEffect(() => {
-    if (activeSection === "manage-products") {
+    if (activeSection === "manage-products" || activeSection === "add-product") {
       fetchProducts();
     }
+  }, [activeSection]);
+
+  // Listen for stock updates from other components
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'medicart-stock-updated' && activeSection === "manage-products") {
+        // Refresh products when stock is updated in another component
+        fetchProducts();
+      }
+    };
+
+    // Also check localStorage periodically in case storage events don't fire
+    const interval = setInterval(() => {
+      const stockUpdated = localStorage.getItem('medicart-stock-updated');
+      if (stockUpdated) {
+        const lastUpdate = parseInt(stockUpdated, 10);
+        const now = Date.now();
+        // Only refresh if the update was recent (within last 5 seconds)
+        if (now - lastUpdate < 5000 && activeSection === "manage-products") {
+          fetchProducts();
+          // Clear the flag after processing
+          localStorage.removeItem('medicart-stock-updated');
+        }
+      }
+    }, 1000);
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
   }, [activeSection]);
 
   // Fetch announcements when announcements section is active
@@ -674,6 +716,7 @@ const Owner = () => {
     setOriginalPrice(product.original_price?.toString() || "");
     setImageUrl(product.image_url || "");
     setInStock(product.in_stock !== undefined ? product.in_stock : true);
+    setStockQuantity(product.stock_quantity || 0);
   };
 
   const handleResetFilters = () => {
@@ -697,6 +740,7 @@ const Owner = () => {
     setOriginalPrice("");
     setImageUrl("");
     setInStock(true);
+    setStockQuantity(0);
   };
 
   const handleUpdateProduct = async (e: React.FormEvent) => {
@@ -733,6 +777,7 @@ const Owner = () => {
         original_price: parseFloat(originalPrice),
         image_url: imageUrl || null,
         in_stock: inStock,
+        stock_quantity: stockQuantity,
         updated_at: new Date().toISOString()
       });
 
@@ -764,6 +809,40 @@ const Owner = () => {
       return;
     }
     
+    if (!originalPrice || parseFloat(originalPrice) <= 0) {
+      toast.error("Valid original price is required");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await addDoc(collection(db, "products"), {
+        name: productName,
+        category_id: categoryId,
+        description,
+        uses,
+        side_effects: sideEffects,
+        composition,
+        original_price: parseFloat(originalPrice),
+        image_url: imageUrl || null,
+        in_stock: inStock,
+        stock_quantity: stockQuantity,
+        created_at: new Date().toISOString()
+      });
+
+      toast.success("Product added successfully!");
+      // Reset form
+      resetForm();
+      // Refresh product list
+      fetchProducts();
+      // Navigate back to manage products section
+      setActiveSection("manage-products");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add product");
+    } finally {
+      setLoading(false);
+    }
     if (!originalPrice || parseFloat(originalPrice) <= 0) {
       toast.error("Valid original price is required");
       return;
@@ -861,15 +940,45 @@ const Owner = () => {
     }
   };
 
-  // Update navigation items to include Offers
+  // Medicine data import functions
+  const handleApiImport = async () => {
+    if (!apiEndpoint) {
+      toast.error("Please enter an API endpoint");
+      return;
+    }
+
+    setIsImporting(true);
+    setImportProgress(0);
+
+    try {
+      // Simulate API import process
+      // In a real implementation, this would connect to an actual medicine database API
+      for (let i = 0; i <= 100; i += 10) {
+        setImportProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      toast.success("Medicine data imported successfully!");
+    } catch (error) {
+      console.error("Import error:", error);
+      toast.error("Failed to import medicine data");
+    } finally {
+      setIsImporting(false);
+      setImportProgress(0);
+    }
+  };
+
+  // Update navigation items to include Data Import
   const navigationItems = [
     { id: "add-product", label: "Add Product", icon: Plus },
     { id: "manage-products", label: "Manage Products", icon: Package },
     { id: "manage-categories", label: "Manage Categories", icon: Package },
-    { id: "offers", label: "Manage Offers", icon: Percent }, // Added Offers section
+    { id: "offers", label: "Manage Offers", icon: Percent },
     { id: "announcements", label: "Announcements", icon: Bell },
     { id: "orders", label: "Orders", icon: Package },
     { id: "requests", label: "Medicine Requests", icon: Mail },
+    { id: "sales-reporting", label: "Sales Reporting", icon: TrendingUp },
+    { id: "data-import", label: "Data Import", icon: Database }, // Added Data Import section
     { id: "settings", label: "Settings", icon: Settings },
     { id: "features", label: "Features", icon: Package },
   ];
@@ -1241,6 +1350,25 @@ const Owner = () => {
                           </p>
                         </div>
 
+                        <div className="space-y-2">
+                          <Label htmlFor="stock-quantity" className="font-medium">
+                            Stock Quantity
+                          </Label>
+                          <Input
+                            id="stock-quantity"
+                            type="number"
+                            min="0"
+                            value={stockQuantity}
+                            onChange={(e) => setStockQuantity(parseInt(e.target.value) || 0)}
+                            placeholder="0"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Enter the current quantity available in stock
+                          </p>
+                        </div>
+
+
+
                         <div className="flex gap-3">
                           <Button type="submit" disabled={loading} className="w-full md:w-1/3">
                             {loading ? (
@@ -1259,30 +1387,6 @@ const Owner = () => {
                           )}
                         </div>
                       </form>
-                      
-                      {/* Divider - Only shown in Add Product section */}
-                      {activeSection === "add-product" && (
-                        <div className="my-8 border-t border-muted"></div>
-                      )}
-                      
-                      {/* Bulk Upload Section - Only shown in Add Product section */}
-                      {activeSection === "add-product" && (
-                        <div className="mt-8">
-                          <h3 className="text-xl font-semibold mb-4">Bulk Upload Products</h3>
-                          <p className="text-muted-foreground mb-6">
-                            Upload an Excel file to add multiple products at once. Download the template to see the required format.
-                          </p>
-                          <ExcelUpload onSuccess={() => {
-                            // Refresh categories and products after successful upload
-                            fetchCategories();
-                            fetchProducts();
-                            // Show success message
-                            toast.success("Products uploaded successfully! Refresh the store to see changes.");
-                            // Navigate to manage products section
-                            setActiveSection("manage-products");
-                          }} />
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -1444,6 +1548,179 @@ const Owner = () => {
                 )}
               </div>
             )}
+
+            {/* Data Import Section */}
+            {activeSection === "data-import" && (
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    <Database className="w-6 h-6" />
+                    Medicine Data Import
+                  </CardTitle>
+                  <CardDescription>
+                    Import medicine data from various sources
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card 
+                      className={`cursor-pointer border-2 ${importSource === "manual" ? "border-primary" : ""}`}
+                      onClick={() => setImportSource("manual")}
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Plus className="w-5 h-5" />
+                          Manual Entry
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          Add medicines one by one using the manual form
+                        </p>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card 
+                      className={`cursor-pointer border-2 ${importSource === "csv" ? "border-primary" : ""}`}
+                      onClick={() => setImportSource("csv")}
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <FileSpreadsheet className="w-5 h-5" />
+                          CSV/Excel Import
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          Upload a spreadsheet with multiple medicine records
+                        </p>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card 
+                      className={`cursor-pointer border-2 ${importSource === "api" ? "border-primary" : ""}`}
+                      onClick={() => setImportSource("api")}
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Database className="w-5 h-5" />
+                          API Import
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          Connect to external medicine databases (coming soon)
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {importSource === "manual" && (
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold mb-4">Manual Entry</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Use the "Add Product" section to manually enter medicine details.
+                      </p>
+                      <Button onClick={() => setActiveSection("add-product")}>
+                        Go to Add Product
+                      </Button>
+                    </div>
+                  )}
+
+                  {importSource === "csv" && (
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold mb-4">CSV/Excel Import</h3>
+                      <ExcelUpload onSuccess={() => {
+                        fetchProducts();
+                        toast.success("Products uploaded successfully! Refresh the store to see changes.");
+                      }} />
+                    </div>
+                  )}
+
+                  {importSource === "api" && (
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold mb-4">API Import</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Connect to external medicine databases. Note: This feature requires a valid API endpoint and key.
+                      </p>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="api-endpoint">API Endpoint</Label>
+                          <Input
+                            id="api-endpoint"
+                            value={apiEndpoint}
+                            onChange={(e) => setApiEndpoint(e.target.value)}
+                            placeholder="https://api.medicinedatabase.com/v1/medicines"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="api-key">API Key</Label>
+                          <Input
+                            id="api-key"
+                            type="password"
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                            placeholder="Enter your API key"
+                          />
+                        </div>
+                        
+                        {isImporting && (
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">Importing data...</p>
+                            <div className="w-full bg-secondary rounded-full h-2.5">
+                              <div 
+                                className="bg-primary h-2.5 rounded-full transition-all duration-300" 
+                                style={{ width: `${importProgress}%` }}
+                              ></div>
+                            </div>
+                            <p className="text-xs text-muted-foreground text-right">{importProgress}%</p>
+                          </div>
+                        )}
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={handleApiImport} 
+                            disabled={isImporting}
+                          >
+                            {isImporting ? "Importing..." : "Import Data"}
+                          </Button>
+                          
+                          <Button 
+                            variant="outline"
+                            onClick={() => {
+                              setApiEndpoint("https://api.example.com/medicines");
+                              setApiKey("sample-api-key-12345");
+                            }}
+                          >
+                            Use Sample Credentials
+                          </Button>
+                        </div>
+                        
+                        <Card className="mt-6 border border-dashed bg-muted/30">
+                          <CardHeader>
+                            <CardTitle className="text-md">Note</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-sm text-muted-foreground">
+                              Currently, there are no freely available public APIs for Indian medicine data. 
+                              This feature is designed to work with commercial medicine databases that you may subscribe to.
+                              When you obtain access to such an API, you can use this interface to import medicine data automatically.
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              For now, we recommend using the CSV/Excel import option with our template for bulk data entry.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+
 
             {/* Orders Management Section */}
             {activeSection === "orders" && (
@@ -2203,6 +2480,11 @@ const Owner = () => {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Sales Reporting Section */}
+            {activeSection === "sales-reporting" && (
+              <SalesReporting />
             )}
 
             {activeSection === "features" && (

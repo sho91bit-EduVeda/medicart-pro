@@ -62,6 +62,28 @@ This project is built with:
 
 ## New Features
 
+### Sales Reporting System
+Owners can now track daily sales and generate monthly reports:
+- Record daily earnings and products sold
+- View daily sales summaries
+- Generate monthly sales reports
+- Export reports to Excel/CSV format
+- Automatically update product stock when sales are recorded
+- Easily select products from a searchable dropdown
+- Automatically calculate total earnings based on products sold
+- Automatically populate unit prices from inventory
+
+**Important**: After implementing this feature, you must deploy the updated Firestore rules. See [DEPLOY_FIRESTORE_RULES.md](DEPLOY_FIRESTORE_RULES.md) for instructions.
+
+See [SALES_REPORTING.md](SALES_REPORTING.md) for usage instructions.
+
+### Google Ads Integration
+Strategic Google Ad placements have been added throughout the website to monetize traffic:
+- Homepage banner ads
+- Product page ads
+- Category page ads
+See [GOOGLE_ADS_SETUP.md](GOOGLE_ADS_SETUP.md) for configuration instructions.
+
 ### Offers Management
 Owners can now manage special offers and discounts through the dashboard:
 - Create, edit, and delete offers

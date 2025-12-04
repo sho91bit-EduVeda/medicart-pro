@@ -128,5 +128,15 @@ service cloud.firestore {
       allow create: if true;  // Allow anyone to submit reviews
       allow update, delete: if isAuthenticated();  // Allow admin/owner to moderate reviews
     }
+    
+    // Daily Sales - Authenticated read/write (owner only)
+    match /daily_sales/{saleId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Monthly Reports - Authenticated read/write (owner only)
+    match /monthly_reports/{reportId} {
+      allow read, write: if isAuthenticated();
+    }
   }
 }

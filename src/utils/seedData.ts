@@ -18,28 +18,114 @@ export const seedDatabase = async () => {
 
         const categoriesRef = collection(db, "categories");
         const categoriesSnapshot = await getDocs(categoriesRef);
+        let categoryIds: Record<string, string> = {};
 
         if (categoriesSnapshot.empty) {
-            categories.forEach((cat) => {
+            const categoryRefs: Record<string, string> = {};
+            categories.forEach((cat, index) => {
                 const newCatRef = doc(categoriesRef);
                 batch.set(newCatRef, {
                     ...cat,
                     created_at: new Date().toISOString()
                 });
+                // Store the reference for later use
+                categoryRefs[cat.name] = newCatRef.id;
             });
+            categoryIds = categoryRefs;
             console.log("Seeding categories...");
         } else {
             console.log("Categories already exist, skipping.");
+            // Get existing category IDs
+            categoriesSnapshot.forEach(doc => {
+                const data = doc.data();
+                categoryIds[data.name] = doc.id;
+            });
         }
 
-        // 2. Seed Store Settings
+        // 2. Seed Sample Medicines (only if no products exist)
+        const productsRef = collection(db, "products");
+        const productsSnapshot = await getDocs(productsRef);
+
+        if (productsSnapshot.empty) {
+            const sampleMedicines = [
+                {
+                    name: "Paracetamol 500mg",
+                    category_id: categoryIds["Pain Relief"] || "",
+                    description: "Effective pain reliever and fever reducer",
+                    uses: "Headache, fever, muscle pain, toothache",
+                    composition: "Paracetamol 500mg",
+                    side_effects: "May cause liver damage in high doses",
+                    original_price: 15.50,
+                    in_stock: true,
+                    stock_quantity: 100
+                },
+                {
+                    name: "Amoxicillin 250mg",
+                    category_id: categoryIds["Antibiotics"] || "",
+                    description: "Antibiotic for bacterial infections",
+                    uses: "Respiratory tract infections, urinary tract infections, skin infections",
+                    composition: "Amoxicillin 250mg",
+                    side_effects: "Diarrhea, nausea, rash",
+                    original_price: 85.00,
+                    in_stock: true,
+                    stock_quantity: 50
+                },
+                {
+                    name: "Cetirizine 10mg",
+                    category_id: categoryIds["Allergy"] || "",
+                    description: "Antihistamine for allergy relief",
+                    uses: "Seasonal allergies, hay fever, hives",
+                    composition: "Cetirizine Hydrochloride 10mg",
+                    side_effects: "Drowsiness, dry mouth, fatigue",
+                    original_price: 45.75,
+                    in_stock: true,
+                    stock_quantity: 75
+                },
+                {
+                    name: "Vitamin C 500mg",
+                    category_id: categoryIds["Vitamins"] || "",
+                    description: "Immunity booster and antioxidant",
+                    uses: "Boosts immunity, prevents cold, acts as antioxidant",
+                    composition: "Ascorbic Acid 500mg",
+                    side_effects: "Diarrhea in high doses",
+                    original_price: 65.00,
+                    in_stock: true,
+                    stock_quantity: 120
+                },
+                {
+                    name: "Baby Diaper Rash Cream",
+                    category_id: categoryIds["Baby Products"] || "",
+                    description: "Soothing cream for diaper rash",
+                    uses: "Prevents and treats diaper rash in babies",
+                    composition: "Zinc Oxide 15%, Calamine",
+                    side_effects: "Skin irritation (rare)",
+                    original_price: 120.00,
+                    in_stock: true,
+                    stock_quantity: 30
+                }
+            ];
+
+            sampleMedicines.forEach(medicine => {
+                const newProductRef = doc(productsRef);
+                batch.set(newProductRef, {
+                    ...medicine,
+                    created_at: new Date().toISOString()
+                });
+            });
+
+            console.log("Seeding sample medicines...");
+        } else {
+            console.log("Products already exist, skipping medicine seeding.");
+        }
+
+        // 3. Seed Store Settings
         const settingsRef = doc(db, "settings", "store");
         batch.set(settingsRef, {
             discount_percentage: 0,
             updated_at: new Date().toISOString()
         }, { merge: true });
 
-        // 3. Seed WhatsApp Settings
+        // 4. Seed WhatsApp Settings
         const whatsappRef = doc(db, "settings", "whatsapp");
         batch.set(whatsappRef, {
             phone_number: "",
