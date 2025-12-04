@@ -32,7 +32,7 @@ export function ProductRecommendations({
   limit: limitCount = 4,
   onProductClick,
 }: ProductRecommendationsProps) {
-  const { productRecommendations } = useFeatureFlags();
+  const { productRecommendations, deliveryEnabled } = useFeatureFlags();
   const [products, setProducts] = useState<Product[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -111,7 +111,8 @@ export function ProductRecommendations({
     }
   };
 
-  if (!productRecommendations || loading || products.length === 0) {
+  // Don't show recommendations if delivery is disabled
+  if (!productRecommendations || !deliveryEnabled || loading || products.length === 0) {
     return null;
   }
 

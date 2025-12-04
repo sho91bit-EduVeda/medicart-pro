@@ -210,6 +210,8 @@ export function NotificationBell() {
         return '🎉';
       case 'medicine_request':
         return '💊';
+      case 'report':
+        return '📊';
       default:
         return '💬';
     }

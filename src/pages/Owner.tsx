@@ -65,6 +65,13 @@ interface Offer {
   updated_at: string;
 }
 
+interface NavigationItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  category: string;
+}
+
 const Owner = () => {
   const navigate = useNavigate();
   const { deliveryEnabled } = useFeatureFlags();
@@ -77,6 +84,7 @@ const Owner = () => {
 
   // Navigation state
   const [activeSection, setActiveSection] = useState("manage-products");
+  const [activeCategory, setActiveCategory] = useState("Inventory");
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -970,19 +978,28 @@ const Owner = () => {
     }
   };
 
-  // Update navigation items to include Data Import
+  // Update navigation items to group related functionalities into logical categories
   const navigationItems = [
-    { id: "add-product", label: "Add Product", icon: Plus },
-    { id: "manage-products", label: "Manage Products", icon: Package },
-    { id: "manage-categories", label: "Manage Categories", icon: Package },
-    { id: "offers", label: "Manage Offers", icon: Percent },
-    { id: "announcements", label: "Announcements", icon: Bell },
-    { id: "orders", label: "Orders", icon: Package },
-    { id: "requests", label: "Medicine Requests", icon: Mail },
-    { id: "sales-reporting", label: "Sales Reporting", icon: TrendingUp },
-    { id: "data-import", label: "Data Import", icon: Database }, // Added Data Import section
-    { id: "settings", label: "Settings", icon: Settings },
-    { id: "features", label: "Features", icon: Package },
+    // Inventory Management Group
+    { id: "add-product", label: "Add Product", icon: Plus, category: "Inventory" },
+    { id: "manage-products", label: "Manage Products", icon: Package, category: "Inventory" },
+    { id: "manage-categories", label: "Manage Categories", icon: Package, category: "Inventory" },
+    { id: "data-import", label: "Data Import", icon: Database, category: "Inventory" },
+    
+    // Marketing & Promotions Group
+    { id: "offers", label: "Manage Offers", icon: Percent, category: "Marketing" },
+    { id: "announcements", label: "Announcements", icon: Bell, category: "Marketing" },
+    
+    // Customer Relations Group
+    { id: "requests", label: "Medicine Requests", icon: Mail, category: "Customer Relations" },
+    { id: "orders", label: "Orders", icon: Package, category: "Customer Relations" },
+    
+    // Analytics & Reporting Group
+    { id: "sales-reporting", label: "Sales Reporting", icon: TrendingUp, category: "Analytics" },
+    
+    // Store Configuration Group
+    { id: "settings", label: "Settings", icon: Settings, category: "Configuration" },
+    { id: "features", label: "Features", icon: Package, category: "Configuration" },
   ];
 
   // Effect to handle medicine request notifications
@@ -1080,24 +1097,32 @@ const Owner = () => {
                   </SheetHeader>
                   
                   <div className="mt-6 flex flex-col gap-2">
-                    {navigationItems.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Button
-                          key={item.id}
-                          variant={activeSection === item.id ? "default" : "ghost"}
-                          className="justify-start gap-3 py-6 text-left"
-                          onClick={() => {
-                            setActiveSection(item.id);
-                            // Close the sheet using the proper Radix UI API
-                            document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
-                          }}
-                        >
-                          <Icon className="w-5 h-5" />
-                          <span className="font-medium">{item.label}</span>
-                        </Button>
-                      );
-                    })}
+                    {/* Show only essential navigation items in mobile menu */}
+                    {navigationItems
+                      .filter(item => 
+                        item.id === "add-product" || 
+                        item.id === "manage-products" || 
+                        item.id === "requests" || 
+                        item.id === "sales-reporting"
+                      )
+                      .map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Button
+                            key={item.id}
+                            variant={activeSection === item.id ? "default" : "ghost"}
+                            className="justify-start gap-3 py-6 text-left pl-8"
+                            onClick={() => {
+                              setActiveSection(item.id);
+                              // Close the sheet using the proper Radix UI API
+                              document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
+                            }}
+                          >
+                            <Icon className="w-5 h-5" />
+                            <span className="font-medium">{item.label}</span>
+                          </Button>
+                        );
+                      })}
                     
                     <div className="mt-4 pt-4 border-t">
                       <Button 
@@ -1144,26 +1169,33 @@ const Owner = () => {
           </div>
         </div>
       </header>
-
       <div className="flex flex-1">
         {/* Sidebar Navigation - Hidden on mobile */}
         <nav className="w-64 bg-sidebar-background border-r p-4 hidden md:block relative overflow-hidden">
           <SidebarBackground />
           <div className="relative z-10 space-y-3">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Button
-                  key={item.id}
-                  variant={activeSection === item.id ? "default" : "ghost"}
-                  className="w-full justify-start gap-3 py-6 text-left hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
-                  onClick={() => setActiveSection(item.id)}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                </Button>
-              );
-            })}
+            {/* Group navigation items by category */}
+            {Array.from(new Set(navigationItems.map(item => item.category))).map(category => (
+              <div key={category}>
+                <h3 className="text-sm font-semibold text-sidebar-accent-foreground/70 px-4 py-2">{category}</h3>
+                {navigationItems
+                  .filter(item => item.category === category)
+                  .map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Button
+                        key={item.id}
+                        variant={activeSection === item.id ? "default" : "ghost"}
+                        className="w-full justify-start gap-3 py-6 text-left hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200 pl-8"
+                        onClick={() => setActiveSection(item.id)}
+                      >
+                        <Icon className="w-5 h-5" />
+                        <span className="font-medium">{item.label}</span>
+                      </Button>
+                    );
+                  })}
+              </div>
+            ))}
           </div>
         </nav>
 
@@ -1190,24 +1222,47 @@ const Owner = () => {
               </div>
             )}
 
-            {/* Mobile Navigation - Improved for better accessibility */}
+            {/* Mobile Navigation - Redesigned for better UX */}
             <div className="md:hidden mb-6">
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {navigationItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
+              {/* Category Tabs for Mobile */}
+              <div className="mb-4">
+                <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
+                  {Array.from(new Set(navigationItems.map(item => item.category))).map(category => (
                     <Button
-                      key={item.id}
-                      variant={activeSection === item.id ? "default" : "outline"}
+                      key={category}
+                      variant="outline"
                       size="sm"
-                      className="flex-shrink-0 flex items-center gap-2"
-                      onClick={() => setActiveSection(item.id)}
+                      className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full ${
+                        activeCategory === category 
+                          ? "bg-primary text-primary-foreground border-primary" 
+                          : "bg-background"
+                      }`}
+                      onClick={() => setActiveCategory(category)}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span className="whitespace-nowrap">{item.label}</span>
+                      <span className="whitespace-nowrap text-xs font-medium">{category}</span>
                     </Button>
-                  );
-                })}
+                  ))}
+                </div>
+              </div>
+              
+              {/* Navigation Items for Active Category */}
+              <div className="grid grid-cols-2 gap-3">
+                {navigationItems
+                  .filter(item => item.category === activeCategory)
+                  .map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Button
+                        key={item.id}
+                        variant={activeSection === item.id ? "default" : "outline"}
+                        className="flex flex-col items-center justify-center h-20 gap-2 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                        onClick={() => setActiveSection(item.id)}
+                      >
+                        <Icon className="w-6 h-6" />
+                        <span className="text-xs font-medium text-center">{item.label}</span>
+                      </Button>
+                    );
+                  })}
               </div>
             </div>
 

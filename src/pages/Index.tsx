@@ -42,6 +42,7 @@ import { MobileMenu } from "@/components/MobileMenu";
 import AnnouncementMarquee from "@/components/AnnouncementMarquee";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 import { LoginPopup } from "@/components/LoginPopup";
+import { QuickLinksSidebar } from "@/components/QuickLinksSidebar";
 import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
 import coldFluImage from "@/assets/category-cold-flu.jpg";
@@ -271,6 +272,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Quick Links Sidebar - Only show when authenticated */}
+      {isAuthenticated && <QuickLinksSidebar />}
+      
       {/* Header */}
       <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg">
         <div className="container mx-auto px-4 py-4">
@@ -561,14 +565,14 @@ const Index = () => {
 
       <div className="container mx-auto px-4 py-12">
         {/* Categories Section */}
-        <section className="mb-20">
-          <div className="flex items-center justify-between mb-10">
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold mb-2">Explore by Category</h2>
-              <p className="text-muted-foreground">Browse our wide range of healthcare products</p>
+              <h2 className="text-2xl font-bold mb-1">Explore by Category</h2>
+              <p className="text-muted-foreground text-sm">Browse our wide range of healthcare products</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {categories.map((category) => (
               <CategoryCard
                 key={category.id}
@@ -583,36 +587,36 @@ const Index = () => {
         </section>
 
         {/* Search Bar and Filters */}
-        <section className="mb-16">
-          <div className="relative max-w-3xl mx-auto">
+        <section className="mb-12">
+          <div className="relative max-w-2xl mx-auto">
             <div className="relative">
-              <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 type="search"
                 placeholder="Search for medicines, health products, brands..."
-                className="pl-14 pr-24 h-14 text-base rounded-2xl border-2 border-muted shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+                className="pl-10 pr-20 h-12 text-sm rounded-xl border-2 border-muted shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
               <Button 
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-xl px-6 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-lg px-4 h-8 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300 text-sm"
                 onClick={handleSearchSubmit}
               >
                 Search
               </Button>
             </div>
             
-            <div className="mt-6 flex flex-wrap gap-3 justify-center">
-              <Button variant="outline" size="sm" className="rounded-full px-4 py-2 hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+              <Button variant="outline" size="sm" className="rounded-full px-3 py-1.5 text-xs hover:bg-primary/10 hover:text-primary transition-colors duration-300">
                 Popular
               </Button>
-              <Button variant="outline" size="sm" className="rounded-full px-4 py-2 hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+              <Button variant="outline" size="sm" className="rounded-full px-3 py-1.5 text-xs hover:bg-primary/10 hover:text-primary transition-colors duration-300">
                 Offers
               </Button>
-              <Button variant="outline" size="sm" className="rounded-full px-4 py-2 hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+              <Button variant="outline" size="sm" className="rounded-full px-3 py-1.5 text-xs hover:bg-primary/10 hover:text-primary transition-colors duration-300">
                 New Arrivals
               </Button>
-              <Button variant="outline" size="sm" className="rounded-full px-4 py-2 hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+              <Button variant="outline" size="sm" className="rounded-full px-3 py-1.5 text-xs hover:bg-primary/10 hover:text-primary transition-colors duration-300">
                 Prescriptions
               </Button>
             </div>
@@ -620,19 +624,19 @@ const Index = () => {
         </section>
         
         {/* Products Grid */}
-        <section className="mb-20">
-          <div className="flex items-center justify-between mb-10">
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold mb-2">
+              <h2 className="text-2xl font-bold mb-1">
                 All Products
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} available
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="rounded-full hidden sm:flex hover:bg-primary/10 hover:text-primary transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+              <Button variant="outline" size="sm" className="rounded-full hidden sm:flex hover:bg-primary/10 hover:text-primary transition-colors duration-300 h-8 px-3 text-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
                   <line x1="4" y1="21" x2="4" y2="14"></line>
                   <line x1="4" y1="10" x2="4" y2="3"></line>
                   <line x1="12" y1="21" x2="12" y2="12"></line>
@@ -645,8 +649,8 @@ const Index = () => {
                 </svg>
                 Filter
               </Button>
-              <Button variant="outline" size="sm" className="rounded-full hidden sm:flex hover:bg-primary/10 hover:text-primary transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+              <Button variant="outline" size="sm" className="rounded-full hidden sm:flex hover:bg-primary/10 hover:text-primary transition-colors duration-300 h-8 px-3 text-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
                   <path d="m3 16 4 4 4-4"></path>
                   <path d="M7 20V4"></path>
                   <path d="m21 8-4-4-4 4"></path>
@@ -654,8 +658,8 @@ const Index = () => {
                 </svg>
                 Sort
               </Button>
-              <Button variant="outline" size="icon" className="rounded-full sm:hidden hover:bg-primary/10 hover:text-primary transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <Button variant="outline" size="icon" className="rounded-full sm:hidden hover:bg-primary/10 hover:text-primary transition-colors duration-300 h-8 w-8">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="4" y1="21" x2="4" y2="14"></line>
                   <line x1="4" y1="10" x2="4" y2="3"></line>
                   <line x1="12" y1="21" x2="12" y2="12"></line>
@@ -671,26 +675,26 @@ const Index = () => {
           </div>
           
           {loading ? (
-            <div className="text-center py-16">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading products...</p>
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-3"></div>
+              <p className="text-muted-foreground text-sm">Loading products...</p>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-16 rounded-2xl bg-muted/50">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+            <div className="text-center py-12 rounded-xl bg-muted/50">
+              <div className="mx-auto w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
                   <circle cx="11" cy="11" r="8"></circle>
                   <path d="m21 21-4.3-4.3"></path>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">No products found</h3>
-              <p className="text-muted-foreground mb-6">Try adjusting your search or filter criteria</p>
-              <Button onClick={() => setSearchQuery("")} variant="default" className="rounded-full">
+              <h3 className="text-lg font-semibold mb-1">No products found</h3>
+              <p className="text-muted-foreground text-sm mb-4">Try adjusting your search or filter criteria</p>
+              <Button onClick={() => setSearchQuery("")} variant="default" className="rounded-full h-8 px-4 text-sm">
                 Clear Search
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -713,7 +717,7 @@ const Index = () => {
         </section>
 
         {/* Product Recommendations */}
-        <section className="mb-20">
+        <section className="mb-16">
           <ProductRecommendations 
             onProductClick={(productName) => {
               setSearchQuery(productName);
