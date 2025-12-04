@@ -12,9 +12,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle } from "lucide-react";
+import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ExcelUpload } from "@/components/ExcelUpload";
+import { IndianMedicineDatasetImport } from "@/components/IndianMedicineDatasetImport";
+
 import { seedDatabase } from "@/utils/seedData";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import SidebarBackground from "@/components/svgs/SidebarBackground";
@@ -181,7 +183,7 @@ const Owner = () => {
   const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
 
   // State for medicine data import
-  const [importSource, setImportSource] = useState<"manual" | "csv" | "api">("manual");
+  const [importSource, setImportSource] = useState<"manual" | "csv" | "api" | "indian_dataset">("manual");
   const [apiEndpoint, setApiEndpoint] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [importProgress, setImportProgress] = useState(0);
@@ -1613,6 +1615,23 @@ const Owner = () => {
                         </p>
                       </CardContent>
                     </Card>
+                    
+                    <Card 
+                      className={`cursor-pointer border-2 ${importSource === "indian_dataset" ? "border-primary" : ""}`}
+                      onClick={() => setImportSource("indian_dataset")}
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Download className="w-5 h-5" />
+                          Indian Medicine Dataset
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          Search and import from the Indian Medicine Dataset (250,000+ medicines)
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
 
                   {importSource === "manual" && (
@@ -1714,6 +1733,16 @@ const Owner = () => {
                           </CardContent>
                         </Card>
                       </div>
+                    </div>
+                  )}
+                  
+                  {importSource === "indian_dataset" && (
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold mb-4">Indian Medicine Dataset Import</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Search and import medicines from the comprehensive Indian Medicine Dataset containing over 250,000 medicines.
+                      </p>
+                      <IndianMedicineDatasetImport categories={categories} />
                     </div>
                   )}
                 </CardContent>
