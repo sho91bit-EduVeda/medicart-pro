@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { auth } from "@/integrations/firebase/config";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "@/integrations/firebase/config";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { setDoc, doc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ const Auth = () => {
   const prefersReducedMotion = useReducedMotion();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState(""); // New state for owner's name
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
 
@@ -41,7 +43,30 @@ const Auth = () => {
         toast.success("Welcome back!");
         navigate("/");
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        // For signup, we need to collect the owner's name
+        if (!name.trim()) {
+          toast.error("Please enter your name");
+          setLoading(false);
+          return;
+        }
+
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Update user profile with display name
+        await updateProfile(user, {
+          displayName: name
+        });
+        
+        // Save additional user info to Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          email: user.email,
+          name: name,
+          createdAt: new Date().toISOString(),
+          role: "owner"
+        });
+
         toast.success("Account created! You are now signed in.");
         navigate("/");
       }
@@ -118,11 +143,28 @@ const Auth = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
+              {!isLogin && (
+                <motion.div 
+                  className="space-y-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </motion.div>
+              )}
               <motion.div 
                 className="space-y-2"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 }}
+                transition={{ delay: isLogin ? 0.6 : 0.7 }}
               >
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -138,7 +180,7 @@ const Auth = () => {
                 className="space-y-2"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.7 }}
+                transition={{ delay: isLogin ? 0.7 : 0.8 }}
               >
                 <Label htmlFor="password">Password</Label>
                 <Input

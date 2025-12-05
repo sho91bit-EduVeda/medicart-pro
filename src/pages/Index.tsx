@@ -144,7 +144,8 @@ const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(""); // For header search bar
+  const [productsSearchQuery, setProductsSearchQuery] = useState(""); // For products section search bar
   const [loading, setLoading] = useState(true);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const { deliveryEnabled } = useFeatureFlags();
@@ -316,6 +317,20 @@ const Index = () => {
     };
   }, [searchTimeout]);
 
+  // Handle search input change for products section search bar
+  const handleProductsSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setProductsSearchQuery(value);
+  };
+
+  // Handle search submission for products section search bar
+  const handleProductsSearchSubmit = () => {
+    if (productsSearchQuery.trim()) {
+      setSearchQuery(productsSearchQuery); // Sync with main search query to show results
+      setShowSearchPopup(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Quick Links Sidebar - Only show when authenticated */}
@@ -341,52 +356,39 @@ const Index = () => {
               </div>
               <div>
                 {/* Desktop view - Full business name */}
-                <h1 className="text-2xl font-bold hidden sm:block">Kalyanam Pharmaceuticals</h1>
-                <p className="text-sm text-primary-foreground/90 hidden sm:block">Your Trusted Healthcare Partner</p>
+                <h1 className="hidden md:block text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
+                <p className="hidden md:block text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
                 
                 {/* Mobile view - Shortened business name */}
-                <div className="sm:hidden">
+                <div className="md:hidden">
                   <h1 className="text-xl font-bold">Kalyanam</h1>
                   <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
                 </div>
               </div>
             </div>
             
-            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1">
-              <motion.button 
-                className={`rounded-full px-4 py-2 transition-colors font-medium ${
-                  location.pathname === "/" 
-                    ? "bg-white/20 text-white" 
-                    : "text-primary-foreground hover:bg-white/20"
-                }`}
-                onClick={() => navigate("/")}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                Home
-              </motion.button>
-              <motion.button 
-                className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+              <Button 
+                variant="ghost" 
+                className="text-primary-foreground hover:bg-white/20"
                 onClick={() => setShowReviews(true)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 Reviews
-              </motion.button>
-              {/* Show Track Unavailable Medicines only when delivery is enabled */}
-              {deliveryEnabled && (
+              </Button>
+              {isAuthenticated && (
+                <Button 
+                  variant="ghost" 
+                  className="text-primary-foreground hover:bg-white/20"
+                  onClick={() => navigate("/owner#manage-products")}
+                >
+                  Inventory
+                </Button>
+              )}
+              {!isAuthenticated && (
                 <RequestMedicineSheet>
-                  <motion.button 
-                    className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  >
-                    Track Unavailable Medicines
-                  </motion.button>
+                  <Button variant="ghost" className="text-primary-foreground hover:bg-white/20">
+                    Request Medicine
+                  </Button>
                 </RequestMedicineSheet>
               )}
             </nav>
@@ -475,7 +477,7 @@ const Index = () => {
                       Dashboard
                     </motion.button>
                     <motion.button 
-                      className="rounded-full px-4 py-2 transition-colors font-medium flex items-center gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      className="rounded-full p-2 transition-colors flex items-center justify-center bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       onClick={async () => {
                         await signOut();
                         toast.success("Logged out successfully");
@@ -483,9 +485,9 @@ const Index = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                      title="Logout"
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
                     </motion.button>
                   </>
                 ) : (
@@ -503,7 +505,7 @@ const Index = () => {
                   />
                 )}
               </div>
-              
+
               <div className="hidden md:flex items-center gap-1">
                 {deliveryEnabled && (
                   <motion.button 
@@ -602,23 +604,10 @@ const Index = () => {
             )}
           </div>
         </div>
-      
-        {/* Announcement Marquee with animation */}
-        <motion.div 
-          className="sticky top-0 z-40"
-          initial={{ y: prefersReducedMotion ? 0 : -40, opacity: prefersReducedMotion ? 1 : 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ 
-            delay: prefersReducedMotion ? 0 : 0.3,
-            type: "spring", 
-            stiffness: 100, 
-            damping: 15,
-            duration: prefersReducedMotion ? 0 : undefined
-          }}
-        >
-          <AnnouncementMarquee />
-        </motion.div>
       </motion.header>
+
+      {/* Announcement Marquee */}
+      <AnnouncementMarquee />
 
       {/* Hidden LoginPopup trigger for mobile */}
       <div className="hidden">
@@ -695,12 +684,17 @@ const Index = () => {
                 type="search"
                 placeholder="Search for medicines, health products, brands..."
                 className="pl-10 pr-20 h-12 text-sm rounded-xl border-2 border-muted shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
-                value={searchQuery}
-                onChange={handleSearchChange}
+                value={productsSearchQuery}
+                onChange={handleProductsSearchChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleProductsSearchSubmit();
+                  }
+                }}
               />
               <motion.button 
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-lg px-4 h-8 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300 text-sm"
-                onClick={handleSearchSubmit}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-lg px-4 h-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 text-sm font-medium shadow-sm"
+                onClick={handleProductsSearchSubmit}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -947,7 +941,7 @@ const Index = () => {
                 <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Kalyanam Pharmaceuticals</h2>
               </div>
               <p className="text-muted-foreground text-sm">
-                Your trusted online medical store with quality products and detailed information. We deliver healthcare solutions right to your doorstep.
+                Your trusted healthcare partner delivering quality pharmaceutical products and expert solutions right to your doorstep.
               </p>
               <div className="flex gap-3">
                 <motion.button className="rounded-full p-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>

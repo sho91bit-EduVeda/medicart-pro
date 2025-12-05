@@ -22,11 +22,13 @@ import {
 } from "@/components/ui/dialog";
 import StoreReviewForm from "@/components/StoreReviewForm";
 import { motion, useScroll, useTransform, useInView, useAnimation } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth"; // Import useAuth hook
 
 export const HeroBanner = ({ discountPercentage }: { discountPercentage: number }) => {
   const [expandedFeature, setExpandedFeature] = useState<number | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const { deliveryEnabled, storeClosed } = useFeatureFlags(); // Use the new feature flags
+  const { isAuthenticated, userName } = useAuth(); // Get authentication state and user name
   
   // Animation refs and controls
   const ref = useRef(null);
@@ -108,7 +110,15 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
             >
-              Your <span className="text-primary">Trusted</span> Healthcare Partner
+              {isAuthenticated && userName ? (
+                <>
+                  Welcome, <span className="text-primary">{userName}</span>!
+                </>
+              ) : (
+                <>
+                  Your <span className="text-primary">Trusted</span> Healthcare Partner
+                </>
+              )}
             </motion.h1>
             
             <motion.p 
@@ -133,32 +143,34 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
                 </div>
               )}
               
-              {/* Leave a Store Review Button */}
-              <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
-                <DialogTrigger asChild>
-                  <motion.button 
-                    className="rounded-full px-6 py-3 flex items-center gap-2 bg-background hover:bg-accent transition-colors border-primary/30"
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  >
-                    <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                    Leave a Store Review
-                    <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  </motion.button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Store Review</DialogTitle>
-                  </DialogHeader>
-                  <StoreReviewForm 
-                    onClose={() => setShowReviewDialog(false)} 
-                    onSubmit={() => {
-                      // Refresh reviews if needed
-                    }} 
-                  />
-                </DialogContent>
-              </Dialog>
+              {/* Leave a Store Review Button - Hidden when owner is logged in */}
+              {!isAuthenticated && (
+                <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+                  <DialogTrigger asChild>
+                    <motion.button 
+                      className="rounded-full px-6 py-3 flex items-center gap-2 bg-background hover:bg-accent transition-colors border-primary/30"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    >
+                      <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                      Leave a Store Review
+                      <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                    </motion.button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Store Review</DialogTitle>
+                    </DialogHeader>
+                    <StoreReviewForm 
+                      onClose={() => setShowReviewDialog(false)} 
+                      onSubmit={() => {
+                        // Refresh reviews if needed
+                      }} 
+                    />
+                  </DialogContent>
+                </Dialog>
+              )}
             </motion.div>
           </motion.div>
           

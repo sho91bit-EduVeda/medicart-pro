@@ -67,20 +67,6 @@ export function QuickLinksSidebar() {
       icon: ShoppingCart,
       path: "/owner#orders",
       requiresAuth: true
-    },
-    {
-      id: "notifications",
-      label: "Notifications",
-      icon: Bell,
-      path: "/owner",
-      requiresAuth: true
-    },
-    {
-      id: "profile",
-      label: "Profile",
-      icon: User,
-      path: "/owner",
-      requiresAuth: true
     }
   ];
   

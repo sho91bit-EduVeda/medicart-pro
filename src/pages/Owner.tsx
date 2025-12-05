@@ -273,7 +273,7 @@ const Owner = () => {
     }
   }, [activeSection]);
 
-  const { isAuthenticated, isLoading, checkAuth, user } = useAuth();
+  const { isAuthenticated, isLoading, checkAuth, user, userName } = useAuth();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -1084,7 +1084,9 @@ const Owner = () => {
                 <div className="sm:hidden">
                   <h1 className="text-xl font-bold">Dashboard</h1>
                 </div>
-                <p className="text-sm text-primary-foreground/90 hidden sm:block">Manage your medical store</p>
+                <p className="text-sm text-primary-foreground/90 hidden sm:block">
+                  {userName ? `Welcome, ${userName}!` : "Manage your medical store"}
+                </p>
               </div>
             </motion.div>
             <div className="flex items-center gap-3">
@@ -1102,25 +1104,47 @@ const Owner = () => {
               <NotificationBell />
 
               
-              <Button variant="secondary" onClick={seedDatabase} className="flex items-center gap-2 hidden md:flex">
+              <motion.button 
+                className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium hidden md:flex items-center gap-2"
+                onClick={seedDatabase}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
                 <Database className="w-4 h-4" />
                 <span className="hidden sm:inline">Seed DB</span>
-              </Button>
-              <Button variant="default" onClick={() => navigate("/")} className="flex items-center gap-2 hidden md:flex">
+              </motion.button>
+              <motion.button 
+                className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium hidden md:flex items-center gap-2"
+                onClick={() => navigate("/")}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
                 <Store className="w-5 h-5" />
                 <span className="hidden sm:inline">View Store</span>
-              </Button>
-              <Button variant="destructive" onClick={handleLogout} className="flex items-center gap-2 hidden md:flex">
+              </motion.button>
+              <motion.button 
+                className="rounded-full p-2 transition-colors flex items-center justify-center bg-destructive text-destructive-foreground hover:bg-destructive/90 hidden md:flex"
+                onClick={handleLogout}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                title="Logout"
+              >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
-              
+              </motion.button>              
               {/* Mobile menu trigger - Moved to the extreme right */}
               <Sheet>
                 <SheetTrigger asChild className="md:hidden">
-                  <Button variant="ghost" size="icon" className="text-primary-foreground">
+                  <motion.button 
+                    className="rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  >
                     <Menu className="w-6 h-6" />
-                  </Button>
+                  </motion.button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[300px] sm:w-[340px]">
                   <SheetHeader>
@@ -1129,7 +1153,9 @@ const Owner = () => {
                       <span className="hidden sm:inline">Dashboard</span>
                       <span className="sm:hidden text-xl">Dashboard</span>
                     </SheetTitle>
-                    <p className="text-sm text-muted-foreground hidden sm:block">Manage your medical store</p>
+                    <p className="text-sm text-muted-foreground hidden sm:block">
+                      {userName ? `Welcome, ${userName}!` : "Manage your medical store"}
+                    </p>
                   </SheetHeader>
                   
                   <div className="mt-6 flex flex-col gap-2">

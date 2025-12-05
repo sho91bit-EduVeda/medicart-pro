@@ -10,7 +10,7 @@ interface StockStatusProps {
 
 export function StockStatus({ 
   quantity, 
-  lowStockThreshold = 10,
+  lowStockThreshold = 2, // Changed from 10 to 2
   className 
 }: StockStatusProps) {
   const { productReviews } = useFeatureFlags() // Using an existing flag as placeholder

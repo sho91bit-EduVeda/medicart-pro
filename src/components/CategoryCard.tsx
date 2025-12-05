@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { Pill, Stethoscope, Baby, Syringe } from "lucide-react";
 import { motion } from "framer-motion";
+import { Pill, Stethoscope, Baby, Syringe, Package, Bandage, Thermometer, Heart } from "lucide-react";
 
 interface CategoryCardProps {
   id: string;
@@ -15,10 +15,15 @@ interface CategoryCardProps {
 // Map category names to appropriate icons
 const getCategoryIcon = (categoryName: string) => {
   const lowerName = categoryName.toLowerCase();
-  if (lowerName.includes("baby")) return Baby;
-  if (lowerName.includes("medicine") || lowerName.includes("tablet")) return Pill;
-  if (lowerName.includes("health") || lowerName.includes("care")) return Stethoscope;
-  return Syringe;
+  if (lowerName.includes("baby") || lowerName.includes("infant")) return Baby;
+  if (lowerName.includes("medicine") || lowerName.includes("tablet") || lowerName.includes("capsule")) return Pill;
+  if (lowerName.includes("health") || lowerName.includes("care") || lowerName.includes("wellness")) return Stethoscope;
+  if (lowerName.includes("inject") || lowerName.includes("syringe")) return Syringe;
+  if (lowerName.includes("bottle") || lowerName.includes("liquid") || lowerName.includes("syrup")) return Package;
+  if (lowerName.includes("wound") || lowerName.includes("bandage") || lowerName.includes("first aid")) return Bandage;
+  if (lowerName.includes("temperature") || lowerName.includes("fever")) return Thermometer;
+  if (lowerName.includes("heart") || lowerName.includes("cardio")) return Heart;
+  return Pill; // Default icon
 };
 
 const CategoryCard = ({ id, name, description, imageUrl, productCount, variants }: CategoryCardProps) => {
@@ -50,7 +55,7 @@ const CategoryCard = ({ id, name, description, imageUrl, productCount, variants 
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5">
-            <IconComponent className="w-12 h-12 text-primary/30" />
+            <IconComponent className="w-12 h-12 text-primary" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
@@ -59,7 +64,7 @@ const CategoryCard = ({ id, name, description, imageUrl, productCount, variants 
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
           <div className="flex items-center gap-1.5 mb-1">
-            <IconComponent className="w-4 h-4" />
+            <IconComponent className="w-4 h-4 text-primary" />
             <h3 className="font-bold text-base group-hover:text-white transition-colors">{name}</h3>
           </div>
           {description && (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, PackagePlus } from "lucide-react";
+import { Heart, PackagePlus, Pill, Stethoscope, Baby, Syringe, Package, Bandage, Thermometer, HeartPulse } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";
 import { StockStatus } from "@/components/StockStatus";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
@@ -20,6 +20,19 @@ interface ProductCardProps {
   custom?: any;
 }
 
+// Map product names to appropriate icons
+const getProductIcon = (productName: string) => {
+  const lowerName = productName.toLowerCase();
+  if (lowerName.includes("baby") || lowerName.includes("infant")) return Baby;
+  if (lowerName.includes("syringe") || lowerName.includes("inject")) return Syringe;
+  if (lowerName.includes("bottle") || lowerName.includes("liquid") || lowerName.includes("syrup")) return Package;
+  if (lowerName.includes("health") || lowerName.includes("care") || lowerName.includes("wellness")) return Stethoscope;
+  if (lowerName.includes("wound") || lowerName.includes("bandage") || lowerName.includes("first aid")) return Bandage;
+  if (lowerName.includes("temperature") || lowerName.includes("fever") || lowerName.includes("thermometer")) return Thermometer;
+  if (lowerName.includes("heart") || lowerName.includes("cardio")) return HeartPulse;
+  return Pill; // Default icon for pills, tablets, capsules, etc.
+};
+
 export default function ProductCard({
   id,
   name,
@@ -37,6 +50,7 @@ export default function ProductCard({
   
   const [isWishlisted, setIsWishlisted] = useState(false);
   const lowStockControls = useAnimation();
+  const IconComponent = getProductIcon(name);
 
   useEffect(() => {
     setIsWishlisted(isInWishlist(id));
@@ -44,7 +58,7 @@ export default function ProductCard({
 
   // Pulse animation for low stock items
   useEffect(() => {
-    if (quantity > 0 && quantity <= 5) { // Low stock threshold
+    if (quantity > 0 && quantity <= 2) { // Low stock threshold
       lowStockControls.start({
         scale: [1, 1.05, 1],
         transition: {
@@ -104,13 +118,13 @@ export default function ProductCard({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center">
-            <span className="text-2xl">💊</span>
+          <div className="w-full h-full bg-gradient-to-br from-primary/5 to-secondary/5 flex items-center justify-center">
+            <IconComponent className="w-16 h-16 text-primary" />
           </div>
         )}
         
         <div className="absolute top-2 left-2">
-          <motion.div animate={quantity > 0 && quantity <= 5 ? lowStockControls : {}}>
+          <motion.div animate={quantity > 0 && quantity <= 2 ? lowStockControls : {}}>
             <StockStatus quantity={quantity} />
           </motion.div>
         </div>

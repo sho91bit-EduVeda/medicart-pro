@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { auth } from "@/integrations/firebase/config";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "@/integrations/firebase/config";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { setDoc, doc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,7 @@ interface LoginPopupProps {
 export const LoginPopup = ({ trigger }: LoginPopupProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState(""); // Add name state for signup
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -41,7 +43,30 @@ export const LoginPopup = ({ trigger }: LoginPopupProps) => {
         toast.success("Welcome back!");
         setIsOpen(false);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        // For signup, we need to collect the owner's name
+        if (!name.trim()) {
+          toast.error("Please enter your name");
+          setLoading(false);
+          return;
+        }
+
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Update user profile with display name
+        await updateProfile(user, {
+          displayName: name
+        });
+        
+        // Save additional user info to Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          email: user.email,
+          name: name,
+          createdAt: new Date().toISOString(),
+          role: "owner"
+        });
+
         toast.success("Account created! You are now signed in.");
         setIsOpen(false);
       }
@@ -60,6 +85,7 @@ export const LoginPopup = ({ trigger }: LoginPopupProps) => {
     if (!open) {
       setEmail("");
       setPassword("");
+      setName(""); // Reset name field
       setIsLogin(true);
       setShowSignupOption(false); // Reset signup visibility
     }
@@ -69,8 +95,8 @@ export const LoginPopup = ({ trigger }: LoginPopupProps) => {
   const handleDialogCloseMouseDown = () => {
     closeBtnTimer.current = setTimeout(() => {
       setShowSignupOption(true);
-      toast.info("Signup option unlocked for owner access", {
-        duration: 3000,
+      toast.info("Owner signup option unlocked! Enter your full name during signup.", {
+        duration: 5000,
       });
     }, 2000); // 2 seconds long press
   };
@@ -86,8 +112,8 @@ export const LoginPopup = ({ trigger }: LoginPopupProps) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'S') {
       e.preventDefault();
       setShowSignupOption(true);
-      toast.info("Signup option unlocked for owner access", {
-        duration: 3000,
+      toast.info("Owner signup option unlocked! Enter your full name during signup.", {
+        duration: 5000,
       });
     }
   };
@@ -131,6 +157,19 @@ export const LoginPopup = ({ trigger }: LoginPopupProps) => {
             </CardHeader>
             <CardContent className="pb-8 px-8">
               <form onSubmit={handleAuth} className="space-y-4">
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Enter your full name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="rounded-xl"
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -180,7 +219,8 @@ export const LoginPopup = ({ trigger }: LoginPopupProps) => {
                       </button>
                     ) : (
                       <p className="text-muted-foreground">
-                        Only authorized personnel
+                        Only authorized personnel. <br />
+                        <span className="text-xs text-primary/70">(Long press X or Ctrl+Shift+S to unlock signup)</span>
                       </p>
                     )}
                   </>

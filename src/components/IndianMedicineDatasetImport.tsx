@@ -128,25 +128,46 @@ export const IndianMedicineDatasetImport = ({ categories }: IndianMedicineDatase
     }));
   };
 
+  // Validate form data
+  const validateFormData = (): string[] => {
+    const errors: string[] = [];
+    
+    if (!formData.name.trim()) {
+      errors.push("Product name is required");
+    }
+    
+    if (!formData.category_id) {
+      errors.push("Category is required");
+    }
+    
+    if (!formData.original_price || parseFloat(formData.original_price) <= 0) {
+      errors.push("Valid original price is required");
+    }
+    
+    // Check for any missing fields that might be important
+    if (!formData.composition.trim()) {
+      errors.push("Composition field is empty - please fill in");
+    }
+    
+    if (!formData.uses.trim()) {
+      errors.push("Uses field is empty - please fill in");
+    }
+    
+    return errors;
+  };
+
   // Add medicine to Firestore
   const addMedicineToStore = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim()) {
-      toast.error("Product name is required");
+    // Validate form data
+    const errors = validateFormData();
+    
+    if (errors.length > 0) {
+      errors.forEach(error => toast.error(error));
       return;
     }
     
-    if (!formData.category_id) {
-      toast.error("Category is required");
-      return;
-    }
-    
-    if (!formData.original_price || parseFloat(formData.original_price) <= 0) {
-      toast.error("Valid original price is required");
-      return;
-    }
-
     try {
       await addDoc(collection(db, "products"), {
         name: formData.name,
@@ -272,10 +293,16 @@ export const IndianMedicineDatasetImport = ({ categories }: IndianMedicineDatase
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="mb-4 p-3 bg-muted rounded-md">
+                <p className="text-sm">
+                  <span className="font-medium">Note:</span> Fields marked with <span className="text-destructive">*</span> are required. 
+                  Please ensure all required fields are filled before submitting.
+                </p>
+              </div>
               <form onSubmit={addMedicineToStore} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Product Name *</Label>
+                    <Label htmlFor="name">Product Name <span className="text-destructive">*</span></Label>
                     <Input
                       id="name"
                       value={formData.name}
@@ -284,7 +311,7 @@ export const IndianMedicineDatasetImport = ({ categories }: IndianMedicineDatase
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category *</Label>
+                    <Label htmlFor="category">Category <span className="text-destructive">*</span></Label>
                     <Select 
                       value={formData.category_id} 
                       onValueChange={(value) => handleInputChange("category_id", value)}
@@ -316,7 +343,7 @@ export const IndianMedicineDatasetImport = ({ categories }: IndianMedicineDatase
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="uses">Uses</Label>
+                    <Label htmlFor="uses">Uses <span className="text-destructive">*</span></Label>
                     <Textarea
                       id="uses"
                       value={formData.uses}
@@ -325,7 +352,7 @@ export const IndianMedicineDatasetImport = ({ categories }: IndianMedicineDatase
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="composition">Composition</Label>
+                    <Label htmlFor="composition">Composition <span className="text-destructive">*</span></Label>
                     <Textarea
                       id="composition"
                       value={formData.composition}
@@ -347,7 +374,7 @@ export const IndianMedicineDatasetImport = ({ categories }: IndianMedicineDatase
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Original Price (₹) *</Label>
+                    <Label htmlFor="price">Original Price (₹) <span className="text-destructive">*</span></Label>
                     <Input
                       id="price"
                       type="number"

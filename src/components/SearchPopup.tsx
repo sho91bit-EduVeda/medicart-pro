@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useCart } from "@/hooks/useCart";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { db } from "@/integrations/firebase/config";
 import { collection, query, where, orderBy, limit, getDocs, addDoc, doc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
@@ -38,6 +39,10 @@ interface Product {
   categories?: {
     name: string;
   };
+  uses?: string;
+  side_effects?: string;
+  composition?: string;
+  stock_quantity?: number;
 }
 
 interface SearchPopupProps {
@@ -57,6 +62,7 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
   const { isAuthenticated } = useAuth();
   const { items: wishlistItems, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlist();
   const { addItem: addToCart } = useCart();
+  const { deliveryEnabled } = useFeatureFlags(); // Add this line
   
   const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('details');
   const [reviews, setReviews] = useState<any[]>([]);
@@ -289,7 +295,7 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
 
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <div className="flex justify-between items-center">
               <Button variant="outline" onClick={handleBackToList}>
@@ -299,17 +305,17 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
             </div>
           </DialogHeader>
           
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-8 h-full">
             {/* Product Image */}
-            <div className="rounded-xl overflow-hidden bg-muted">
+            <div className="rounded-xl overflow-hidden bg-muted flex items-center justify-center">
               {selectedProduct.image_url ? (
                 <img
                   src={selectedProduct.image_url}
                   alt={selectedProduct.name}
-                  className="w-full aspect-square object-cover"
+                  className="w-full h-full object-contain max-h-[400px]"
                 />
               ) : (
-                <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 py-12">
                   <span className="text-9xl">💊</span>
                 </div>
               )}
@@ -327,12 +333,6 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                 {!selectedProduct.in_stock && (
                   <div className="flex items-center gap-2 mb-4">
                     <Badge variant="destructive">Out of Stock</Badge>
-                    <RequestMedicineSheet medicineName={selectedProduct.name}>
-                      <Button className="flex-1" size="lg">
-                        <PackagePlus className="w-5 h-5 mr-2" />
-                        Request Availability
-                      </Button>
-                    </RequestMedicineSheet>
                   </div>
                 )}
               </div>
@@ -357,7 +357,53 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
 
               {/* Tab Content */}
               {activeTab === 'details' ? (
-                <>
+                <div className="space-y-6">
+                  {/* Product Details */}
+                  <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                    {selectedProduct.description && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">Description</h3>
+                        <p className="text-muted-foreground">{selectedProduct.description}</p>
+                      </div>
+                    )}
+                    
+                    {selectedProduct.uses && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">Uses</h3>
+                        <p className="text-muted-foreground">{selectedProduct.uses}</p>
+                      </div>
+                    )}
+                    
+                    {selectedProduct.composition && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">Composition</h3>
+                        <p className="text-muted-foreground">{selectedProduct.composition}</p>
+                      </div>
+                    )}
+                    
+                    {selectedProduct.side_effects && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">Side Effects</h3>
+                        <p className="text-muted-foreground">{selectedProduct.side_effects}</p>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-medium text-sm text-muted-foreground">Availability</h4>
+                        <p className={`font-medium ${selectedProduct.in_stock ? 'text-green-600' : 'text-red-600'}`}>
+                          {selectedProduct.in_stock ? 'In Stock' : 'Out of Stock'}
+                        </p>
+                      </div>
+                      {selectedProduct.stock_quantity !== undefined && selectedProduct.stock_quantity > 0 && (
+                        <div>
+                          <h4 className="font-medium text-sm text-muted-foreground">Stock Quantity</h4>
+                          <p className="font-medium">{selectedProduct.stock_quantity} units</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Pricing */}
                   <Card>
                     <CardContent className="p-6">
@@ -382,7 +428,8 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                         </div>
                       )}
                       <div className="flex gap-2 mt-4">
-                        {selectedProduct.in_stock && (
+                        {/* Request Availability button should only show for out-of-stock products */}
+                        {!selectedProduct.in_stock && (
                           <RequestMedicineSheet medicineName={selectedProduct.name}>
                             <Button className="flex-1" size="lg">
                               <PackagePlus className="w-5 h-5 mr-2" />
@@ -390,14 +437,17 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                             </Button>
                           </RequestMedicineSheet>
                         )}
-                        <RequestMedicineSheet medicineName={selectedProduct.name}>
-                          <Button
-                            variant="outline"
+                        {/* Add to Cart button should only show for in-stock products and when delivery is enabled */}
+                        {selectedProduct.in_stock && deliveryEnabled && (
+                          <Button 
+                            className="flex-1" 
                             size="lg"
+                            onClick={() => handleAddToCart(selectedProduct)}
                           >
-                            <PackagePlus className="w-5 h-5" />
+                            <ShoppingCart className="w-5 h-5 mr-2" />
+                            Add to Cart
                           </Button>
-                        </RequestMedicineSheet>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -418,7 +468,7 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                       </p>
                     </CardContent>
                   </Card>
-                </>
+                </div>
               ) : (
                 /* Reviews Tab */
                 <div className="space-y-6">
@@ -495,7 +545,7 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                   )}
 
                   {/* Reviews List */}
-                  <div className="space-y-4">
+                  <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
                     {reviewsLoading ? (
                       <div className="text-center py-4">Loading reviews...</div>
                     ) : reviews.length === 0 ? (
@@ -552,7 +602,7 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
   // Show product list
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Search Results for "{searchQuery}"</DialogTitle>
         </DialogHeader>
@@ -591,7 +641,7 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
               Found {products.length} product{products.length !== 1 ? 's' : ''} matching "{searchQuery}"
             </p>
             
-            <div className="grid gap-4 max-h-[60vh] overflow-y-auto">
+            <div className="grid gap-4">
               {products.map((product) => {
                 const discountedPrice = product.original_price * (1 - discountPercentage / 100);
                 const isWishlisted = isInWishlist(product.id);
@@ -624,14 +674,17 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                           <Button size="sm" onClick={() => handleViewDetails(product)}>
                             View Details
                           </Button>
-                          <RequestMedicineSheet medicineName={product.name}>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                            >
-                              <PackagePlus className="w-4 h-4" />
-                            </Button>
-                          </RequestMedicineSheet>
+                          {/* Request Availability button should only show for out-of-stock products */}
+                          {!product.in_stock && (
+                            <RequestMedicineSheet medicineName={product.name}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                              >
+                                <PackagePlus className="w-4 h-4" />
+                              </Button>
+                            </RequestMedicineSheet>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -639,7 +692,7 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                 );
               })}
             </div>
-            
+
             {/* Contact Info */}
             <Card>
               <CardContent className="p-4">
