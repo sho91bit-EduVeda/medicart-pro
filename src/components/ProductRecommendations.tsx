@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { db } from "@/integrations/firebase/config";
 import { collection, query, where, orderBy, limit, getDocs, doc, getDoc, DocumentData } from "firebase/firestore";
 import ProductCard from "./ProductCard";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { motion, useInView, useAnimation } from "framer-motion";
 
 interface Product {
   id: string;
@@ -36,6 +37,11 @@ export function ProductRecommendations({
   const [products, setProducts] = useState<Product[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [loading, setLoading] = useState(true);
+  
+  // Animation refs and controls
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: false, margin: "-20% 0px" });
+  const controls = useAnimation();
 
   useEffect(() => {
     if (productRecommendations) {
@@ -117,11 +123,43 @@ export function ProductRecommendations({
   }
 
   return (
-    <div className="py-12 bg-muted/30 rounded-2xl px-6">
-      <h2 className="text-3xl font-bold mb-8">
+    <motion.section 
+      ref={ref}
+      className="py-12 bg-muted/30 rounded-2xl px-6"
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      variants={{
+        hidden: { opacity: 0 },
+        visible: {
+          opacity: 1,
+          transition: {
+            staggerChildren: 0.05,
+            duration: 0.4
+          }
+        }
+      }}
+    >
+      <motion.h2 
+        className="text-3xl font-bold mb-8"
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 }
+        }}
+      >
         {currentProductId ? 'You May Also Like' : 'Recommended For You'}
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      </motion.h2>
+      <motion.div 
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.05
+            }
+          }
+        }}
+      >
         {products.map((product) => (
           <ProductCard
             key={product.id}
@@ -133,9 +171,13 @@ export function ProductRecommendations({
             in_stock={product.in_stock}
             quantity={product.stock_quantity || 0}
             onClick={onProductClick ? () => onProductClick(product.name) : undefined}
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
           />
         ))}
-      </div>
-    </div>
+      </motion.div>
+    </motion.section>
   );
 }

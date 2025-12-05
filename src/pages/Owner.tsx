@@ -33,6 +33,7 @@ import {
   SheetTrigger 
 } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 
 interface Category {
@@ -75,6 +76,7 @@ interface NavigationItem {
 const Owner = () => {
   const navigate = useNavigate();
   const { deliveryEnabled } = useFeatureFlags();
+  const prefersReducedMotion = useReducedMotion();
   const [categories, setCategories] = useState<Category[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -1002,6 +1004,34 @@ const Owner = () => {
     { id: "features", label: "Features", icon: Package, category: "Configuration" },
   ];
 
+  // Effect to handle hash changes for navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        // Remove the # prefix
+        const sectionId = hash.substring(1);
+        // Check if this section exists in our navigation items
+        const sectionExists = navigationItems.some(item => item.id === sectionId);
+        if (sectionExists) {
+          setActiveSection(sectionId);
+        }
+        // Clear the hash from the URL without triggering navigation
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    };
+
+    // Check initial hash on page load
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+
   // Effect to handle medicine request notifications
   useEffect(() => {
     const handleOpenRequest = (event: CustomEvent) => {
@@ -1019,15 +1049,6 @@ const Owner = () => {
     // Add event listener for opening medicine requests
     window.addEventListener('openMedicineRequest', handleOpenRequest as EventListener);
 
-    // Check if we need to open a specific request on initial load (for navigation from main page)
-    const hash = window.location.hash;
-    if (hash === '#requests') {
-      // Clear the hash
-      window.history.replaceState(null, '', window.location.pathname);
-      // Set the active section to requests
-      setActiveSection("requests");
-    }
-
     return () => {
       window.removeEventListener('openMedicineRequest', handleOpenRequest as EventListener);
     };
@@ -1035,11 +1056,26 @@ const Owner = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg">
+      {/* Header with animation */}
+      <motion.header 
+        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 100, 
+          damping: 15,
+          mass: 1
+        }}
+      >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <motion.div 
+              className="flex items-center gap-3"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
               <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10 shadow-lg">
                 <KalyanamLogo className="w-8 h-8" />
               </div>
@@ -1050,7 +1086,7 @@ const Owner = () => {
                 </div>
                 <p className="text-sm text-primary-foreground/90 hidden sm:block">Manage your medical store</p>
               </div>
-            </div>
+            </motion.div>
             <div className="flex items-center gap-3">
               {/* View Store Button - Visible on mobile and desktop */}
               <Button 
@@ -1168,43 +1204,71 @@ const Owner = () => {
             </div>
           </div>
         </div>
-      </header>
+      </motion.header>
       <div className="flex flex-1">
-        {/* Sidebar Navigation - Hidden on mobile */}
-        <nav className="w-64 bg-sidebar-background border-r p-4 hidden md:block relative overflow-hidden">
+        {/* Sidebar Navigation with animation - Hidden on mobile */}
+        <motion.nav 
+          className="w-64 bg-sidebar-background border-r p-4 hidden md:block relative overflow-hidden"
+          initial={{ x: -50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
           <SidebarBackground />
           <div className="relative z-10 space-y-3">
             {/* Group navigation items by category */}
-            {Array.from(new Set(navigationItems.map(item => item.category))).map(category => (
+            {Array.from(new Set(navigationItems.map(item => item.category))).map((category, categoryIndex) => (
               <div key={category}>
                 <h3 className="text-sm font-semibold text-sidebar-accent-foreground/70 px-4 py-2">{category}</h3>
                 {navigationItems
                   .filter(item => item.category === category)
-                  .map((item) => {
+                  .map((item, itemIndex) => {
                     const Icon = item.icon;
                     return (
-                      <Button
+                      <motion.div
                         key={item.id}
-                        variant={activeSection === item.id ? "default" : "ghost"}
-                        className="w-full justify-start gap-3 py-6 text-left hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200 pl-8"
-                        onClick={() => setActiveSection(item.id)}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 + (categoryIndex * 0.1) + (itemIndex * 0.05) }}
+                        whileHover={{ x: 5 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        <Icon className="w-5 h-5" />
-                        <span className="font-medium">{item.label}</span>
-                      </Button>
+                        <Button
+                          variant={activeSection === item.id ? "default" : "ghost"}
+                          className="w-full justify-start gap-3 py-6 text-left hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200 pl-8"
+                          onClick={() => setActiveSection(item.id)}
+                        >
+                          <Icon className="w-5 h-5" />
+                          <span className="font-medium">{item.label}</span>
+                        </Button>
+                      </motion.div>
                     );
                   })}
               </div>
             ))}
           </div>
-        </nav>
+        </motion.nav>
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 overflow-auto">
-          <div className="max-w-6xl mx-auto">
-            {/* Delivery Status Banner */}
+        {/* Main Content with animation */}
+        <motion.main 
+          className="flex-1 p-4 sm:p-6 overflow-auto"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <motion.div 
+            className="max-w-6xl mx-auto"
+            initial={{ y: 20 }}
+            animate={{ y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            {/* Delivery Status Banner with animation */}
             {!deliveryEnabled && (
-              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
+              <motion.div 
+                className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
                 <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
                 <div>
                   <h3 className="font-semibold text-yellow-800">Delivery Service Disabled</h3>
@@ -1219,52 +1283,79 @@ const Owner = () => {
                     Go to Feature Flags →
                   </Button>
                 </div>
-              </div>
+              </motion.div>
             )}
 
-            {/* Mobile Navigation - Redesigned for better UX */}
-            <div className="md:hidden mb-6">
+            {/* Mobile Navigation with animation - Redesigned for better UX */}
+            <motion.div 
+              className="md:hidden mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
               {/* Category Tabs for Mobile */}
               <div className="mb-4">
                 <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
-                  {Array.from(new Set(navigationItems.map(item => item.category))).map(category => (
-                    <Button
+                  {Array.from(new Set(navigationItems.map(item => item.category))).map((category, index) => (
+                    <motion.div
                       key={category}
-                      variant="outline"
-                      size="sm"
-                      className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full ${
-                        activeCategory === category 
-                          ? "bg-primary text-primary-foreground border-primary" 
-                          : "bg-background"
-                      }`}
-                      onClick={() => setActiveCategory(category)}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.3 + index * 0.1 }}
+                      whileHover={{ y: -3 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      <span className="whitespace-nowrap text-xs font-medium">{category}</span>
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full ${
+                          activeCategory === category 
+                            ? "bg-primary text-primary-foreground border-primary" 
+                            : "bg-background"
+                        }`}
+                        onClick={() => setActiveCategory(category)}
+                      >
+                        <span className="whitespace-nowrap text-xs font-medium">{category}</span>
+                      </Button>
+                    </motion.div>
                   ))}
                 </div>
               </div>
               
               {/* Navigation Items for Active Category */}
-              <div className="grid grid-cols-2 gap-3">
+              <motion.div 
+                className="grid grid-cols-2 gap-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
                 {navigationItems
                   .filter(item => item.category === activeCategory)
-                  .map((item) => {
+                  .map((item, index) => {
                     const Icon = item.icon;
                     return (
-                      <Button
+                      <motion.div
                         key={item.id}
-                        variant={activeSection === item.id ? "default" : "outline"}
-                        className="flex flex-col items-center justify-center h-20 gap-2 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-                        onClick={() => setActiveSection(item.id)}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 + index * 0.1 }}
+                        whileHover={{ y: -5, scale: 1.03 }}
+                        whileTap={{ scale: 0.95 }}
+                        whileFocus={{ scale: 1.03 }}
                       >
-                        <Icon className="w-6 h-6" />
-                        <span className="text-xs font-medium text-center">{item.label}</span>
-                      </Button>
+                        <Button
+                          variant={activeSection === item.id ? "default" : "outline"}
+                          className="flex flex-col items-center justify-center h-20 gap-2 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow w-full"
+                          onClick={() => setActiveSection(item.id)}
+                        >
+                          <Icon className="w-6 h-6" />
+                          <span className="text-xs font-medium text-center">{item.label}</span>
+                        </Button>
+                      </motion.div>
                     );
                   })}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
             {/* Content Sections */}
             {(activeSection === "add-product" || activeSection === "manage-products") && (
@@ -2587,8 +2678,8 @@ const Owner = () => {
                 </CardContent>
               </Card>
             )}
-          </div>
-        </main>
+          </motion.div>
+        </motion.main>
       </div>
       <RequestDetailsModal
         request={selectedRequest}

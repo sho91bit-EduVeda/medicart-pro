@@ -4,6 +4,7 @@ import { Heart, PackagePlus } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";
 import { StockStatus } from "@/components/StockStatus";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
+import { motion, useAnimation } from "framer-motion";
 
 interface ProductCardProps {
   id: string;
@@ -15,6 +16,8 @@ interface ProductCardProps {
   requires_prescription?: boolean;
   discountPercentage?: number;
   onClick?: () => void;
+  variants?: any;
+  custom?: any;
 }
 
 export default function ProductCard({
@@ -27,14 +30,31 @@ export default function ProductCard({
   requires_prescription = false,
   discountPercentage = 0,
   onClick,
+  variants,
+  custom,
 }: ProductCardProps) {
   const { items: wishlistItems, addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlist();
   
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const lowStockControls = useAnimation();
 
   useEffect(() => {
     setIsWishlisted(isInWishlist(id));
   }, [wishlistItems, id, isInWishlist]);
+
+  // Pulse animation for low stock items
+  useEffect(() => {
+    if (quantity > 0 && quantity <= 5) { // Low stock threshold
+      lowStockControls.start({
+        scale: [1, 1.05, 1],
+        transition: {
+          duration: 1.5,
+          repeat: Infinity,
+          repeatType: "reverse"
+        }
+      });
+    }
+  }, [quantity, lowStockControls]);
 
   const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -65,9 +85,16 @@ export default function ProductCard({
   const showRequestButton = quantity === 0;
 
   return (
-    <div 
+    <motion.div 
       className="group relative bg-card rounded-lg border overflow-hidden shadow-xs hover:shadow-sm transition-all duration-300 cursor-pointer"
       onClick={handleClick}
+      whileHover={{ y: -5 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      variants={variants || {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0 }
+      }}
     >
       <div className="aspect-square relative overflow-hidden">
         {image_url ? (
@@ -83,7 +110,9 @@ export default function ProductCard({
         )}
         
         <div className="absolute top-2 left-2">
-          <StockStatus quantity={quantity} />
+          <motion.div animate={quantity > 0 && quantity <= 5 ? lowStockControls : {}}>
+            <StockStatus quantity={quantity} />
+          </motion.div>
         </div>
 
         {showRequestButton && (
@@ -124,11 +153,6 @@ export default function ProductCard({
           </span>
         )}
         
-        {/* Show stock status prominently */}
-        <div className="mb-2">
-          <StockStatus quantity={quantity} />
-        </div>
-        
         {/* Show request button only when out of stock */}
         {showRequestButton && (
           <div className="flex flex-col gap-1.5">
@@ -144,6 +168,6 @@ export default function ProductCard({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/integrations/firebase/config";
@@ -53,6 +53,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { motion, useScroll, useTransform, useReducedMotion, useAnimation, useInView } from "framer-motion";
 
 interface Category {
   id: string;
@@ -91,6 +92,51 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, signOut, checkAuth, user } = useAuth();
+  const prefersReducedMotion = useReducedMotion();
+  const { scrollY } = useScroll();
+  
+  // Animation controls for scroll effects
+  const headerControls = useAnimation();
+  const heroControls = useAnimation();
+  
+  // Refs for scroll-triggered animations
+  const categoriesRef = useRef(null);
+  const productsRef = useRef(null);
+  const recommendationsRef = useRef(null);
+  const footerRef = useRef(null);
+  
+  const isCategoriesInView = useInView(categoriesRef, { once: false, margin: "-20% 0px" });
+  const isProductsInView = useInView(productsRef, { once: false, margin: "-20% 0px" });
+  const isRecommendationsInView = useInView(recommendationsRef, { once: false, margin: "-20% 0px" });
+  const isFooterInView = useInView(footerRef, { once: false, margin: "-20% 0px" });
+
+  // Scroll direction detection
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // Apply header animation based on scroll direction
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    
+    // Always keep header visible - removed the hiding behavior when scrolling down
+    headerControls.start({
+      y: 0,
+      transition: { duration: 0.3 }
+    });
+  }, [headerControls, prefersReducedMotion]);
 
   useEffect(() => {
     checkAuth();
@@ -275,8 +321,18 @@ const Index = () => {
       {/* Quick Links Sidebar - Only show when authenticated */}
       {isAuthenticated && <QuickLinksSidebar />}
       
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg">
+      {/* Header with scroll-aware animation */}
+      <motion.header 
+        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        initial={{ y: prefersReducedMotion ? 0 : -100 }}
+        animate={headerControls}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30,
+          mass: 1
+        }}
+      >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
@@ -298,36 +354,39 @@ const Index = () => {
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <motion.button 
                 className={`rounded-full px-4 py-2 transition-colors font-medium ${
                   location.pathname === "/" 
                     ? "bg-white/20 text-white" 
                     : "text-primary-foreground hover:bg-white/20"
                 }`}
                 onClick={() => navigate("/")}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 Home
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              </motion.button>
+              <motion.button 
                 className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
                 onClick={() => setShowReviews(true)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 Reviews
-              </Button>
+              </motion.button>
               {/* Show Track Unavailable Medicines only when delivery is enabled */}
               {deliveryEnabled && (
                 <RequestMedicineSheet>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <motion.button 
                     className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
                   >
                     Track Unavailable Medicines
-                  </Button>
+                  </motion.button>
                 </RequestMedicineSheet>
               )}
             </nav>
@@ -335,7 +394,7 @@ const Index = () => {
             {/* Search Box - Hidden on mobile */}
             <div className="hidden md:flex flex-1 max-w-md mx-4 relative">
               <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
                 <Input
                   type="search"
                   placeholder="Search medicines..."
@@ -348,14 +407,15 @@ const Index = () => {
                     }
                   }}
                 />
-                <Button 
-                  size="icon"
-                  variant="ghost"
+                <motion.button
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 text-primary-foreground hover:bg-white/20 z-10"
                   onClick={handleSearchSubmit}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
                   <Search className="w-4 h-4" />
-                </Button>
+                </motion.button>
               </div>
               
               {/* Autocomplete Suggestions */}
@@ -405,37 +465,40 @@ const Index = () => {
               <div className="hidden md:flex items-center gap-1">
                 {isAuthenticated ? (
                   <>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <motion.button 
                       className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
                       onClick={() => navigate("/owner")}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
                       Dashboard
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      className="rounded-full px-4 py-2 transition-colors font-medium flex items-center gap-2"
+                    </motion.button>
+                    <motion.button 
+                      className="rounded-full px-4 py-2 transition-colors font-medium flex items-center gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       onClick={async () => {
                         await signOut();
                         toast.success("Logged out successfully");
                       }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Logout</span>
-                    </Button>
+                    </motion.button>
                   </>
                 ) : (
                   <LoginPopup
                     trigger={
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <motion.button 
                         className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
                         Owner Login
-                      </Button>
+                      </motion.button>
                     }
                   />
                 )}
@@ -443,12 +506,13 @@ const Index = () => {
               
               <div className="hidden md:flex items-center gap-1">
                 {deliveryEnabled && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <motion.button 
                     className="rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
                     onClick={() => navigate("/wishlist")}
                     title="Wishlist"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
                   >
                     <Heart className="w-5 h-5" />
                     {wishlistItems.length > 0 && (
@@ -456,7 +520,7 @@ const Index = () => {
                         {wishlistItems.length}
                       </span>
                     )}
-                  </Button>
+                  </motion.button>
                 )}
               </div>
         
@@ -475,7 +539,7 @@ const Index = () => {
           {/* Mobile Search Box - Visible only on mobile */}
           <div className="md:hidden mt-3 px-2 relative">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
               <Input
                 type="search"
                 placeholder="Search medicines..."
@@ -488,14 +552,15 @@ const Index = () => {
                   }
                 }}
               />
-              <Button 
-                size="icon"
-                variant="ghost"
+              <motion.button
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 text-primary-foreground hover:bg-white/20 z-10"
                 onClick={handleSearchSubmit}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 <Search className="w-4 h-4" />
-              </Button>
+              </motion.button>
             </div>
             
             {/* Autocomplete Suggestions */}
@@ -538,11 +603,22 @@ const Index = () => {
           </div>
         </div>
       
-        {/* Announcement Marquee - Fixed at the bottom of the header */}
-        <div className="sticky top-0 z-40">
+        {/* Announcement Marquee with animation */}
+        <motion.div 
+          className="sticky top-0 z-40"
+          initial={{ y: prefersReducedMotion ? 0 : -40, opacity: prefersReducedMotion ? 1 : 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ 
+            delay: prefersReducedMotion ? 0 : 0.3,
+            type: "spring", 
+            stiffness: 100, 
+            damping: 15,
+            duration: prefersReducedMotion ? 0 : undefined
+          }}
+        >
           <AnnouncementMarquee />
-        </div>
-      </header>
+        </motion.div>
+      </motion.header>
 
       {/* Hidden LoginPopup trigger for mobile */}
       <div className="hidden">
@@ -560,12 +636,32 @@ const Index = () => {
       <SearchPopup 
         searchQuery={searchQuery} 
         isOpen={showSearchPopup} 
-        onClose={() => setShowSearchPopup(false)} 
+        onClose={() => {
+          setShowSearchPopup(false);
+          // Clear the search query when closing the popup to show all products
+          setSearchQuery("");
+        }} 
       />
 
       <div className="container mx-auto px-4 py-12">
-        {/* Categories Section */}
-        <section className="mb-16">
+        {/* Categories Section with scroll-triggered animation */}
+        <motion.section 
+          ref={categoriesRef}
+          className="mb-16"
+          initial="hidden"
+          animate={isCategoriesInView ? "visible" : "hidden"}
+          variants={{
+            hidden: { opacity: 0, y: 30 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: {
+                staggerChildren: 0.1,
+                duration: 0.5
+              }
+            }
+          }}
+        >
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl font-bold mb-1">Explore by Category</h2>
@@ -581,10 +677,14 @@ const Index = () => {
                 description={category.description}
                 imageUrl={categoryImages[category.name]}
                 productCount={products.filter(p => p.category_id === category.id).length}
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
               />
             ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* Search Bar and Filters */}
         <section className="mb-12">
@@ -598,33 +698,67 @@ const Index = () => {
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
-              <Button 
+              <motion.button 
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-lg px-4 h-8 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300 text-sm"
                 onClick={handleSearchSubmit}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 Search
-              </Button>
+              </motion.button>
             </div>
             
             <div className="mt-4 flex flex-wrap gap-2 justify-center">
-              <Button variant="outline" size="sm" className="rounded-full px-3 py-1.5 text-xs hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+              <motion.button className="rounded-full px-3 py-1.5 text-xs border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300"
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
                 Popular
-              </Button>
-              <Button variant="outline" size="sm" className="rounded-full px-3 py-1.5 text-xs hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+              </motion.button>
+              <motion.button className="rounded-full px-3 py-1.5 text-xs border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300"
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
                 Offers
-              </Button>
-              <Button variant="outline" size="sm" className="rounded-full px-3 py-1.5 text-xs hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+              </motion.button>
+              <motion.button className="rounded-full px-3 py-1.5 text-xs border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300"
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
                 New Arrivals
-              </Button>
-              <Button variant="outline" size="sm" className="rounded-full px-3 py-1.5 text-xs hover:bg-primary/10 hover:text-primary transition-colors duration-300">
+              </motion.button>
+              <motion.button className="rounded-full px-3 py-1.5 text-xs border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300"
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
                 Prescriptions
-              </Button>
+              </motion.button>
             </div>
           </div>
         </section>
         
-        {/* Products Grid */}
-        <section className="mb-16">
+        {/* Products Grid with scroll-triggered animation */}
+        <motion.section 
+          ref={productsRef}
+          className="mb-16"
+          initial="hidden"
+          animate={isProductsInView ? "visible" : "hidden"}
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.03,
+                duration: 0.4
+              }
+            }
+          }}
+        >
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl font-bold mb-1">
@@ -635,7 +769,11 @@ const Index = () => {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="rounded-full hidden sm:flex hover:bg-primary/10 hover:text-primary transition-colors duration-300 h-8 px-3 text-xs">
+              <motion.button className="rounded-full hidden sm:flex border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300 h-8 px-3 text-xs"
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
                   <line x1="4" y1="21" x2="4" y2="14"></line>
                   <line x1="4" y1="10" x2="4" y2="3"></line>
@@ -648,8 +786,12 @@ const Index = () => {
                   <line x1="17" y1="16" x2="23" y2="16"></line>
                 </svg>
                 Filter
-              </Button>
-              <Button variant="outline" size="sm" className="rounded-full hidden sm:flex hover:bg-primary/10 hover:text-primary transition-colors duration-300 h-8 px-3 text-xs">
+              </motion.button>
+              <motion.button className="rounded-full hidden sm:flex border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300 h-8 px-3 text-xs"
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
                   <path d="m3 16 4 4 4-4"></path>
                   <path d="M7 20V4"></path>
@@ -657,8 +799,12 @@ const Index = () => {
                   <path d="M17 4v16"></path>
                 </svg>
                 Sort
-              </Button>
-              <Button variant="outline" size="icon" className="rounded-full sm:hidden hover:bg-primary/10 hover:text-primary transition-colors duration-300 h-8 w-8">
+              </motion.button>
+              <motion.button className="rounded-full sm:hidden border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300 h-8 w-8"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="4" y1="21" x2="4" y2="14"></line>
                   <line x1="4" y1="10" x2="4" y2="3"></line>
@@ -670,7 +816,7 @@ const Index = () => {
                   <line x1="9" y1="8" x2="15" y2="8"></line>
                   <line x1="17" y1="16" x2="23" y2="16"></line>
                 </svg>
-              </Button>
+              </motion.button>
             </div>
           </div>
           
@@ -680,7 +826,12 @@ const Index = () => {
               <p className="text-muted-foreground text-sm">Loading products...</p>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-12 rounded-xl bg-muted/50">
+            <motion.div 
+              className="text-center py-12 rounded-xl bg-muted/50"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <div className="mx-auto w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-3">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
                   <circle cx="11" cy="11" r="8"></circle>
@@ -689,12 +840,29 @@ const Index = () => {
               </div>
               <h3 className="text-lg font-semibold mb-1">No products found</h3>
               <p className="text-muted-foreground text-sm mb-4">Try adjusting your search or filter criteria</p>
-              <Button onClick={() => setSearchQuery("")} variant="default" className="rounded-full h-8 px-4 text-sm">
+              <motion.button onClick={() => setSearchQuery("")} className="rounded-full h-8 px-4 text-sm bg-primary text-primary-foreground hover:bg-primary/90"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
                 Clear Search
-              </Button>
-            </div>
+              </motion.button>
+            </motion.div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <motion.div 
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.03
+                  }
+                }
+              }}
+            >
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -710,11 +878,15 @@ const Index = () => {
                     setSearchQuery(product.name);
                     setShowSearchPopup(true);
                   }}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 }
+                  }}
                 />
               ))}
-            </div>
+            </motion.div>
           )}
-        </section>
+        </motion.section>
 
         {/* Product Recommendations */}
         <section className="mb-16">
@@ -737,11 +909,37 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Footer */}
-      <footer className="bg-gradient-to-r from-primary/5 to-secondary/5 border-t">
+      {/* Footer with scroll-triggered animation */}
+      <motion.footer 
+        ref={footerRef}
+        className="bg-muted py-12 mt-16 border-t"
+        initial="hidden"
+        animate={isFooterInView ? "visible" : "hidden"}
+        variants={{
+          visible: { opacity: 1, y: 0 },
+          hidden: { opacity: 0, y: 20 }
+        }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="container mx-auto px-4 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-            <div className="space-y-4">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: {
+                  staggerChildren: 0.1
+                }
+              }
+            }}
+          >
+            <motion.div className="space-y-4" variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-secondary shadow-md">
                   <Store className="w-6 h-6 text-primary-foreground" />
@@ -752,89 +950,104 @@ const Index = () => {
                 Your trusted online medical store with quality products and detailed information. We deliver healthcare solutions right to your doorstep.
               </p>
               <div className="flex gap-3">
-                <Button variant="outline" size="icon" className="rounded-full">
+                <motion.button className="rounded-full p-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
                   </svg>
-                </Button>
-                <Button variant="outline" size="icon" className="rounded-full">
+                </motion.button>
+                <motion.button className="rounded-full p-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
                   </svg>
-                </Button>
-                <Button variant="outline" size="icon" className="rounded-full">
+                </motion.button>
+                <motion.button className="rounded-full p-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
                     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                     <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                   </svg>
-                </Button>
+                </motion.button>
               </div>
-            </div>
+            </motion.div>
             
-            <div>
+            <motion.div variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}>
               <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-3">
                 <li>
-                  <button 
-                    onClick={() => navigate("/")}
+                  <motion.button 
+                    onClick={() => navigate("/")} 
                     className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                    whileHover={{ x: 5 }}
                   >
                     Home
-                  </button>
+                  </motion.button>
                 </li>
                 <li>
-                  <button 
-                    onClick={() => navigate("/about")}
+                  <motion.button 
+                    onClick={() => navigate("/about")} 
                     className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                    whileHover={{ x: 5 }}
                   >
                     About Us
-                  </button>
+                  </motion.button>
                 </li>
                 <li>
-                  <button 
-                    onClick={() => navigate("/products")}
+                  <motion.button 
+                    onClick={() => navigate("/products")} 
                     className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                    whileHover={{ x: 5 }}
                   >
                     Products
-                  </button>
+                  </motion.button>
                 </li>
                 <li>
-                  <button 
-                    onClick={() => navigate("/offers")}
+                  <motion.button 
+                    onClick={() => navigate("/offers")} 
                     className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                    whileHover={{ x: 5 }}
                   >
                     Offers
-                  </button>
+                  </motion.button>
                 </li>
                 <li>
-                  <button 
-                    onClick={() => navigate("/contact")}
+                  <motion.button 
+                    onClick={() => navigate("/contact")} 
                     className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                    whileHover={{ x: 5 }}
                   >
                     Contact
-                  </button>
+                  </motion.button>
                 </li>
               </ul>
-            </div>
+            </motion.div>
             
-            <div>
+            <motion.div variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}>
               <h3 className="text-lg font-semibold mb-4">Categories</h3>
               <ul className="space-y-3">
                 {categories.slice(0, 5).map((category) => (
                   <li key={category.id}>
-                    <button 
-                      onClick={() => navigate(`/category/${category.id}`)}
+                    <motion.button 
+                      onClick={() => navigate(`/category/${category.id}`)} 
                       className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                      whileHover={{ x: 5 }}
                     >
                       {category.name}
-                    </button>
+                    </motion.button>
                   </li>
                 ))}
               </ul>
-            </div>
+            </motion.div>
             
-            <div>
+            <motion.div variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}>
               <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-3">
@@ -858,10 +1071,15 @@ const Index = () => {
                   <span className="text-sm">info@kalyanampharmacy.com</span>
                 </li>
               </ul>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
           
-          <div className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <motion.div 
+            className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
             <div className="flex flex-col items-center md:items-start gap-1">
               <p className="text-muted-foreground text-sm">
                 © 2025 Kalyanam Pharmaceuticals. All rights reserved.
@@ -882,28 +1100,31 @@ const Index = () => {
               </TooltipProvider>
             </div>
             <div className="flex gap-6">
-              <button 
-                onClick={() => navigate("/privacy-policy")}
+              <motion.button 
+                onClick={() => navigate("/privacy-policy")} 
                 className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                whileHover={{ y: -2 }}
               >
                 Privacy Policy
-              </button>
-              <button 
-                onClick={() => navigate("/terms-of-service")}
+              </motion.button>
+              <motion.button 
+                onClick={() => navigate("/terms-of-service")} 
                 className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                whileHover={{ y: -2 }}
               >
                 Terms of Service
-              </button>
-              <button 
-                onClick={() => navigate("/shipping-policy")}
+              </motion.button>
+              <motion.button 
+                onClick={() => navigate("/shipping-policy")} 
                 className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                whileHover={{ y: -2 }}
               >
                 Shipping Policy
-              </button>
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </footer>
+      </motion.footer>
     </div>
   );
 };

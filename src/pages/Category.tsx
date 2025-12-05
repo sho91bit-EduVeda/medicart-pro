@@ -18,6 +18,7 @@ import { MobileMenu } from "@/components/MobileMenu";
 import { SearchPopup } from "@/components/SearchPopup";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 import { LoginPopup } from "@/components/LoginPopup";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface Product {
   id: string;
@@ -47,6 +48,7 @@ interface Category {
 const CategoryPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
   const { isAuthenticated, signOut, checkAuth, user } = useAuth();
   const { deliveryEnabled } = useFeatureFlags();
   const { loadWishlist, items: wishlistItems, toggleItem } = useWishlist();
@@ -224,8 +226,18 @@ const CategoryPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg">
+      {/* Header with animation */}
+      <motion.header 
+        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        initial={{ y: prefersReducedMotion ? 0 : -100 }}
+        animate={{ y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30,
+          mass: 1
+        }}
+      >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
@@ -477,7 +489,7 @@ const CategoryPage = () => {
             )}
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* Hidden LoginPopup trigger for mobile */}
       <div className="hidden">
@@ -492,62 +504,150 @@ const CategoryPage = () => {
       <SearchPopup 
         searchQuery={searchQuery} 
         isOpen={showSearchPopup} 
-        onClose={() => setShowSearchPopup(false)} 
+        onClose={() => {
+          setShowSearchPopup(false);
+          // Clear the search query when closing the popup to show all products
+          setSearchQuery("");
+        }} 
       />
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+      {/* Main Content with animations */}
+      <motion.div 
+        className="container mx-auto px-4 py-8"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
+        <motion.div 
+          className="flex items-center gap-4 mb-8"
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.button 
+            className="rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 w-10"
+            onClick={() => navigate(-1)}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
             <ArrowLeft className="w-4 h-4" />
-          </Button>
+          </motion.button>
           <div>
-            <h1 className="text-3xl font-bold">{category?.name || "Category"}</h1>
+            <motion.h1 
+              className="text-3xl font-bold"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 }
+              }}
+            >
+              {category?.name || "Category"}
+            </motion.h1>
             {category?.description && (
-              <p className="text-muted-foreground mt-1">{category.description}</p>
+              <motion.p 
+                className="text-muted-foreground mt-1"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                transition={{ delay: 0.1 }}
+              >
+                {category.description}
+              </motion.p>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {products.length === 0 ? (
-          <div className="text-center py-12">
+          <motion.div 
+            className="text-center py-12"
+            variants={{
+              hidden: { opacity: 0, y: 30 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.2 }}
+          >
             <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">No products found</h3>
             <p className="text-muted-foreground mb-4">
               There are no products in this category yet.
             </p>
             <div className="flex flex-col gap-4 items-center">
-              <Button onClick={() => navigate("/")}>Back to Home</Button>
+              <motion.button 
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+                onClick={() => navigate("/")}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                Back to Home
+              </motion.button>
               <RequestMedicineSheet>
-                <Button variant="secondary" className="rounded-full flex items-center gap-2">
+                <motion.button 
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 rounded-full gap-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
                   <PackagePlus className="w-4 h-4" />
                   Request Medicine in this Category
-                </Button>
+                </motion.button>
               </RequestMedicineSheet>
             </div>
-          </div>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: {
+                  staggerChildren: 0.03
+                }
+              }
+            }}
+            transition={{ delay: 0.2 }}
+          >
             {products.map((product) => (
-              <ProductCard
+              <motion.div
                 key={product.id}
-                id={product.id}
-                name={product.name}
-                original_price={product.original_price}
-                discountPercentage={discountPercentage}
-                image_url={product.image_url}
-                in_stock={product.in_stock}
-                quantity={product.stock_quantity || 0}
-                requires_prescription={product.requires_prescription}
-                onClick={() => {
-                  setSearchQuery(product.name);
-                  setShowSearchPopup(true);
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
                 }}
-              />
+              >
+                <ProductCard
+                  id={product.id}
+                  name={product.name}
+                  original_price={product.original_price}
+                  discountPercentage={discountPercentage}
+                  image_url={product.image_url}
+                  in_stock={product.in_stock}
+                  quantity={product.stock_quantity || 0}
+                  requires_prescription={product.requires_prescription}
+                  onClick={() => {
+                    setSearchQuery(product.name);
+                    setShowSearchPopup(true);
+                  }}
+                />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };

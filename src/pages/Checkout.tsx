@@ -14,14 +14,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PrescriptionUpload } from "@/components/PrescriptionUpload";
 import { toast } from "sonner";
 import { Store, ShoppingBag, CreditCard, MapPin, FileText, ArrowLeft } from "lucide-react";
-import { useFeatureFlags } from "@/hooks/useFeatureFlags"; // Import feature flags hook
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { motion, useReducedMotion } from "framer-motion";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const { items, getTotal, clearCart } = useCart();
   const { createOrder, isLoading } = useOrder();
-  const { deliveryEnabled } = useFeatureFlags(); // Use the delivery feature flag
+  const { deliveryEnabled } = useFeatureFlags();
+  const prefersReducedMotion = useReducedMotion();
 
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("cod");
@@ -156,12 +158,32 @@ const Checkout = () => {
   const requiresPrescription = items.some(item => item.product?.requires_prescription);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+    <motion.div 
+      className="min-h-screen bg-background"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Header with animation */}
+      <motion.header 
+        className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
+        initial={{ y: prefersReducedMotion ? 0 : -100 }}
+        animate={{ y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30,
+          mass: 1
+        }}
+      >
         <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 sm:gap-2 cursor-pointer" onClick={() => navigate("/")}>
+            <motion.div 
+              className="flex items-center gap-1 sm:gap-2 cursor-pointer" 
+              onClick={() => navigate("/")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
                 <Store className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
               </div>
@@ -172,183 +194,254 @@ const Checkout = () => {
               <div className="block sm:hidden">
                 <h1 className="text-sm font-bold">Checkout</h1>
               </div>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            </motion.div>
+            <motion.button 
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9 sm:h-10 sm:w-10"
+              onClick={() => navigate(-1)}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
               <ArrowLeft className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Back</span>
-            </Button>
+            </motion.button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
-        <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
+      <motion.div 
+        className="container mx-auto px-2 sm:px-4 py-4 sm:py-8"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
+        <motion.div 
+          className="grid lg:grid-cols-3 gap-4 sm:gap-8"
+          variants={{
+            hidden: { opacity: 0, y: 30 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ delay: 0.2 }}
+        >
           {/* Left Column - Forms */}
-          <div className="lg:col-span-2 space-y-6">
+          <motion.div 
+            className="lg:col-span-2 space-y-6"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.3 }}
+          >
             {/* Delivery Address - Only show when delivery is enabled */}
             {deliveryEnabled && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5" />
-                    Delivery Address
-                  </CardTitle>
-                  <CardDescription>Enter your delivery details</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="full_name">Full Name *</Label>
-                      <Input
-                        id="full_name"
-                        name="full_name"
-                        value={formData.full_name}
-                        onChange={handleInputChange}
-                        className={errors.full_name ? "border-red-500" : ""}
-                      />
-                      {errors.full_name && <p className="text-xs text-red-500">{errors.full_name}</p>}
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="w-5 h-5" />
+                      Delivery Address
+                    </CardTitle>
+                    <CardDescription>Enter your delivery details</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="full_name">Full Name *</Label>
+                        <Input
+                          id="full_name"
+                          name="full_name"
+                          value={formData.full_name}
+                          onChange={handleInputChange}
+                          className={errors.full_name ? "border-red-500" : ""}
+                        />
+                        {errors.full_name && <p className="text-xs text-red-500">{errors.full_name}</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number *</Label>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          placeholder="1234567890"
+                          className={errors.phone ? "border-red-500" : ""}
+                        />
+                        {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                      </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number *</Label>
+                      <Label htmlFor="address_line1">Address Line 1 *</Label>
                       <Input
-                        id="phone"
-                        name="phone"
-                        value={formData.phone}
+                        id="address_line1"
+                        name="address_line1"
+                        value={formData.address_line1}
                         onChange={handleInputChange}
-                        placeholder="1234567890"
-                        className={errors.phone ? "border-red-500" : ""}
+                        placeholder="House No, Street Name"
+                        className={errors.address_line1 ? "border-red-500" : ""}
                       />
-                      {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="address_line1">Address Line 1 *</Label>
-                    <Input
-                      id="address_line1"
-                      name="address_line1"
-                      value={formData.address_line1}
-                      onChange={handleInputChange}
-                      placeholder="House No, Street Name"
-                      className={errors.address_line1 ? "border-red-500" : ""}
-                    />
-                    {errors.address_line1 && <p className="text-xs text-red-500">{errors.address_line1}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="address_line2">Address Line 2 (Optional)</Label>
-                    <Input
-                      id="address_line2"
-                      name="address_line2"
-                      value={formData.address_line2}
-                      onChange={handleInputChange}
-                      placeholder="Landmark, Area"
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
-                      <Input
-                        id="city"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        className={errors.city ? "border-red-500" : ""}
-                      />
-                      {errors.city && <p className="text-xs text-red-500">{errors.city}</p>}
+                      {errors.address_line1 && <p className="text-xs text-red-500">{errors.address_line1}</p>}
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="state">State *</Label>
+                      <Label htmlFor="address_line2">Address Line 2 (Optional)</Label>
                       <Input
-                        id="state"
-                        name="state"
-                        value={formData.state}
+                        id="address_line2"
+                        name="address_line2"
+                        value={formData.address_line2}
                         onChange={handleInputChange}
-                        className={errors.state ? "border-red-500" : ""}
+                        placeholder="Landmark, Area"
                       />
-                      {errors.state && <p className="text-xs text-red-500">{errors.state}</p>}
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="postal_code">Postal Code *</Label>
-                      <Input
-                        id="postal_code"
-                        name="postal_code"
-                        value={formData.postal_code}
-                        onChange={handleInputChange}
-                        placeholder="600001"
-                        className={errors.postal_code ? "border-red-500" : ""}
-                      />
-                      {errors.postal_code && <p className="text-xs text-red-500">{errors.postal_code}</p>}
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City *</Label>
+                        <Input
+                          id="city"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleInputChange}
+                          className={errors.city ? "border-red-500" : ""}
+                        />
+                        {errors.city && <p className="text-xs text-red-500">{errors.city}</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="state">State *</Label>
+                        <Input
+                          id="state"
+                          name="state"
+                          value={formData.state}
+                          onChange={handleInputChange}
+                          className={errors.state ? "border-red-500" : ""}
+                        />
+                        {errors.state && <p className="text-xs text-red-500">{errors.state}</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="postal_code">Postal Code *</Label>
+                        <Input
+                          id="postal_code"
+                          name="postal_code"
+                          value={formData.postal_code}
+                          onChange={handleInputChange}
+                          placeholder="600001"
+                          className={errors.postal_code ? "border-red-500" : ""}
+                        />
+                        {errors.postal_code && <p className="text-xs text-red-500">{errors.postal_code}</p>}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
             )}
 
             {/* Prescription Upload */}
             {requiresPrescription && (
-              <PrescriptionUpload onUploadComplete={setPrescriptionUrl} />
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                transition={{ delay: 0.5 }}
+              >
+                <PrescriptionUpload onUploadComplete={setPrescriptionUrl} />
+              </motion.div>
             )}
 
             {/* Payment Method */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5" />
-                  Payment Method
-                </CardTitle>
-                <CardDescription>
-                  {deliveryEnabled 
-                    ? "Select your preferred payment method" 
-                    : "Select your preferred payment method for in-store pickup"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                    <RadioGroupItem value="cod" id="cod" />
-                    <Label htmlFor="cod" className="flex-1 cursor-pointer">
-                      {deliveryEnabled ? "Cash on Delivery (COD)" : "Pay at Store"}
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2 p-3 border rounded-lg opacity-50">
-                    <RadioGroupItem value="online" id="online" disabled />
-                    <Label htmlFor="online" className="flex-1">
-                      Online Payment (Coming Soon)
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </CardContent>
-            </Card>
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ delay: 0.6 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5" />
+                    Payment Method
+                  </CardTitle>
+                  <CardDescription>
+                    {deliveryEnabled 
+                      ? "Select your preferred payment method" 
+                      : "Select your preferred payment method for in-store pickup"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                      <RadioGroupItem value="cod" id="cod" />
+                      <Label htmlFor="cod" className="flex-1 cursor-pointer">
+                        {deliveryEnabled ? "Cash on Delivery (COD)" : "Pay at Store"}
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 border rounded-lg opacity-50">
+                      <RadioGroupItem value="online" id="online" disabled />
+                      <Label htmlFor="online" className="flex-1">
+                        Online Payment (Coming Soon)
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+            </motion.div>
 
             {/* Order Notes */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Order Notes (Optional)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  placeholder={deliveryEnabled 
-                    ? "Any special instructions for your delivery?" 
-                    : "Any special instructions for your in-store pickup?"}
-                  rows={3}
-                />
-              </CardContent>
-            </Card>
-          </div>
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ delay: 0.7 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Order Notes (Optional)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    placeholder={deliveryEnabled 
+                      ? "Any special instructions for your delivery?" 
+                      : "Any special instructions for your in-store pickup?"}
+                    rows={3}
+                  />
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
 
           {/* Right Column - Order Summary */}
-          <div className="lg:col-span-1">
+          <motion.div 
+            className="lg:col-span-1"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.8 }}
+          >
             <Card className="sticky top-24">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -360,7 +453,15 @@ const Checkout = () => {
                 {/* Cart Items */}
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {items.map((item) => (
-                    <div key={item.id} className="flex gap-3">
+                    <motion.div 
+                      key={item.id} 
+                      className="flex gap-3"
+                      variants={{
+                        hidden: { opacity: 0, x: -20 },
+                        visible: { opacity: 1, x: 0 }
+                      }}
+                      transition={{ delay: 0.9 }}
+                    >
                       {item.product?.image_url ? (
                         <img
                           src={item.product.image_url}
@@ -379,7 +480,7 @@ const Checkout = () => {
                           ₹{((item.product?.original_price || 0) * item.quantity).toFixed(2)}
                         </p>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
 
@@ -416,14 +517,16 @@ const Checkout = () => {
                   </div>
                 </div>
 
-                <Button
-                  className="w-full"
-                  size="lg"
+                <motion.button
+                  className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-4 py-2"
                   onClick={handlePlaceOrder}
                   disabled={isLoading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
                   {isLoading ? "Placing Order..." : deliveryEnabled ? "Place Delivery Order" : "Place Pickup Order"}
-                </Button>
+                </motion.button>
 
                 <p className="text-xs text-center text-muted-foreground">
                   By placing this order, you agree to our terms and conditions
@@ -431,27 +534,37 @@ const Checkout = () => {
                 
                 {/* Show delivery info when enabled */}
                 {deliveryEnabled && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <motion.div 
+                    className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.0 }}
+                  >
                     <p className="text-sm text-blue-800 text-center">
                       🚚 Your order will be delivered within 2 hours
                     </p>
-                  </div>
+                  </motion.div>
                 )}
                 
                 {/* Show pickup info when disabled */}
                 {!deliveryEnabled && (
-                  <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <motion.div 
+                    className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.0 }}
+                  >
                     <p className="text-sm text-yellow-800 text-center">
                       🏪 Please visit our store to pickup your order
                     </p>
-                  </div>
+                  </motion.div>
                 )}
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 };
 

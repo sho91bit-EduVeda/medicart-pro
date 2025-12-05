@@ -13,6 +13,7 @@ import { ProductRecommendations } from "@/components/ProductRecommendations";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface Product {
   id: string;
@@ -33,6 +34,7 @@ interface Product {
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
   const [product, setProduct] = useState<Product | null>(null);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -116,20 +118,70 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      {/* Header with animation */}
+      <motion.header 
+        className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
+        initial={{ y: prefersReducedMotion ? 0 : -100 }}
+        animate={{ y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30,
+          mass: 1
+        }}
+      >
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <motion.button 
+            className="rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 w-10"
+            onClick={() => navigate("/")}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
             <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-xl font-bold">Product Details</h1>
+          </motion.button>
+          <motion.h1 
+            className="text-xl font-bold"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            Product Details
+          </motion.h1>
         </div>
-      </header>
+      </motion.header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Product Image */}
-          <div className="rounded-xl overflow-hidden bg-muted">
+      <motion.div 
+        className="container mx-auto px-4 py-8"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
+        <motion.div 
+          className="grid md:grid-cols-2 gap-8"
+          variants={{
+            hidden: { opacity: 0, y: 30 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ delay: 0.2 }}
+        >
+          {/* Product Image with animation */}
+          <motion.div 
+            className="rounded-xl overflow-hidden bg-muted"
+            variants={{
+              hidden: { opacity: 0, scale: 0.9 },
+              visible: { opacity: 1, scale: 1 }
+            }}
+            transition={{ delay: 0.3, type: "spring", stiffness: 300, damping: 20 }}
+          >
             {product.image_url ? (
               <img
                 src={product.image_url}
@@ -141,10 +193,17 @@ const ProductDetail = () => {
                 <span className="text-9xl">💊</span>
               </div>
             )}
-          </div>
+          </motion.div>
 
-          {/* Product Info */}
-          <div className="space-y-6">
+          {/* Product Info with animation */}
+          <motion.div 
+            className="space-y-6"
+            variants={{
+              hidden: { opacity: 0, y: 30 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.4 }}
+          >
             <div>
               {product.categories && (
                 <Badge variant="secondary" className="mb-3">
@@ -248,21 +307,35 @@ const ProductDetail = () => {
                 <p className="text-muted-foreground leading-relaxed">{product.side_effects}</p>
               </div>
             )}
-          </div>
+          </motion.div>
 
-          <div className="md:col-span-2 mt-8">
+          <motion.div 
+            className="md:col-span-2 mt-8"
+            variants={{
+              hidden: { opacity: 0, y: 30 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.4 }}
+          >
             <ProductReviewsSection productId={product.id} />
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        <div className="container mx-auto px-4">
+        <motion.div 
+          className="container mx-auto px-4"
+          variants={{
+            hidden: { opacity: 0, y: 30 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ delay: 0.5 }}
+        >
           <ProductRecommendations
             currentProductId={product.id}
             categoryId={product.category_id}
             limit={4}
           />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Package, Store, Search, Pill, Baby, Stethoscope, Syringe } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface Product {
   id: string;
@@ -29,6 +30,7 @@ interface Product {
 
 const Products = () => {
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -81,8 +83,18 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg">
+      {/* Header with animation */}
+      <motion.header 
+        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        initial={{ y: prefersReducedMotion ? 0 : -100 }}
+        animate={{ y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30,
+          mass: 1
+        }}
+      >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div 
@@ -98,88 +110,165 @@ const Products = () => {
               </div>
             </div>
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <motion.button 
               className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
               onClick={() => navigate("/")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               Back to Home
-            </Button>
+            </motion.button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Our Products</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+      {/* Main Content with animations */}
+      <motion.div 
+        className="container mx-auto px-4 py-12"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
+        <motion.div 
+          className="text-center mb-12"
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.h1 
+            className="text-4xl font-bold mb-4"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+          >
+            Our Products
+          </motion.h1>
+          <motion.p 
+            className="text-muted-foreground max-w-2xl mx-auto"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.1 }}
+          >
             Explore our wide range of quality medicines and healthcare products
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
-        {/* Search Bar */}
-        <div className="max-w-2xl mx-auto mb-12">
+        {/* Search Bar with animation */}
+        <motion.div 
+          className="max-w-2xl mx-auto mb-12"
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ delay: 0.2 }}
+        >
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-            <Input
-              type="search"
-              placeholder="Search for medicines, brands, or categories..."
-              className="pl-12 pr-4 py-6 text-base rounded-2xl border-2 border-muted shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileFocus={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <Input
+                type="search"
+                placeholder="Search for medicines, brands, or categories..."
+                className="pl-12 pr-4 py-6 text-base rounded-2xl border-2 border-muted shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Products Grid */}
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-16 rounded-2xl bg-muted/50">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <Search className="w-8 h-8 text-primary" />
+        {/* Products Grid with animation */}
+        <motion.div 
+          variants={{
+            hidden: { opacity: 0, y: 30 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ delay: 0.3 }}
+        >
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
-            <h3 className="text-xl font-semibold mb-2">No products found</h3>
-            <p className="text-muted-foreground mb-6">
-              {searchQuery ? "Try adjusting your search terms" : "We currently don't have any products listed"}
-            </p>
-            <Button onClick={() => setSearchQuery("")} variant="default" className="rounded-full">
-              Clear Search
-            </Button>
-          </div>
-        ) : (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">
-                {searchQuery ? "Search Results" : "All Products"}
-              </h2>
-              <p className="text-muted-foreground">
-                {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-16 rounded-2xl bg-muted/50">
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">No products found</h3>
+              <p className="text-muted-foreground mb-6">
+                {searchQuery ? "Try adjusting your search terms" : "We currently don't have any products listed"}
               </p>
+              <Button onClick={() => setSearchQuery("")} variant="default" className="rounded-full">
+                Clear Search
+              </Button>
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  original_price={product.original_price}
-                  discountPercentage={discountPercentage}
-                  image_url={product.image_url}
-                  in_stock={product.in_stock}
-                  quantity={product.stock_quantity || 0}
-                  requires_prescription={product.requires_prescription}
-                />
-              ))}
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">
+                  {searchQuery ? "Search Results" : "All Products"}
+                </h2>
+                <p className="text-muted-foreground">
+                  {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+                </p>
+              </div>
+              
+              <motion.div 
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.03
+                    }
+                  }
+                }}
+              >
+                {filteredProducts.map((product) => (
+                  <motion.div
+                    key={product.id}
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                  >
+                    <ProductCard
+                      id={product.id}
+                      name={product.name}
+                      original_price={product.original_price}
+                      discountPercentage={discountPercentage}
+                      image_url={product.image_url}
+                      in_stock={product.in_stock}
+                      quantity={product.stock_quantity || 0}
+                      requires_prescription={product.requires_prescription}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

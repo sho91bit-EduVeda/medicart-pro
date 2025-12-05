@@ -13,9 +13,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { motion, useReducedMotion } from "framer-motion";
 
 const Contact = () => {
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -86,8 +88,18 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg">
+      {/* Header with animation */}
+      <motion.header 
+        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        initial={{ y: prefersReducedMotion ? 0 : -100 }}
+        animate={{ y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30,
+          mass: 1
+        }}
+      >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div 
@@ -103,32 +115,82 @@ const Contact = () => {
               </div>
             </div>
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+            <motion.button 
+              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium flex items-center gap-2"
               onClick={() => navigate("/")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
-              <Home className="w-4 h-4 mr-2" />
-              Home
-            </Button>
+              <Home className="w-4 h-4" />
+              <span>Home</span>
+            </motion.button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Contact Us</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+      {/* Main Content with animations */}
+      <motion.div 
+        className="container mx-auto px-4 py-12"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
+        <motion.div 
+          className="text-center mb-12"
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.h1 
+            className="text-4xl font-bold mb-4"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+          >
+            Contact Us
+          </motion.h1>
+          <motion.p 
+            className="text-muted-foreground max-w-2xl mx-auto"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.1 }}
+          >
             Have questions or need assistance? Reach out to us through any of the channels below 
             or use the contact form to send us a message directly.
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <motion.div 
+          className="grid grid-cols-1 lg:grid-cols-2 gap-12"
+          variants={{
+            hidden: { opacity: 0, y: 30 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ delay: 0.2 }}
+        >
           {/* Contact Information */}
-          <div className="space-y-8">
+          <motion.div 
+            className="space-y-8"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.3 }}
+          >
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -172,67 +234,97 @@ const Contact = () => {
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Phone className="w-5 h-5" />
-                    Phone
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <a href="tel:+917905382771" className="text-lg font-semibold hover:text-primary transition-colors">
-                    079053 82771
-                  </a>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Mon-Sun: 8:00 AM - 11:00 PM
-                  </p>
-                </CardContent>
-              </Card>
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Phone className="w-5 h-5" />
+                      Phone
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <a href="tel:+917905382771" className="text-lg font-semibold hover:text-primary transition-colors">
+                      079053 82771
+                    </a>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Mon-Sun: 8:00 AM - 11:00 PM
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Mail className="w-5 h-5" />
-                    Email
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <a href="mailto:info@kalyanampharmacy.com" className="text-lg font-semibold hover:text-primary transition-colors">
-                    info@kalyanampharmacy.com
-                  </a>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    We'll respond within 24 hours
-                  </p>
-                </CardContent>
-              </Card>
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                transition={{ delay: 0.5 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Mail className="w-5 h-5" />
+                      Email
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <a href="mailto:info@kalyanampharmacy.com" className="text-lg font-semibold hover:text-primary transition-colors">
+                      info@kalyanampharmacy.com
+                    </a>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      We'll respond within 24 hours
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  Opening Hours
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  <li className="flex justify-between">
-                    <span>Monday - Sunday</span>
-                    <span className="font-medium">8:00 AM - 11:00 PM</span>
-                  </li>
-                </ul>
-                <div className="mt-4 p-3 bg-primary/5 rounded-lg">
-                  <p className="text-sm text-center">
-                    <span className="font-medium">Store Status:</span> 
-                    <span className="text-green-600 font-medium"> OPEN</span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ delay: 0.6 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    Opening Hours
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    <li className="flex justify-between">
+                      <span>Monday - Sunday</span>
+                      <span className="font-medium">8:00 AM - 11:00 PM</span>
+                    </li>
+                  </ul>
+                  <div className="mt-4 p-3 bg-primary/5 rounded-lg">
+                    <p className="text-sm text-center">
+                      <span className="font-medium">Store Status:</span> 
+                      <span className="text-green-600 font-medium"> OPEN</span>
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
 
           {/* Contact Form */}
-          <div>
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.7 }}
+          >
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -245,7 +337,14 @@ const Contact = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
+                  <motion.div 
+                    className="space-y-2"
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    transition={{ delay: 0.8 }}
+                  >
                     <Label htmlFor="name">Full Name</Label>
                     <Input
                       id="name"
@@ -255,9 +354,16 @@ const Contact = () => {
                       placeholder="Enter your full name"
                       required
                     />
-                  </div>
+                  </motion.div>
                   
-                  <div className="space-y-2">
+                  <motion.div 
+                    className="space-y-2"
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    transition={{ delay: 0.9 }}
+                  >
                     <Label htmlFor="email">Email Address</Label>
                     <Input
                       id="email"
@@ -268,9 +374,16 @@ const Contact = () => {
                       placeholder="Enter your email address"
                       required
                     />
-                  </div>
+                  </motion.div>
                   
-                  <div className="space-y-2">
+                  <motion.div 
+                    className="space-y-2"
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    transition={{ delay: 1.0 }}
+                  >
                     <Label htmlFor="subject">Subject</Label>
                     <Input
                       id="subject"
@@ -280,9 +393,16 @@ const Contact = () => {
                       placeholder="What is this regarding?"
                       required
                     />
-                  </div>
+                  </motion.div>
                   
-                  <div className="space-y-2">
+                  <motion.div 
+                    className="space-y-2"
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    transition={{ delay: 1.1 }}
+                  >
                     <Label htmlFor="message">Message</Label>
                     <Textarea
                       id="message"
@@ -293,12 +413,22 @@ const Contact = () => {
                       rows={5}
                       required
                     />
-                  </div>
+                  </motion.div>
                   
                   {/* Honey pot field for spam protection (hidden) */}
                   <input type="text" name="_honeypot" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
                   
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  <motion.button 
+                    className="w-full rounded-md bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 text-sm font-medium transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    transition={{ delay: 1.2, type: "spring", stiffness: 400, damping: 17 }}
+                    disabled={isSubmitting}
+                  >
                     {isSubmitting ? (
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
@@ -310,19 +440,34 @@ const Contact = () => {
                         <span>Send Message</span>
                       </div>
                     )}
-                  </Button>
+                  </motion.button>
                 </form>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
       
-      {/* Footer */}
-      <footer className="bg-gradient-to-r from-primary/5 to-secondary/5 border-t mt-12">
+      {/* Footer with animation */}
+      <motion.footer 
+        className="bg-gradient-to-r from-primary/5 to-secondary/5 border-t mt-12"
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.3, duration: 0.6 }}
+      >
         <div className="container mx-auto px-4 py-8">
-          <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex flex-col items-center md:items-start gap-1">
+          <motion.div 
+            className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.4 }}
+          >
+            <motion.div 
+              className="flex flex-col items-center md:items-start gap-1"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.5 }}
+            >
               <p className="text-muted-foreground text-sm">
                 © 2025 Kalyanam Pharmaceuticals. All rights reserved.
               </p>
@@ -340,30 +485,41 @@ const Contact = () => {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </div>
-            <div className="flex gap-6">
-              <button 
+            </motion.div>
+            <motion.div 
+              className="flex gap-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.6 }}
+            >
+              <motion.button 
                 onClick={() => navigate("/privacy-policy")}
                 className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                whileHover={{ y: -2 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 Privacy Policy
-              </button>
-              <button 
+              </motion.button>
+              <motion.button 
                 onClick={() => navigate("/terms-of-service")}
                 className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                whileHover={{ y: -2 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 Terms of Service
-              </button>
-              <button 
+              </motion.button>
+              <motion.button 
                 onClick={() => navigate("/shipping-policy")}
                 className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                whileHover={{ y: -2 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 Shipping Policy
-              </button>
-            </div>
-          </div>
+              </motion.button>
+            </motion.div>
+          </motion.div>
         </div>
-      </footer>
+      </motion.footer>
     </div>
   );
 };

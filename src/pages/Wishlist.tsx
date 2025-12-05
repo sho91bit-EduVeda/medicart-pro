@@ -8,6 +8,7 @@ import { ArrowLeft, Heart } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { useAuth } from "@/hooks/useAuth";
 import { SearchPopup } from "@/components/SearchPopup";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface Product {
   id: string;
@@ -25,6 +26,7 @@ interface Product {
 
 export default function Wishlist() {
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
   const { isAuthenticated, user } = useAuth();
   const { items: wishlistIds, loadWishlist } = useWishlist();
   const [products, setProducts] = useState<Product[]>([]);
@@ -90,68 +92,182 @@ export default function Wishlist() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <motion.header 
+        className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
+        initial={{ y: prefersReducedMotion ? 0 : -100 }}
+        animate={{ y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30,
+          mass: 1
+        }}
+      >
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <motion.button 
+            className="rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 w-10"
+            onClick={() => navigate("/")}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
             <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-xl font-bold">My Wishlist</h1>
+          </motion.button>
+          <motion.h1 
+            className="text-xl font-bold"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            My Wishlist
+          </motion.h1>
         </div>
-      </header>
+      </motion.header>
 
-      <div className="container mx-auto px-4 py-8">
+      <motion.div 
+        className="container mx-auto px-4 py-8"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
         {/* Search Popup */}
         <SearchPopup 
           searchQuery={searchQuery} 
           isOpen={showSearchPopup} 
-          onClose={() => setShowSearchPopup(false)} 
+          onClose={() => {
+            setShowSearchPopup(false);
+            // Clear the search query when closing the popup to show all products
+            setSearchQuery("");
+          }} 
         />
         
         {loading ? (
-          <div className="text-center py-12">
+          <motion.div 
+            className="text-center py-12"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ duration: 0.5 }}
+          >
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading wishlist...</p>
-          </div>
+          </motion.div>
         ) : products.length === 0 ? (
-          <div className="text-center py-20">
+          <motion.div 
+            className="text-center py-20"
+            variants={{
+              hidden: { opacity: 0, y: 30 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.2 }}
+          >
             <Heart className="w-24 h-24 mx-auto mb-6 text-muted-foreground" />
-            <h2 className="text-3xl font-bold mb-4">Your wishlist is empty</h2>
-            <p className="text-muted-foreground mb-8">
+            <motion.h2 
+              className="text-3xl font-bold mb-4"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ delay: 0.3 }}
+            >
+              Your wishlist is empty
+            </motion.h2>
+            <motion.p 
+              className="text-muted-foreground mb-8"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ delay: 0.4 }}
+            >
               Start adding products you love to your wishlist
-            </p>
-            <Button onClick={() => navigate("/")}>
+            </motion.p>
+            <motion.button 
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+              onClick={() => navigate("/")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ delay: 0.5, type: "spring", stiffness: 400, damping: 17 }}
+            >
               Browse Products
-            </Button>
-          </div>
+            </motion.button>
+          </motion.div>
         ) : (
-          <>
-            <div className="mb-8">
+          <motion.div 
+            variants={{
+              hidden: { opacity: 0, y: 30 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.2 }}
+          >
+            <motion.div 
+              className="mb-8"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ delay: 0.3 }}
+            >
               <h2 className="text-2xl font-bold">
                 {products.length} {products.length === 1 ? 'item' : 'items'} in your wishlist
               </h2>
-            </div>
+            </motion.div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <motion.div 
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.03
+                  }
+                }
+              }}
+              transition={{ delay: 0.4 }}
+            >
               {products.map((product) => (
-                <ProductCard
+                <motion.div
                   key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  original_price={product.original_price}
-                  discountPercentage={discountPercentage}
-                  image_url={product.image_url}
-                  in_stock={product.in_stock}
-                  quantity={product.stock_quantity || 0}
-                  onClick={() => {
-                    setSearchQuery(product.name);
-                    setShowSearchPopup(true);
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 }
                   }}
-                />
+                >
+                  <ProductCard
+                    id={product.id}
+                    name={product.name}
+                    original_price={product.original_price}
+                    discountPercentage={discountPercentage}
+                    image_url={product.image_url}
+                    in_stock={product.in_stock}
+                    quantity={product.stock_quantity || 0}
+                    onClick={() => {
+                      setSearchQuery(product.name);
+                      setShowSearchPopup(true);
+                    }}
+                  />
+                </motion.div>
               ))}
-            </div>
-          </>
+            </motion.div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }

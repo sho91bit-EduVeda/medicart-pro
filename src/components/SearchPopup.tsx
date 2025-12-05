@@ -272,6 +272,8 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
 
   const handleBackToList = () => {
     setSelectedProduct(null);
+    // Reset the search to show all results again
+    searchProducts();
   };
 
   // If a product is selected, show its details

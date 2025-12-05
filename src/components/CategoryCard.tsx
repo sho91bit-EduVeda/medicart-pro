@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Pill, Stethoscope, Baby, Syringe } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface CategoryCardProps {
   id: string;
@@ -8,6 +9,7 @@ interface CategoryCardProps {
   description?: string;
   imageUrl?: string;
   productCount?: number;
+  variants?: any;
 }
 
 // Map category names to appropriate icons
@@ -19,14 +21,25 @@ const getCategoryIcon = (categoryName: string) => {
   return Syringe;
 };
 
-const CategoryCard = ({ id, name, description, imageUrl, productCount }: CategoryCardProps) => {
+const CategoryCard = ({ id, name, description, imageUrl, productCount, variants }: CategoryCardProps) => {
   const navigate = useNavigate();
   const IconComponent = getCategoryIcon(name);
 
   return (
-    <Card 
-      className="group overflow-hidden cursor-pointer transition-all duration-500 hover:shadow-xl rounded-xl border-0 bg-gradient-to-br from-card to-muted shadow-sm hover:shadow-primary/10"
+    <motion.div
+      className="group overflow-hidden cursor-pointer rounded-xl border-0 bg-gradient-to-br from-card to-muted shadow-sm"
       onClick={() => navigate(`/category/${id}`)}
+      whileHover={{
+        y: -8,
+        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+        backgroundColor: "hsl(var(--primary) / 0.05)"
+      }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      variants={variants || {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0 }
+      }}
     >
       <div className="relative aspect-video overflow-hidden">
         {imageUrl ? (
@@ -59,7 +72,7 @@ const CategoryCard = ({ id, name, description, imageUrl, productCount }: Categor
           )}
         </div>
       </div>
-    </Card>
+    </motion.div>
   );
 };
 

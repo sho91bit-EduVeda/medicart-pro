@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Store, Percent, Calendar, Clock, Tag } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface Offer {
   id: string;
@@ -21,6 +22,7 @@ interface Offer {
 
 const Offers = () => {
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
   const [activeTab, setActiveTab] = useState("current");
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,8 +114,18 @@ const Offers = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg">
+      {/* Header with animation */}
+      <motion.header 
+        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        initial={{ y: prefersReducedMotion ? 0 : -100 }}
+        animate={{ y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30,
+          mass: 1
+        }}
+      >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div 
@@ -129,61 +141,133 @@ const Offers = () => {
               </div>
             </div>
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <motion.button 
               className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
               onClick={() => navigate("/")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               Back to Home
-            </Button>
+            </motion.button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Special Offers</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+      {/* Main Content with animations */}
+      <motion.div 
+        className="container mx-auto px-4 py-12"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
+        <motion.div 
+          className="text-center mb-12"
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.h1 
+            className="text-4xl font-bold mb-4"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+          >
+            Special Offers
+          </motion.h1>
+          <motion.p 
+            className="text-muted-foreground max-w-2xl mx-auto"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.1 }}
+          >
             Take advantage of our exclusive deals and discounts on quality medicines and healthcare products
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
-        {/* Offer Tabs */}
-        <div className="flex justify-center mb-8">
+        {/* Offer Tabs with animation */}
+        <motion.div 
+          className="flex justify-center mb-8"
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ delay: 0.2 }}
+        >
           <div className="inline-flex p-1 bg-muted rounded-lg">
-            <Button
-              variant={activeTab === "current" ? "default" : "ghost"}
-              className="rounded-md"
+            <motion.button
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${activeTab === "current" ? "bg-primary text-primary-foreground hover:bg-primary/90" : "hover:bg-accent hover:text-accent-foreground"}`}
               onClick={() => setActiveTab("current")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               Current Offers
-            </Button>
-            <Button
-              variant={activeTab === "expired" ? "default" : "ghost"}
-              className="rounded-md"
+            </motion.button>
+            <motion.button
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${activeTab === "expired" ? "bg-primary text-primary-foreground hover:bg-primary/90" : "hover:bg-accent hover:text-accent-foreground"}`}
               onClick={() => setActiveTab("expired")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               Expired
-            </Button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Offers Content */}
-        <div className="max-w-4xl mx-auto">
+        {/* Offers Content with animation */}
+        <motion.div 
+          className="max-w-4xl mx-auto"
+          variants={{
+            hidden: { opacity: 0, y: 30 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ delay: 0.3 }}
+        >
           {activeTab === "current" && (
             <div className="space-y-6">
               {currentOffers.length > 0 ? (
-                currentOffers.map(renderOfferCard)
+                currentOffers.map((offer, index) => (
+                  <motion.div
+                    key={offer.id}
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    transition={{ delay: 0.4 + index * 0.1 }}
+                  >
+                    {renderOfferCard(offer)}
+                  </motion.div>
+                ))
               ) : (
-                <div className="text-center py-12">
+                <motion.div 
+                  className="text-center py-12"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 }
+                  }}
+                  transition={{ delay: 0.4 }}
+                >
                   <Percent className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">No Current Offers</h3>
                   <p className="text-muted-foreground">
                     Check back later for exciting deals and discounts!
                   </p>
-                </div>
+                </motion.div>
               )}
             </div>
           )}
@@ -191,64 +275,112 @@ const Offers = () => {
           {activeTab === "expired" && (
             <div className="space-y-6">
               {expiredOffers.length > 0 ? (
-                expiredOffers.map(renderOfferCard)
+                expiredOffers.map((offer, index) => (
+                  <motion.div
+                    key={offer.id}
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    transition={{ delay: 0.4 + index * 0.1 }}
+                  >
+                    {renderOfferCard(offer)}
+                  </motion.div>
+                ))
               ) : (
-                <div className="text-center py-12">
+                <motion.div 
+                  className="text-center py-12"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 }
+                  }}
+                  transition={{ delay: 0.4 }}
+                >
                   <Clock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">No Expired Offers</h3>
                   <p className="text-muted-foreground">
                     No offers have expired yet. Check current offers to take advantage of our deals!
                   </p>
-                </div>
+                </motion.div>
               )}
             </div>
           )}
-        </div>
+        </motion.div>
 
-        {/* How to Redeem */}
-        <Card className="max-w-4xl mx-auto mt-16">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Tag className="w-5 h-5" />
-              How to Redeem Offers
-            </CardTitle>
-            <CardDescription>
-              Simple steps to avail our special discounts
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-primary font-bold">1</span>
-                </div>
-                <h3 className="font-semibold mb-2">Shop Products</h3>
-                <p className="text-sm text-muted-foreground">
-                  Browse and add discounted products to your cart
-                </p>
+        {/* How to Redeem with animation */}
+        <motion.div 
+          className="max-w-4xl mx-auto mt-16"
+          variants={{
+            hidden: { opacity: 0, y: 30 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="w-5 h-5" />
+                How to Redeem Offers
+              </CardTitle>
+              <CardDescription>
+                Simple steps to avail our special discounts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <motion.div 
+                  className="text-center"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 }
+                  }}
+                  transition={{ delay: 0.6 }}
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-primary font-bold">1</span>
+                  </div>
+                  <h3 className="font-semibold mb-2">Shop Products</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Browse and add discounted products to your cart
+                  </p>
+                </motion.div>
+                <motion.div 
+                  className="text-center"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 }
+                  }}
+                  transition={{ delay: 0.7 }}
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-primary font-bold">2</span>
+                  </div>
+                  <h3 className="font-semibold mb-2">Apply Discount</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enter promo code at checkout or mention offer to pharmacist
+                  </p>
+                </motion.div>
+                <motion.div 
+                  className="text-center"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 }
+                  }}
+                  transition={{ delay: 0.8 }}
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-primary font-bold">3</span>
+                  </div>
+                  <h3 className="font-semibold mb-2">Save Money</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enjoy instant savings on your purchase
+                  </p>
+                </motion.div>
               </div>
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-primary font-bold">2</span>
-                </div>
-                <h3 className="font-semibold mb-2">Apply Discount</h3>
-                <p className="text-sm text-muted-foreground">
-                  Enter promo code at checkout or mention offer to pharmacist
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-primary font-bold">3</span>
-                </div>
-                <h3 className="font-semibold mb-2">Save Money</h3>
-                <p className="text-sm text-muted-foreground">
-                  Enjoy instant savings on your purchase
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

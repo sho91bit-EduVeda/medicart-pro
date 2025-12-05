@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 
 const NotFound = () => {
   const location = useLocation();
@@ -9,15 +10,59 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-gray-600">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 underline hover:text-blue-700">
+    <motion.div 
+      className="flex min-h-screen items-center justify-center bg-gray-100"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div 
+        className="text-center"
+        initial={{ y: 30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30,
+          mass: 1,
+          delay: 0.1
+        }}
+      >
+        <motion.h1 
+          className="mb-4 text-4xl font-bold"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 300, 
+            damping: 20,
+            mass: 1,
+            delay: 0.2
+          }}
+        >
+          404
+        </motion.h1>
+        <motion.p 
+          className="mb-4 text-xl text-gray-600"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          Oops! Page not found
+        </motion.p>
+        <motion.a 
+          href="/" 
+          className="text-blue-500 underline hover:text-blue-700 inline-block"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
           Return to Home
-        </a>
-      </div>
-    </div>
+        </motion.a>
+      </motion.div>
+    </motion.div>
   );
 };
 

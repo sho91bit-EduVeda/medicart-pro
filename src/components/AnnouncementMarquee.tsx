@@ -100,7 +100,7 @@ const AnnouncementMarquee = () => {
         
         .animate-marquee {
           padding-left: 100%;
-          animation: marquee 60s linear infinite; /* Slowed down from 45s to 60s */
+          animation: marquee 90s linear infinite; /* Slowed down from 60s to 90s */
           line-height: 1.2;
         }
         

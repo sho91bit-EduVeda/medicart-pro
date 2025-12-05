@@ -2,14 +2,26 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, ShoppingBag, User, CreditCard, Shield, Phone } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 const TermsOfService = () => {
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg">
+      {/* Header with animation */}
+      <motion.header 
+        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        initial={{ y: prefersReducedMotion ? 0 : -100 }}
+        animate={{ y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30,
+          mass: 1
+        }}
+      >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div 
@@ -20,45 +32,109 @@ const TermsOfService = () => {
                 <FileText className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
-                <p className="text-sm text-primary-foreground/90">Terms of Service</p>
+                <motion.h1 
+                  className="text-2xl font-bold"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  Kalyanam Pharmaceuticals
+                </motion.h1>
+                <motion.p 
+                  className="text-sm text-primary-foreground/90"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  Terms of Service
+                </motion.p>
               </div>
             </div>
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <motion.button 
               className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
               onClick={() => navigate("/")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               Back to Home
-            </Button>
+            </motion.button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Terms of Service</h1>
-          <p className="text-muted-foreground">
+      {/* Main Content with animations */}
+      <motion.div 
+        className="container mx-auto px-4 py-12 max-w-4xl"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
+        <motion.div 
+          className="text-center mb-12"
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.h1 
+            className="text-4xl font-bold mb-4"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+          >
+            Terms of Service
+          </motion.h1>
+          <motion.p 
+            className="text-muted-foreground"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            transition={{ delay: 0.1 }}
+          >
             Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Agreement to Terms
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="prose prose-gray max-w-none">
-            <p className="text-muted-foreground mb-6">
-              These Terms of Service ("Terms") govern your access to and use of the services, 
-              websites, and applications offered by Kalyanam Pharmaceuticals ("we", "our", or "us"). 
-              By accessing or using our services, you agree to be bound by these Terms.
-            </p>
+        <motion.div 
+          variants={{
+            hidden: { opacity: 0, y: 30 },
+            visible: { opacity: 1, y: 0 }
+          }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Agreement to Terms
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="prose prose-gray max-w-none">
+              <motion.p 
+                className="text-muted-foreground mb-6"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                transition={{ delay: 0.3 }}
+              >
+                These Terms of Service ("Terms") govern your access to and use of the services, 
+                websites, and applications offered by Kalyanam Pharmaceuticals ("we", "our", or "us"). 
+                By accessing or using our services, you agree to be bound by these Terms.
+              </motion.p>
 
             <h2 className="text-2xl font-bold mt-8 mb-4 flex items-center gap-2">
               <User className="w-5 h-5" />
@@ -163,7 +239,8 @@ const TermsOfService = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
+    </motion.div>
     </div>
   );
 };
