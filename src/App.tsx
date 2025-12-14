@@ -20,6 +20,7 @@ import TermsOfService from "./pages/TermsOfService";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import NotFound from "./pages/NotFound";
 import ProductSelectorDemo from "./pages/ProductSelectorDemo";
+import AccordionDemo from "./components/AccordionDemo";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/shipping-policy" element={<ShippingPolicy />} />
             <Route path="/product-selector-demo" element={<ProductSelectorDemo />} />
+            <Route path="/accordion-demo" element={<AccordionDemo />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

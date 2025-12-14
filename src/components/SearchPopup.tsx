@@ -49,10 +49,17 @@ interface SearchPopupProps {
   searchQuery: string;
   isOpen: boolean;
   onClose: () => void;
-  initialTab?: 'details' | 'reviews'; // Add this new prop
+  initialTab?: 'details' | 'reviews';
+  showBackButton?: boolean; // Add this new prop
 }
 
-export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'details' }: SearchPopupProps) {
+export function SearchPopup({ 
+  searchQuery, 
+  isOpen, 
+  onClose, 
+  initialTab = 'details',
+  showBackButton = true // Default to true to maintain existing behavior
+}: SearchPopupProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
@@ -295,59 +302,61 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
 
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4">
           <DialogHeader>
             <div className="flex justify-between items-center">
-              <Button variant="outline" onClick={handleBackToList}>
-                Back to Results
-              </Button>
+              {showBackButton && (
+                <Button variant="outline" onClick={handleBackToList} className="text-sm h-8 px-3">
+                  Back to Results
+                </Button>
+              )}
               <div className="flex-1"></div> {/* Spacer to balance the layout */}
             </div>
           </DialogHeader>
           
-          <div className="grid md:grid-cols-2 gap-8 h-full">
+          <div className="grid md:grid-cols-2 gap-6 h-full">
             {/* Product Image */}
-            <div className="rounded-xl overflow-hidden bg-muted flex items-center justify-center">
+            <div className="rounded-xl overflow-hidden bg-muted flex items-center justify-center p-2">
               {selectedProduct.image_url ? (
                 <img
                   src={selectedProduct.image_url}
                   alt={selectedProduct.name}
-                  className="w-full h-full object-contain max-h-[400px]"
+                  className="w-full h-full object-contain max-h-[200px] md:max-h-[400px] max-w-[200px] md:max-w-none mx-auto"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 py-12">
-                  <span className="text-9xl">💊</span>
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 py-8">
+                  <span className="text-6xl md:text-9xl">💊</span>
                 </div>
               )}
             </div>
 
             {/* Product Info and Reviews */}
-            <div className="space-y-6">
+            <div className="space-y-4 overflow-y-auto max-h-[70vh] md:max-h-none">
               <div>
                 {selectedProduct.categories && (
-                  <Badge variant="secondary" className="mb-3">
+                  <Badge variant="secondary" className="mb-2 text-xs px-2 py-0.5">
                     {selectedProduct.categories.name}
                   </Badge>
                 )}
-                <h2 className="text-3xl font-bold mb-2">{selectedProduct.name}</h2>
+                <h2 className="text-lg md:text-2xl font-bold mb-2">{selectedProduct.name}</h2>
                 {!selectedProduct.in_stock && (
-                  <div className="flex items-center gap-2 mb-4">
-                    <Badge variant="destructive">Out of Stock</Badge>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge variant="destructive" className="text-xs">Out of Stock</Badge>
                   </div>
                 )}
               </div>
 
               {/* Tabs */}
               <div className="border-b">
-                <nav className="flex space-x-6">
+                <nav className="flex space-x-4">
                   <button
-                    className={`pb-3 px-1 font-medium text-sm ${activeTab === 'details' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
+                    className={`pb-2 px-1 font-medium text-xs md:text-sm ${activeTab === 'details' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
                     onClick={() => setActiveTab('details')}
                   >
                     Product Details
                   </button>
                   <button
-                    className={`pb-3 px-1 font-medium text-sm ${activeTab === 'reviews' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
+                    className={`pb-2 px-1 font-medium text-xs md:text-sm ${activeTab === 'reviews' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
                     onClick={() => setActiveTab('reviews')}
                   >
                     Reviews ({reviews.length})
@@ -357,103 +366,101 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
 
               {/* Tab Content */}
               {activeTab === 'details' ? (
-                <div className="space-y-6">
+                <div className="space-y-3">
                   {/* Product Details */}
-                  <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 md:max-h-[300px]">
                     {selectedProduct.description && (
                       <div>
-                        <h3 className="text-lg font-semibold mb-2">Description</h3>
-                        <p className="text-muted-foreground">{selectedProduct.description}</p>
+                        <h3 className="text-base md:text-lg font-semibold mb-1">Description</h3>
+                        <p className="text-muted-foreground text-sm md:text-base">{selectedProduct.description}</p>
                       </div>
                     )}
                     
                     {selectedProduct.uses && (
                       <div>
-                        <h3 className="text-lg font-semibold mb-2">Uses</h3>
-                        <p className="text-muted-foreground">{selectedProduct.uses}</p>
+                        <h3 className="text-base md:text-lg font-semibold mb-1">Uses</h3>
+                        <p className="text-muted-foreground text-sm md:text-base">{selectedProduct.uses}</p>
                       </div>
                     )}
                     
                     {selectedProduct.composition && (
                       <div>
-                        <h3 className="text-lg font-semibold mb-2">Composition</h3>
-                        <p className="text-muted-foreground">{selectedProduct.composition}</p>
+                        <h3 className="text-base md:text-lg font-semibold mb-1">Composition</h3>
+                        <p className="text-muted-foreground text-sm md:text-base">{selectedProduct.composition}</p>
                       </div>
                     )}
                     
                     {selectedProduct.side_effects && (
                       <div>
-                        <h3 className="text-lg font-semibold mb-2">Side Effects</h3>
-                        <p className="text-muted-foreground">{selectedProduct.side_effects}</p>
+                        <h3 className="text-base md:text-lg font-semibold mb-1">Side Effects</h3>
+                        <p className="text-muted-foreground text-sm md:text-base">{selectedProduct.side_effects}</p>
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <h4 className="font-medium text-sm text-muted-foreground">Availability</h4>
-                        <p className={`font-medium ${selectedProduct.in_stock ? 'text-green-600' : 'text-red-600'}`}>
+                        <h4 className="font-medium text-xs md:text-sm text-muted-foreground">Availability</h4>
+                        <p className={`font-medium text-sm md:text-base ${selectedProduct.in_stock ? 'text-green-600' : 'text-red-600'}`}>
                           {selectedProduct.in_stock ? 'In Stock' : 'Out of Stock'}
                         </p>
                       </div>
                       {selectedProduct.stock_quantity !== undefined && selectedProduct.stock_quantity > 0 && (
                         <div>
-                          <h4 className="font-medium text-sm text-muted-foreground">Stock Quantity</h4>
-                          <p className="font-medium">{selectedProduct.stock_quantity} units</p>
+                          <h4 className="font-medium text-xs md:text-sm text-muted-foreground">Stock Quantity</h4>
+                          <p className="font-medium text-sm md:text-base">{selectedProduct.stock_quantity} units</p>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {/* Pricing */}
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-baseline gap-3 mb-2">
-                        <span className="text-3xl font-bold text-primary">
-                          ₹{discountedPrice.toFixed(2)}
-                        </span>
-                        {discountPercentage > 0 && (
-                          <span className="text-lg text-muted-foreground line-through">
-                            ₹{selectedProduct.original_price.toFixed(2)}
-                          </span>
-                        )}
-                      </div>
+                  <div className="p-3 bg-card rounded-lg">
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-lg md:text-2xl font-bold text-primary">
+                        ₹{discountedPrice.toFixed(2)}
+                      </span>
                       {discountPercentage > 0 && (
-                        <div className="flex items-center gap-2">
-                          <Badge className="bg-destructive text-destructive-foreground">
-                            {discountPercentage}% OFF
-                          </Badge>
-                          <span className="text-secondary font-semibold">
-                            You save ₹{savings.toFixed(2)}
-                          </span>
-                        </div>
+                        <span className="text-sm md:text-base text-muted-foreground line-through">
+                          ₹{selectedProduct.original_price.toFixed(2)}
+                        </span>
                       )}
-                      <div className="flex gap-2 mt-4">
-                        {/* Request Availability button should only show for out-of-stock products */}
-                        {!selectedProduct.in_stock && (
-                          <RequestMedicineSheet medicineName={selectedProduct.name}>
-                            <Button className="flex-1" size="lg">
-                              <PackagePlus className="w-5 h-5 mr-2" />
-                              Request Availability
-                            </Button>
-                          </RequestMedicineSheet>
-                        )}
-                        {/* Add to Cart button should only show for in-stock products and when delivery is enabled */}
-                        {selectedProduct.in_stock && deliveryEnabled && (
-                          <Button 
-                            className="flex-1" 
-                            size="lg"
-                            onClick={() => handleAddToCart(selectedProduct)}
-                          >
-                            <ShoppingCart className="w-5 h-5 mr-2" />
-                            Add to Cart
-                          </Button>
-                        )}
+                    </div>
+                    {discountPercentage > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-destructive text-destructive-foreground text-xs">
+                          {discountPercentage}% OFF
+                        </Badge>
+                        <span className="text-secondary font-semibold text-xs">
+                          You save ₹{savings.toFixed(2)}
+                        </span>
                       </div>
-                    </CardContent>
-                  </Card>
+                    )}
+                    <div className="flex flex-col gap-1.5 mt-3">
+                      {/* Request Availability button should only show for out-of-stock products */}
+                      {!selectedProduct.in_stock && (
+                        <RequestMedicineSheet medicineName={selectedProduct.name}>
+                          <Button className="w-full h-8 text-sm" size="sm">
+                            <PackagePlus className="w-3 h-3 mr-2" />
+                            Request Availability
+                          </Button>
+                        </RequestMedicineSheet>
+                      )}
+                      {/* Add to Cart button should only show for in-stock products and when delivery is enabled */}
+                      {selectedProduct.in_stock && deliveryEnabled && (
+                        <Button 
+                          className="w-full h-8 text-sm" 
+                          size="sm"
+                          onClick={() => handleAddToCart(selectedProduct)}
+                        >
+                          <ShoppingCart className="w-3 h-3 mr-2" />
+                          Add to Cart
+                        </Button>
+                      )}
+                    </div>
+                  </div>
 
-                  {/* Contact Info */}
-                  <Card>
+                  {/* Contact Info - REMOVED FOR MOBILE VIEW */}
+                  {/* <Card>
                     <CardContent className="p-6">
                       <h3 className="text-lg font-semibold mb-3">Need Help?</h3>
                       <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg">
@@ -467,42 +474,42 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                         Have questions about this medicine? Call us for expert advice.
                       </p>
                     </CardContent>
-                  </Card>
+                  </Card> */}
                 </div>
               ) : (
                 /* Reviews Tab */
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {/* Average Rating */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <div className="text-center">
-                      <div className="text-3xl font-bold">{averageRating.toFixed(1)}</div>
+                      <div className="text-2xl md:text-3xl font-bold">{averageRating.toFixed(1)}</div>
                       <div className="flex items-center justify-center gap-1 my-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${star <= averageRating
+                            className={`w-3 h-3 md:w-4 md:h-4 ${star <= averageRating
                               ? "fill-yellow-400 text-yellow-400"
                               : "text-gray-300"
                               }`}
                           />
                         ))}
                       </div>
-                      <div className="text-sm text-muted-foreground">{reviews.length} reviews</div>
+                      <div className="text-xs md:text-sm text-muted-foreground">{reviews.length} reviews</div>
                     </div>
                   </div>
 
                   {/* Review Form */}
                   {isAuthenticated ? (
                     <Card>
-                      <CardContent className="p-4 space-y-4">
-                        <h4 className="font-medium">Write a Review</h4>
+                      <CardContent className="p-3 md:p-4 space-y-3">
+                        <h4 className="font-medium text-sm md:text-base">Write a Review</h4>
                         <div>
-                          <label className="text-sm font-medium mb-2 block">Rating</label>
+                          <label className="text-xs md:text-sm font-medium mb-1 block">Rating</label>
                           <div className="flex gap-1">
                             {[1, 2, 3, 4, 5].map((star) => (
                               <Star
                                 key={star}
-                                className={`w-6 h-6 cursor-pointer transition-colors ${star <= rating
+                                className={`w-5 h-5 md:w-6 md:h-6 cursor-pointer transition-colors ${star <= rating
                                   ? "fill-yellow-400 text-yellow-400"
                                   : "text-gray-300 hover:text-yellow-200"
                                   }`}
@@ -513,77 +520,79 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                         </div>
 
                         <div>
-                          <label className="text-sm font-medium mb-2 block">Review Title</label>
+                          <label className="text-xs md:text-sm font-medium mb-1 block">Review Title</label>
                           <Input
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Summarize your experience"
+                            className="text-sm"
                           />
                         </div>
 
                         <div>
-                          <label className="text-sm font-medium mb-2 block">Review</label>
+                          <label className="text-xs md:text-sm font-medium mb-1 block">Review</label>
                           <Textarea
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             placeholder="Share your thoughts about this product"
-                            rows={3}
+                            rows={2}
+                            className="text-sm"
                           />
                         </div>
 
-                        <Button onClick={submitReview} disabled={submittingReview} size="sm">
+                        <Button onClick={submitReview} disabled={submittingReview} size="sm" className="text-sm h-8">
                           {submittingReview ? "Submitting..." : "Submit Review"}
                         </Button>
                       </CardContent>
                     </Card>
                   ) : (
                     <Card>
-                      <CardContent className="p-4 text-center">
-                        <p className="text-muted-foreground">Please sign in to leave a review</p>
+                      <CardContent className="p-3 md:p-4 text-center">
+                        <p className="text-muted-foreground text-sm">Please sign in to leave a review</p>
                       </CardContent>
                     </Card>
                   )}
 
                   {/* Reviews List */}
-                  <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 md:max-h-[300px]">
                     {reviewsLoading ? (
-                      <div className="text-center py-4">Loading reviews...</div>
+                      <div className="text-center py-3 md:py-4 text-sm">Loading reviews...</div>
                     ) : reviews.length === 0 ? (
-                      <div className="text-center py-4 text-muted-foreground">
+                      <div className="text-center py-3 md:py-4 text-muted-foreground text-sm">
                         No reviews yet. Be the first to review this product!
                       </div>
                     ) : (
                       reviews.map((review) => (
                         <Card key={review.id}>
-                          <CardContent className="p-4">
+                          <CardContent className="p-3 md:p-4">
                             <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 md:gap-2">
                                 {[1, 2, 3, 4, 5].map((star) => (
                                   <Star
                                     key={star}
-                                    className={`w-4 h-4 ${star <= review.rating
+                                    className={`w-3 h-3 md:w-4 md:h-4 ${star <= review.rating
                                       ? "fill-yellow-400 text-yellow-400"
                                       : "text-gray-300"
                                       }`}
                                   />
                                 ))}
                                 {review.verified_purchase && (
-                                  <Badge variant="secondary" className="text-xs">
+                                  <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
                                     Verified Purchase
                                   </Badge>
                                 )}
                               </div>
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-xs md:text-sm text-muted-foreground">
                                 {new Date(review.created_at).toLocaleDateString()}
                               </span>
                             </div>
 
                             {review.title && (
-                              <h4 className="font-semibold mb-1">{review.title}</h4>
+                              <h4 className="font-semibold mb-1 text-sm">{review.title}</h4>
                             )}
 
                             {review.comment && (
-                              <p className="text-muted-foreground text-sm">{review.comment}</p>
+                              <p className="text-muted-foreground text-xs md:text-sm">{review.comment}</p>
                             )}
                           </CardContent>
                         </Card>
@@ -602,7 +611,7 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
   // Show product list
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Search Results for "{searchQuery}"</DialogTitle>
         </DialogHeader>
@@ -654,10 +663,10 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                           <img
                             src={product.image_url}
                             alt={product.name}
-                            className="w-16 h-16 object-cover rounded-md"
+                            className="w-16 h-16 object-cover rounded-md md:w-16 md:h-16"
                           />
                         ) : (
-                          <div className="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 rounded-md">
+                          <div className="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 rounded-md md:w-16 md:h-16">
                             <span className="text-2xl">💊</span>
                           </div>
                         )}
@@ -693,8 +702,8 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
               })}
             </div>
 
-            {/* Contact Info */}
-            <Card>
+            {/* Contact Info - REMOVED FOR MOBILE VIEW */}
+            {/* <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-primary" />
@@ -704,7 +713,7 @@ export function SearchPopup({ searchQuery, isOpen, onClose, initialTab = 'detail
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         )}
       </DialogContent>

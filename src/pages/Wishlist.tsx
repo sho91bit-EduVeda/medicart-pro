@@ -142,11 +142,8 @@ export default function Wishlist() {
         <SearchPopup 
           searchQuery={searchQuery} 
           isOpen={showSearchPopup} 
-          onClose={() => {
-            setShowSearchPopup(false);
-            // Clear the search query when closing the popup to show all products
-            setSearchQuery("");
-          }} 
+          onClose={() => setShowSearchPopup(false)} 
+          showBackButton={false} // Set to false since we're viewing individual wishlist items
         />
         
         {loading ? (

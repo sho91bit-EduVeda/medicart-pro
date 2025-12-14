@@ -4,8 +4,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { db } from '@/integrations/firebase/config';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
+import { auth } from '@/integrations/firebase/config';
 import { toast } from 'sonner';
 
 interface MedicineRequest {
@@ -35,12 +37,14 @@ const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
 }) => {
   const [status, setStatus] = useState<MedicineRequest['status']>('pending');
   const [notes, setNotes] = useState('');
+  const [reminderDate, setReminderDate] = useState('');
   const [updating, setUpdating] = useState(false);
 
   React.useEffect(() => {
     if (request) {
       setStatus(request.status);
       setNotes('');
+      setReminderDate('');
     }
   }, [request]);
 
@@ -64,6 +68,31 @@ const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
       toast.error('Failed to update request status');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  // Set a reminder for this request
+  const handleSetReminder = async () => {
+    if (!request || !reminderDate) return;
+    
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        type: 'medicine_request_reminder',
+        title: 'Medicine Request Follow-up',
+        message: `Follow up on request for ${request.medicine_name}`,
+        read: false,
+        action_url: `/owner#requests`,
+        created_at: new Date().toISOString(),
+        reminder_date: new Date(reminderDate).toISOString(),
+        user_id: auth.currentUser?.uid,
+        request_id: request.id
+      });
+      
+      toast.success('Reminder set successfully!');
+      setReminderDate('');
+    } catch (error) {
+      toast.error('Failed to set reminder');
+      console.error(error);
     }
   };
 
@@ -132,6 +161,29 @@ const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
               placeholder="Add any notes about this request..."
               rows={3}
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="reminder">Set Reminder</Label>
+            <div className="flex gap-2">
+              <Input
+                id="reminder"
+                type="date"
+                value={reminderDate}
+                onChange={(e) => setReminderDate(e.target.value)}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleSetReminder} 
+                disabled={!reminderDate || updating}
+                variant="outline"
+              >
+                Set
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Set a reminder to follow up on this request
+            </p>
           </div>
         </div>
         

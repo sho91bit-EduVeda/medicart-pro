@@ -151,6 +151,7 @@ const Index = () => {
   const { deliveryEnabled } = useFeatureFlags();
   const { loadWishlist, items: wishlistItems } = useWishlist();
   const [showSearchPopup, setShowSearchPopup] = useState(false);
+  const [isSearchResult, setIsSearchResult] = useState(false); // Track if popup is from search vs direct product view
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
@@ -278,6 +279,7 @@ const Index = () => {
   const handleSuggestionSelect = (product: Product) => {
     setSearchQuery(product.name);
     setShowSuggestions(false);
+    setIsSearchResult(true); // This is from a search
     setShowSearchPopup(true);
     trackSearch(product.name);
   };
@@ -286,6 +288,7 @@ const Index = () => {
   const handleSearchSubmit = () => {
     if (searchQuery.trim()) {
       setShowSuggestions(false);
+      setIsSearchResult(true); // This is from a search
       setShowSearchPopup(true);
       trackSearch(searchQuery);
     }
@@ -327,6 +330,7 @@ const Index = () => {
   const handleProductsSearchSubmit = () => {
     if (productsSearchQuery.trim()) {
       setSearchQuery(productsSearchQuery); // Sync with main search query to show results
+      setIsSearchResult(true); // This is from a search
       setShowSearchPopup(true);
     }
   };
@@ -627,9 +631,11 @@ const Index = () => {
         isOpen={showSearchPopup} 
         onClose={() => {
           setShowSearchPopup(false);
+          setIsSearchResult(false); // Reset search context
           // Clear the search query when closing the popup to show all products
           setSearchQuery("");
         }} 
+        showBackButton={isSearchResult} // Only show back button when it's actually a search result
       />
 
       <div className="container mx-auto px-4 py-12">
@@ -870,6 +876,7 @@ const Index = () => {
                   requires_prescription={product.requires_prescription}
                   onClick={() => {
                     setSearchQuery(product.name);
+                    setIsSearchResult(false); // Not a search result, direct product view
                     setShowSearchPopup(true);
                   }}
                   variants={{
@@ -887,6 +894,7 @@ const Index = () => {
           <ProductRecommendations 
             onProductClick={(productName) => {
               setSearchQuery(productName);
+              setIsSearchResult(false); // Not a search result, direct product view
               setShowSearchPopup(true);
             }}
           />

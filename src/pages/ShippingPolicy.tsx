@@ -188,7 +188,7 @@ const ShippingPolicy = () => {
 
             <h2 className="text-2xl font-bold mt-8 mb-4">Order Processing</h2>
             <p className="text-muted-foreground mb-4">
-              Orders are processed during our regular business hours (8:00 AM - 11:00 PM). 
+              Orders are processed during our regular business hours (8:00 AM - 10:30 PM). 
               Prescription verification may add additional time to order processing.
             </p>
 

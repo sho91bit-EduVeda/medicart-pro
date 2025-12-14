@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
 } from "./ui/dropdown-menu";
 import { auth, db } from "@/integrations/firebase/config";
-import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc, writeBatch, addDoc, where } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { toast } from "sonner";
@@ -25,6 +25,7 @@ interface Notification {
   action_url: string | null;
   created_at: string;
   user_id?: string; // Make user_id optional
+  reminder_date?: string; // For reminder functionality
 }
 
 interface MedicineRequest {
@@ -200,6 +201,27 @@ export function NotificationBell() {
     }
   };
 
+  // Set a reminder for a medicine request
+  const setReminder = async (requestId: string, medicineName: string, reminderDate: string) => {
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        type: 'medicine_request_reminder',
+        title: 'Medicine Request Follow-up',
+        message: `Follow up on request for ${medicineName}`,
+        read: false,
+        action_url: `/owner#requests`,
+        created_at: new Date().toISOString(),
+        reminder_date: reminderDate,
+        user_id: auth.currentUser?.uid
+      });
+      
+      toast.success('Reminder set successfully!');
+    } catch (error) {
+      toast.error('Failed to set reminder');
+      console.error(error);
+    }
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'order_status':
@@ -210,6 +232,8 @@ export function NotificationBell() {
         return '🎉';
       case 'medicine_request':
         return '💊';
+      case 'medicine_request_reminder':
+        return '⏰';
       case 'report':
         return '📊';
       default:
@@ -285,6 +309,29 @@ export function NotificationBell() {
                     <p className="text-xs text-muted-foreground mt-2">
                       {new Date(notification.created_at).toLocaleDateString()}
                     </p>
+                    {notification.type === 'medicine_request' && (
+                      <div className="mt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Show a prompt for reminder date
+                            const days = prompt('Set reminder in how many days?', '3');
+                            if (days && !isNaN(parseInt(days))) {
+                              const reminderDate = new Date();
+                              reminderDate.setDate(reminderDate.getDate() + parseInt(days));
+                              // Extract medicine name from message
+                              const medicineName = notification.message.split('requested ')[1] || 'medicine';
+                              setReminder(notification.id.replace('request-', ''), medicineName, reminderDate.toISOString());
+                            }
+                          }}
+                        >
+                          Set Reminder
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </DropdownMenuItem>

@@ -13,6 +13,31 @@ import { Download, Plus, TrendingUp, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { SearchableProductDropdown } from "@/components/SearchableProductDropdown";
 
+// Import Recharts components
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from "recharts";
+
+// Import Accordion components
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
 interface DailySale {
   id?: string;
   date: string;
@@ -47,6 +72,9 @@ interface Product {
   in_stock: boolean;
   // ... other product properties
 }
+
+// Define COLORS constant for pie chart
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
 
 const SalesReporting = () => {
   const [dailySales, setDailySales] = useState<DailySale[]>([]);
@@ -1101,9 +1129,38 @@ const SalesReporting = () => {
     return result;
   }, [monthlyReports, reportFilter, sortBy, sortOrder]);
 
+  // Prepare data for charts
+  const chartData = useMemo(() => {
+    // Prepare monthly sales data
+    const monthlySalesData = monthlyReports.map(report => ({
+      month: report.month,
+      sales: report.totalSales,
+      // For profit, we'll assume a 20% profit margin for demonstration
+      profit: report.totalSales * 0.2
+    })).sort((a, b) => a.month.localeCompare(b.month));
+
+    // Prepare product distribution data for pie chart
+    const productDistribution: { name: string; value: number }[] = [];
+    if (monthlyReports.length > 0) {
+      // Use the most recent report for product distribution
+      const latestReport = monthlyReports[0];
+      latestReport.productsSold.forEach(product => {
+        productDistribution.push({
+          name: product.productName,
+          value: product.quantity
+        });
+      });
+    }
+
+    return {
+      monthlySalesData,
+      productDistribution
+    };
+  }, [monthlyReports]);
+
   return (
     <div className="space-y-8">
-      {/* Daily Sales Entry */}
+      {/* Simplified Daily Sales Entry - Moved to Top */}
       <Card className="shadow-md">
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">
@@ -1111,43 +1168,13 @@ const SalesReporting = () => {
             Daily Sales Entry
           </CardTitle>
           <CardDescription>
-            Record today's sales and products sold (stock will be updated automatically)
+            Record today's sales and products sold
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmitDailySales} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  value={currentDate}
-                  readOnly
-                  className="bg-muted"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="totalAmount">Total Amount Earned (₹)</Label>
-                <Input
-                  id="totalAmount"
-                  type="number"
-                  step="0.01"
-                  value={totalAmount.toFixed(2)}
-                  readOnly
-                  className="bg-muted"
-                />
-                <p className="text-sm text-muted-foreground">Automatically calculated based on products sold</p>
-              </div>
-            </div>
-
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Products Sold</h3>
-                <Button type="button" variant="outline" onClick={handleAddProductSale} className="flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Product
-                </Button>
-              </div>
+              <h3 className="text-lg font-semibold">Products Sold</h3>
               
               {/* Product Selection Dropdowns */}
               <div className="space-y-4">
@@ -1248,378 +1275,504 @@ const SalesReporting = () => {
         </CardContent>
       </Card>
 
-      {/* Today's Sales Summary */}
-      <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Today's Sales Summary</CardTitle>
-          <CardDescription>
-            Sales recorded for {format(new Date(currentDate), "MMMM d, yyyy")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {dailySales.length === 0 ? (
-            <div className="text-center py-8">
-              <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No sales recorded yet</h3>
-              <p className="text-muted-foreground">
-                Record your first sale using the form above.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="border rounded-lg p-4 text-center">
-                  <p className="text-sm text-muted-foreground">Total Entries</p>
-                  <p className="text-2xl font-bold">{dailySales.length}</p>
-                </div>
-                <div className="border rounded-lg p-4 text-center">
-                  <p className="text-sm text-muted-foreground">Total Amount</p>
-                  <p className="text-2xl font-bold">
-                    ₹{dailySales.reduce((sum, sale) => sum + sale.totalAmount, 0).toFixed(2)}
-                  </p>
-                </div>
-                <div className="border rounded-lg p-4 text-center">
-                  <p className="text-sm text-muted-foreground">Products Sold</p>
-                  <p className="text-2xl font-bold">
-                    {dailySales.reduce((sum, sale) => 
-                      sum + sale.productsSold.reduce((prodSum, prod) => prodSum + prod.quantity, 0), 0
-                    )}
-                  </p>
-                </div>
+      {/* Charts Section - Moved to Top */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Sales Chart */}
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Monthly Sales
+            </CardTitle>
+            <CardDescription>
+              Sales trend over the past months
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            {chartData.monthlySalesData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData.monthlySalesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value) => [`₹${Number(value).toFixed(2)}`, 'Amount']}
+                    labelFormatter={(label) => `Month: ${label}`}
+                  />
+                  <Legend />
+                  <Bar dataKey="sales" name="Sales (₹)" fill="#3b82f6" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                No data available
               </div>
-              
+            )}
+          </CardContent>
+        </Card>
 
-              
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Products</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {dailySales.map((sale) => (
-                    <TableRow key={sale.id}>
-                      {editingSaleId === sale.id ? (
-                        // Editing mode
-                        <>
-                          <TableCell colSpan={3}>
-                            <div className="space-y-4">
-                              <h4 className="font-medium">Editing Sale</h4>
-                              {editingSaleProducts.map((product, index) => (
-                                <div key={index} className="flex flex-wrap gap-2 items-end">
-                                  <div className="flex-1 min-w-[200px]">
-                                    <Label>Product</Label>
-                                    <Input
-                                      value={product.productName}
-                                      readOnly
-                                      className="bg-muted"
-                                    />
-                                  </div>
-                                  <div className="w-24">
-                                    <Label>Price</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={product.price.toFixed(2)}
-                                      onChange={(e) => updateEditingProduct(index, "price", parseFloat(e.target.value) || 0)}
-                                    />
-                                  </div>
-                                  <div className="w-20">
-                                    <Label>Qty</Label>
-                                    <Input
-                                      type="number"
-                                      min="1"
-                                      value={product.quantity}
-                                      onChange={(e) => updateEditingProduct(index, "quantity", parseInt(e.target.value) || 1)}
-                                    />
-                                  </div>
-                                  <div className="w-24">
-                                    <Label>Total</Label>
-                                    <Input
-                                      value={product.totalPrice.toFixed(2)}
-                                      readOnly
-                                      className="bg-muted"
-                                    />
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex flex-col gap-2">
-                              <Button
-                                size="sm"
-                                onClick={saveEditedSale}
-                                disabled={loading}
-                              >
-                                Save
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={cancelEditingSale}
-                                disabled={loading}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </>
-                      ) : (
-                        // Display mode
-                        <>
-                          <TableCell>
-                            {sale.createdAt ? new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
-                          </TableCell>
-                          <TableCell>₹{sale.totalAmount.toFixed(2)}</TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              {sale.productsSold.map((product, idx) => (
-                                <div key={idx} className="text-sm">
-                                  {product.productName} ({product.quantity} × ₹{product.price.toFixed(2)})
-                                </div>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => startEditingSale(sale)}
-                                disabled={loading}
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  console.log("Daily sales summary delete button clicked");
-                                  console.log("Sale ID:", sale.id);
-                                  if (sale.id) {
-                                    handleDeleteDailySale(sale.id);
-                                  } else {
-                                    console.log("Sale ID is missing");
-                                    toast.error("Cannot delete sale: Missing ID");
-                                  }
-                                }}
-                              >
-                                <Trash className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Monthly Profit Chart */}
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Monthly Profit
+            </CardTitle>
+            <CardDescription>
+              Profit trend over the past months
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            {chartData.monthlySalesData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData.monthlySalesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value) => [`₹${Number(value).toFixed(2)}`, 'Amount']}
+                    labelFormatter={(label) => `Month: ${label}`}
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="profit" 
+                    name="Profit (₹)" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    activeDot={{ r: 8 }} 
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                No data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Monthly Reports */}
-      <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <TrendingUp className="w-6 h-6" />
-            Monthly Reports
-          </CardTitle>
-          <CardDescription>
-            Generated monthly sales reports
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        {/* Product Distribution Pie Chart */}
+        <Card className="shadow-md lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Product Distribution
+            </CardTitle>
+            <CardDescription>
+              Distribution of products sold (latest report)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            {chartData.productDistribution.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData.productDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={true}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    nameKey="name"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {chartData.productDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value} units`, 'Quantity']} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                No data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Accordion for Other Sections */}
+      <Accordion type="single" collapsible className="w-full space-y-4">
+        {/* Today's Sales Summary */}
+        <AccordionItem value="todays-sales">
+          <AccordionTrigger>
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold">Previous Reports</h3>
-              {selectedReports.length > 0 && (
-                <span className="text-sm text-muted-foreground">
-                  ({selectedReports.length} selected)
-                </span>
-              )}
+              <TrendingUp className="w-5 h-5" />
+              <span className="text-lg font-semibold">Today's Sales Summary</span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {selectedReports.length > 0 ? (
-                <>
-                  <Button 
-                    onClick={handleDeleteSelectedReports} 
-                    disabled={loading}
-                    variant="destructive"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <Trash className="w-4 h-4" />
-                    Delete Selected ({selectedReports.length})
-                  </Button>
-                  <Button 
-                    onClick={() => setSelectedReports([])}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <Button onClick={handleGenerateMonthlyReport} disabled={loading} variant="secondary" size="sm">
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                      <span>Generating...</span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <Card className="border-t-0 rounded-t-none">
+              <CardContent className="pt-6">
+                {dailySales.length === 0 ? (
+                  <div className="text-center py-8">
+                    <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No sales recorded yet</h3>
+                    <p className="text-muted-foreground">
+                      Record your first sale using the form above.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="border rounded-lg p-4 text-center">
+                        <p className="text-sm text-muted-foreground">Total Entries</p>
+                        <p className="text-2xl font-bold">{dailySales.length}</p>
+                      </div>
+                      <div className="border rounded-lg p-4 text-center">
+                        <p className="text-sm text-muted-foreground">Total Amount</p>
+                        <p className="text-2xl font-bold">
+                          ₹{dailySales.reduce((sum, sale) => sum + sale.totalAmount, 0).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="border rounded-lg p-4 text-center">
+                        <p className="text-sm text-muted-foreground">Products Sold</p>
+                        <p className="text-2xl font-bold">
+                          {dailySales.reduce((sum, sale) => 
+                            sum + sale.productsSold.reduce((prodSum, prod) => prodSum + prod.quantity, 0), 0
+                          )}
+                        </p>
+                      </div>
                     </div>
-                  ) : (
-                    "Generate Current Month Report"
-                  )}
-                </Button>
-              )}
+                    
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Time</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Products</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {dailySales.map((sale) => (
+                          <TableRow key={sale.id}>
+                            {editingSaleId === sale.id ? (
+                              // Editing mode
+                              <>
+                                <TableCell colSpan={3}>
+                                  <div className="space-y-4">
+                                    <h4 className="font-medium">Editing Sale</h4>
+                                    {editingSaleProducts.map((product, index) => (
+                                      <div key={index} className="flex flex-wrap gap-2 items-end">
+                                        <div className="flex-1 min-w-[200px]">
+                                          <Label>Product</Label>
+                                          <Input
+                                            value={product.productName}
+                                            readOnly
+                                            className="bg-muted"
+                                          />
+                                        </div>
+                                        <div className="w-24">
+                                          <Label>Price</Label>
+                                          <Input
+                                            type="number"
+                                            step="0.01"
+                                            value={product.price.toFixed(2)}
+                                            onChange={(e) => updateEditingProduct(index, "price", parseFloat(e.target.value) || 0)}
+                                          />
+                                        </div>
+                                        <div className="w-20">
+                                          <Label>Qty</Label>
+                                          <Input
+                                            type="number"
+                                            min="1"
+                                            value={product.quantity}
+                                            onChange={(e) => updateEditingProduct(index, "quantity", parseInt(e.target.value) || 1)}
+                                          />
+                                        </div>
+                                        <div className="w-24">
+                                          <Label>Total</Label>
+                                          <Input
+                                            value={product.totalPrice.toFixed(2)}
+                                            readOnly
+                                            className="bg-muted"
+                                          />
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex flex-col gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={saveEditedSale}
+                                      disabled={loading}
+                                    >
+                                      Save
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={cancelEditingSale}
+                                      disabled={loading}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </>
+                            ) : (
+                              // Display mode
+                              <>
+                                <TableCell>
+                                  {sale.createdAt ? new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                </TableCell>
+                                <TableCell>₹{sale.totalAmount.toFixed(2)}</TableCell>
+                                <TableCell>
+                                  <div className="space-y-1">
+                                    {sale.productsSold.map((product, idx) => (
+                                      <div key={idx} className="text-sm">
+                                        {product.productName} ({product.quantity} × ₹{product.price.toFixed(2)})
+                                      </div>
+                                    ))}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => startEditingSale(sale)}
+                                      disabled={loading}
+                                    >
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        console.log("Daily sales summary delete button clicked");
+                                        console.log("Sale ID:", sale.id);
+                                        if (sale.id) {
+                                          handleDeleteDailySale(sale.id);
+                                        } else {
+                                          console.log("Sale ID is missing");
+                                          toast.error("Cannot delete sale: Missing ID");
+                                        }
+                                      }}
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </>
+                            )}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Monthly Reports */}
+        <AccordionItem value="monthly-reports">
+          <AccordionTrigger>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              <span className="text-lg font-semibold">Monthly Reports</span>
             </div>
-          </div>
-          
-          {/* Filter and Sort Controls */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Input
-                placeholder="Filter by month (e.g., 2023-12)..."
-                value={reportFilter}
-                onChange={(e) => setReportFilter(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="month">Month</SelectItem>
-                  <SelectItem value="totalSales">Total Sales</SelectItem>
-                  <SelectItem value="productsSold">Products Sold</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button 
-                variant="outline" 
-                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                className="flex items-center gap-2"
-              >
-                {sortOrder === "asc" ? "↑" : "↓"}
-              </Button>
-              {(reportFilter || sortBy !== "month" || sortOrder !== "desc") && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setReportFilter("");
-                    setSortBy("month");
-                    setSortOrder("desc");
-                  }}
-                >
-                  Reset
-                </Button>
-              )}
-            </div>
-          </div>
-          
-          {filteredAndSortedReports.length === 0 ? (
-            <div className="text-center py-8">
-              <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">
-                {monthlyReports.length === 0 ? "No monthly reports yet" : "No reports match your filter"}
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                {monthlyReports.length === 0 
-                  ? "Generate your first monthly report using the button above."
-                  : "Try adjusting your filter or sort criteria."}
-              </p>
-              {monthlyReports.length === 0 && (
-                <Button onClick={handleGenerateMonthlyReport} disabled={loading}>
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                      <span>Generating...</span>
-                    </div>
-                  ) : (
-                    "Generate Current Month Report"
-                  )}
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Checkbox
-                  id="select-all"
-                  checked={selectedReports.length === filteredAndSortedReports.length && filteredAndSortedReports.length > 0}
-                  onCheckedChange={selectAllReports}
-                />
-                <Label htmlFor="select-all" className="text-sm font-medium">
-                  Select All
-                </Label>
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <span className="sr-only">Select</span>
-                    </TableHead>
-                    <TableHead>Month</TableHead>
-                    <TableHead>Total Sales</TableHead>
-                    <TableHead>Products Sold</TableHead>
-                    <TableHead>Most Sold Product</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAndSortedReports.map((report: any) => (
-                    <TableRow 
-                      key={report.id}
-                      className={selectedReports.includes(report.id) ? "bg-muted" : ""}
+          </AccordionTrigger>
+          <AccordionContent>
+            <Card className="border-t-0 rounded-t-none">
+              <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold">Previous Reports</h3>
+                    {selectedReports.length > 0 && (
+                      <span className="text-sm text-muted-foreground">
+                        ({selectedReports.length} selected)
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedReports.length > 0 ? (
+                      <>
+                        <Button 
+                          onClick={handleDeleteSelectedReports} 
+                          disabled={loading}
+                          variant="destructive"
+                          size="sm"
+                          className="flex items-center gap-2"
+                        >
+                          <Trash className="w-4 h-4" />
+                          Delete Selected ({selectedReports.length})
+                        </Button>
+                        <Button 
+                          onClick={() => setSelectedReports([])}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <Button onClick={handleGenerateMonthlyReport} disabled={loading} variant="secondary" size="sm">
+                        {loading ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                            <span>Generating...</span>
+                          </div>
+                        ) : (
+                          "Generate Current Month Report"
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Filter and Sort Controls */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Filter by month (e.g., 2023-12)..."
+                      value={reportFilter}
+                      onChange={(e) => setReportFilter(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="month">Month</SelectItem>
+                        <SelectItem value="totalSales">Total Sales</SelectItem>
+                        <SelectItem value="productsSold">Products Sold</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                      className="flex items-center gap-2"
                     >
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedReports.includes(report.id)}
-                          onCheckedChange={() => toggleReportSelection(report.id)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{report.month}</TableCell>
-                      <TableCell>₹{report.totalSales.toFixed(2)}</TableCell>
-                      <TableCell>{report.productsSold.length}</TableCell>
-                      <TableCell>{report.mostSoldProduct}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => exportToExcel(report)}
-                            className="flex items-center gap-2"
+                      {sortOrder === "asc" ? "↑" : "↓"}
+                    </Button>
+                    {(reportFilter || sortBy !== "month" || sortOrder !== "desc") && (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setReportFilter("");
+                          setSortBy("month");
+                          setSortOrder("desc");
+                        }}
+                      >
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                {filteredAndSortedReports.length === 0 ? (
+                  <div className="text-center py-8">
+                    <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">
+                      {monthlyReports.length === 0 ? "No monthly reports yet" : "No reports match your filter"}
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      {monthlyReports.length === 0 
+                        ? "Generate your first monthly report using the button above."
+                        : "Try adjusting your filter or sort criteria."}
+                    </p>
+                    {monthlyReports.length === 0 && (
+                      <Button onClick={handleGenerateMonthlyReport} disabled={loading}>
+                        {loading ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                            <span>Generating...</span>
+                          </div>
+                        ) : (
+                          "Generate Current Month Report"
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Checkbox
+                        id="select-all"
+                        checked={selectedReports.length === filteredAndSortedReports.length && filteredAndSortedReports.length > 0}
+                        onCheckedChange={selectAllReports}
+                      />
+                      <Label htmlFor="select-all" className="text-sm font-medium">
+                        Select All
+                      </Label>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">
+                            <span className="sr-only">Select</span>
+                          </TableHead>
+                          <TableHead>Month</TableHead>
+                          <TableHead>Total Sales</TableHead>
+                          <TableHead>Products Sold</TableHead>
+                          <TableHead>Most Sold Product</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredAndSortedReports.map((report: any) => (
+                          <TableRow 
+                            key={report.id}
+                            className={selectedReports.includes(report.id) ? "bg-muted" : ""}
                           >
-                            <Download className="w-4 h-4" />
-                            <span className="hidden sm:inline">Export</span>
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteReport(report.id, report.month)}
-                            disabled={loading}
-                            className="flex items-center gap-2"
-                          >
-                            <Trash className="w-4 h-4" />
-                            <span className="hidden sm:inline">Delete</span>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedReports.includes(report.id)}
+                                onCheckedChange={() => toggleReportSelection(report.id)}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">{report.month}</TableCell>
+                            <TableCell>₹{report.totalSales.toFixed(2)}</TableCell>
+                            <TableCell>{report.productsSold.length}</TableCell>
+                            <TableCell>{report.mostSoldProduct}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => exportToExcel(report)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Download className="w-4 h-4" />
+                                  <span className="hidden sm:inline">Export</span>
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteReport(report.id, report.month)}
+                                  disabled={loading}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Trash className="w-4 h-4" />
+                                  <span className="hidden sm:inline">Delete</span>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 };

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { db } from "@/integrations/firebase/config";
 import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
-import { Bell } from "lucide-react";
+import { Bell, Flame } from "lucide-react";
 
 interface Announcement {
   id: string;
@@ -54,15 +54,10 @@ const AnnouncementMarquee = () => {
     );
   }
 
-  // Always show announcements, even when empty (with a default message)
-  const displayAnnouncements = announcements.length > 0 
-    ? announcements 
-    : [{ id: 'default', text: 'Welcome to Kalyanam Pharmaceuticals - Your Trusted Healthcare Partner!', created_at: new Date().toISOString(), priority: 'normal' as const }];
-
-  // Duplicate announcements for continuous scrolling effect
-  // For a smoother infinite loop, we duplicate more times when there are fewer announcements
-  const duplicationFactor = Math.max(2, Math.ceil(10 / displayAnnouncements.length));
-  const duplicatedAnnouncements = Array(duplicationFactor).fill(displayAnnouncements).flat();
+  // Show the first announcement or a default message
+  const currentAnnouncement = announcements.length > 0 
+    ? announcements[0] 
+    : { id: 'default', text: 'Welcome to Kalyanam Pharmaceuticals - Your Trusted Healthcare Partner!', created_at: new Date().toISOString(), priority: 'normal' };
 
   return (
     <div className="bg-primary text-primary-foreground py-2 overflow-hidden" style={{ height: '40px' }}>
@@ -73,16 +68,13 @@ const AnnouncementMarquee = () => {
             Announcement
           </Badge>
           
-          <div className="flex overflow-hidden flex-1 h-full">
-            <div className="inline-block animate-marquee whitespace-nowrap h-full flex items-center">
-              {duplicatedAnnouncements.map((announcement, index) => (
-                <span key={`${announcement.id}-${index}`} className="mx-4 flex items-center">
-                  {announcement.priority === "high" && (
-                    <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-2 animate-pulse"></span>
-                  )}
-                  {announcement.text}
-                </span>
-              ))}
+          <div className="flex overflow-hidden flex-1 h-full items-center">
+            <div className="animate-marquee whitespace-nowrap">
+              <Flame className="w-4 h-4 mr-1 text-yellow-400 fill-yellow-400 inline" />
+              <Flame className="w-4 h-4 mr-2 text-yellow-400 fill-yellow-400 inline" />
+              <span className="font-medium">{currentAnnouncement.text}</span>
+              <Flame className="w-4 h-4 ml-2 text-yellow-400 fill-yellow-400 inline" />
+              <Flame className="w-4 h-4 ml-1 text-yellow-400 fill-yellow-400 inline" />
             </div>
           </div>
         </div>
@@ -99,13 +91,14 @@ const AnnouncementMarquee = () => {
         }
         
         .animate-marquee {
-          padding-left: 100%;
-          animation: marquee 120s linear infinite; /* Adjusted to approximately 20px/s for better readability */
-          line-height: 1.2;
+          display: inline-block;
+          animation: marquee 15s linear infinite;
         }
         
-        .animate-marquee:hover {
-          animation-play-state: paused;
+        @media (max-width: 768px) {
+          .animate-marquee {
+            animation-duration: 10s;
+          }
         }
       `}</style>
     </div>

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { db } from "@/integrations/firebase/config";
-import { collection, getDocs, addDoc, doc, getDoc, setDoc, query, orderBy, deleteDoc, updateDoc, where } from "firebase/firestore";
+import { db, auth } from "@/integrations/firebase/config";
+import { collection, getDocs, addDoc, doc, getDoc, setDoc, query, orderBy, deleteDoc, updateDoc, where, onSnapshot } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,11 +11,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download } from "lucide-react";
+import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ExcelUpload } from "@/components/ExcelUpload";
 import { IndianMedicineDatasetImport } from "@/components/IndianMedicineDatasetImport";
+import { StorePurchase } from "@/components/StorePurchase";
 
 import { seedDatabase } from "@/utils/seedData";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
@@ -85,8 +92,7 @@ const Owner = () => {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   // Navigation state
-  const [activeSection, setActiveSection] = useState("manage-products");
-  const [activeCategory, setActiveCategory] = useState("Inventory");
+  const [activeSection, setActiveSection] = useState<string>("manage-inventory");  const [activeCategory, setActiveCategory] = useState("Inventory");
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -105,6 +111,9 @@ const Owner = () => {
   // State for selected request and modal
   const [selectedRequest, setSelectedRequest] = useState<MedicineRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // State for handling reminders
+  const [reminders, setReminders] = useState<any[]>([]);
 
   // Filter and sort medicine requests
   const filteredAndSortedRequests = requests.filter(request => {
@@ -208,8 +217,7 @@ const Owner = () => {
 
   // Fetch products when products section is active
   useEffect(() => {
-    if (activeSection === "manage-products") {
-      fetchProducts();
+    if (activeSection === "manage-inventory") {      fetchProducts();
     }
   }, [activeSection]);
 
@@ -220,17 +228,15 @@ const Owner = () => {
     }
   }, [activeSection]);
 
-  // Fetch products when component mounts or when active section changes to manage-products
+  // Fetch products when component mounts or when active section changes to manage-inventory
   useEffect(() => {
-    if (activeSection === "manage-products" || activeSection === "add-product") {
+    if (activeSection === "manage-inventory") {
       fetchProducts();
     }
-  }, [activeSection]);
-
-  // Listen for stock updates from other components
+  }, [activeSection]);  // Listen for stock updates from other components
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'medicart-stock-updated' && activeSection === "manage-products") {
+      if (e.key === 'medicart-stock-updated' && activeSection === "manage-inventory") {
         // Refresh products when stock is updated in another component
         fetchProducts();
       }
@@ -243,7 +249,7 @@ const Owner = () => {
         const lastUpdate = parseInt(stockUpdated, 10);
         const now = Date.now();
         // Only refresh if the update was recent (within last 5 seconds)
-        if (now - lastUpdate < 5000 && activeSection === "manage-products") {
+        if (now - lastUpdate < 5000 && activeSection === "manage-inventory") {
           fetchProducts();
           // Clear the flag after processing
           localStorage.removeItem('medicart-stock-updated');
@@ -669,6 +675,30 @@ const Owner = () => {
     }
   }, [activeSection]);
 
+  // Add useEffect to fetch reminders
+  useEffect(() => {
+    if (!user) return;
+
+    // Fetch reminders for this user
+    const remindersQuery = query(
+      collection(db, 'notifications'),
+      where('user_id', '==', user.uid),
+      where('type', '==', 'medicine_request_reminder'),
+      where('read', '==', false),
+      orderBy('reminder_date', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(remindersQuery, (snapshot) => {
+      const remindersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setReminders(remindersData);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
   const { signOut } = useAuth();
 
   const handleLogout = async () => {
@@ -798,8 +828,8 @@ const Owner = () => {
       resetForm();
       // Refresh product list
       fetchProducts();
-      // Navigate back to manage products section
-      setActiveSection("manage-products");
+      // Navigate back to manage inventory section
+      setActiveSection("manage-inventory");
     } catch (error: any) {
       toast.error(error.message || "Failed to update product");
     } finally {
@@ -807,89 +837,7 @@ const Owner = () => {
     }
   };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate required fields
-    if (!productName.trim()) {
-      toast.error("Product name is required");
-      return;
-    }
-    
-    if (!categoryId) {
-      toast.error("Category is required");
-      return;
-    }
-    
-    if (!originalPrice || parseFloat(originalPrice) <= 0) {
-      toast.error("Valid original price is required");
-      return;
-    }
 
-    setLoading(true);
-
-    try {
-      await addDoc(collection(db, "products"), {
-        name: productName,
-        category_id: categoryId,
-        description,
-        uses,
-        side_effects: sideEffects,
-        composition,
-        original_price: parseFloat(originalPrice),
-        image_url: imageUrl || null,
-        in_stock: inStock,
-        stock_quantity: stockQuantity,
-        created_at: new Date().toISOString()
-      });
-
-      toast.success("Product added successfully!");
-      // Reset form
-      resetForm();
-      // Refresh product list
-      fetchProducts();
-      // Navigate back to manage products section
-      setActiveSection("manage-products");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to add product");
-    } finally {
-      setLoading(false);
-    }
-    if (!originalPrice || parseFloat(originalPrice) <= 0) {
-      toast.error("Valid original price is required");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      await addDoc(collection(db, "products"), {
-        name: productName,
-        category_id: categoryId,
-        description,
-        uses,
-        side_effects: sideEffects,
-        composition,
-        original_price: parseFloat(originalPrice),
-        image_url: imageUrl || null,
-        in_stock: inStock,
-        stock_quantity: inStock ? 10 : 0, // Default stock quantity
-        created_at: new Date().toISOString()
-      });
-
-      toast.success("Product added successfully!");
-      // Reset form
-      resetForm();
-      // Refresh product list
-      fetchProducts();
-      // Navigate back to manage products section
-      setActiveSection("manage-products");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to add product");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleUpdateDiscount = async () => {
     setLoading(true);
@@ -983,10 +931,9 @@ const Owner = () => {
   // Update navigation items to group related functionalities into logical categories
   const navigationItems = [
     // Inventory Management Group
-    { id: "add-product", label: "Add Product", icon: Plus, category: "Inventory" },
-    { id: "manage-products", label: "Manage Products", icon: Package, category: "Inventory" },
-    { id: "manage-categories", label: "Manage Categories", icon: Package, category: "Inventory" },
-    { id: "data-import", label: "Data Import", icon: Database, category: "Inventory" },
+    { id: "data-import", label: "Add Medicines", icon: Database, category: "Inventory" },
+    { id: "manage-inventory", label: "Manage Inventory", icon: Package, category: "Inventory" },
+    { id: "store-purchase", label: "Store Purchase", icon: Receipt, category: "Inventory" },
     
     // Marketing & Promotions Group
     { id: "offers", label: "Manage Offers", icon: Percent, category: "Marketing" },
@@ -1003,7 +950,6 @@ const Owner = () => {
     { id: "settings", label: "Settings", icon: Settings, category: "Configuration" },
     { id: "features", label: "Features", icon: Package, category: "Configuration" },
   ];
-
   // Effect to handle hash changes for navigation
   useEffect(() => {
     const handleHashChange = () => {
@@ -1162,12 +1108,12 @@ const Owner = () => {
                     {/* Show only essential navigation items in mobile menu */}
                     {navigationItems
                       .filter(item => 
-                        item.id === "add-product" || 
-                        item.id === "manage-products" || 
+                        item.id === "data-import" ||
+                        item.id === "store-purchase" ||
+                        item.id === "manage-inventory" || 
                         item.id === "requests" || 
                         item.id === "sales-reporting"
-                      )
-                      .map((item) => {
+                      )                      .map((item) => {
                         const Icon = item.icon;
                         return (
                           <Button
@@ -1384,196 +1330,47 @@ const Owner = () => {
             </motion.div>
 
             {/* Content Sections */}
-            {(activeSection === "add-product" || activeSection === "manage-products") && (
-              <div className="space-y-8">
-                {/* Add/Edit Product Form - Only shown in Add Product section or when editing */}
-                {(activeSection === "add-product" || editingProductId) && (
-                  <Card className="shadow-md">
-                    <CardHeader>
-                      <CardTitle className="text-2xl">{editingProductId ? "Edit Product" : "Add New Product"}</CardTitle>
-                      <CardDescription>{editingProductId ? "Modify medicine details" : "Add medicine details to your store inventory"}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <form onSubmit={editingProductId ? handleUpdateProduct : handleAddProduct} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Label htmlFor="name" className="font-medium">
-                                Product Name <span className="text-destructive">*</span>
-                              </Label>
-                            </div>
-                            <Input
-                              id="name"
-                              value={productName}
-                              onChange={(e) => setProductName(e.target.value)}
-                              placeholder="e.g., Paracetamol 500mg"
-                              required
-                            />
-                            <p className="text-xs text-muted-foreground">Enter the full name of the medicine</p>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Label htmlFor="category" className="font-medium">
-                                Category <span className="text-destructive">*</span>
-                              </Label>
-                            </div>
-                            <Select value={categoryId} onValueChange={setCategoryId} required>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {categories.map((cat) => (
-                                  <SelectItem key={cat.id} value={cat.id}>
-                                    {cat.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+            {activeSection === "data-import" && (
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    <Database className="w-6 h-6" />
+                    Add Medicines
+                  </CardTitle>
+                  <CardDescription>
+                    Automatically searches your inventory first, then the Indian Medicine Dataset
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <p className="text-muted-foreground mb-4">
+                      Automatically searches your current inventory first to restock existing medicines. 
+                      If not found locally, it searches the extensive Indian Medicine Dataset with over 250,000 medicines and adds them directly to your inventory.
+                    </p>
+                  </div>
+                  <IndianMedicineDatasetImport categories={categories} onCategoriesChange={fetchCategories} />
+                </CardContent>
+              </Card>
+            )}
+
+            {activeSection === "store-purchase" && (
+              <StorePurchase />
+            )}
+
+            {activeSection === "manage-inventory" && (
+              <div className="space-y-8 w-full max-w-6xl text-left">
+                {/* Product Listing Section - Only shown in Manage Inventory section */}
+                {!editingProductId && (
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="manage-products">
+                      <AccordionTrigger>
+                        <div className="py-2 pl-4 text-left">
+                          <CardTitle className="text-2xl">Manage Products</CardTitle>
+                          <CardDescription>View and manage your product inventory</CardDescription>
                         </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="description" className="font-medium">Description</Label>
-                          <Textarea
-                            id="description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Brief product description"
-                            rows={3}
-                          />
-                          <p className="text-xs text-muted-foreground">A short summary of the product</p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="uses" className="font-medium">Uses</Label>
-                          <Textarea
-                            id="uses"
-                            value={uses}
-                            onChange={(e) => setUses(e.target.value)}
-                            placeholder="What is this medicine used for?"
-                            rows={3}
-                          />
-                          <p className="text-xs text-muted-foreground">List the primary uses of this medicine</p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="composition" className="font-medium">Composition</Label>
-                          <Textarea
-                            id="composition"
-                            value={composition}
-                            onChange={(e) => setComposition(e.target.value)}
-                            placeholder="Active ingredients and composition"
-                            rows={2}
-                          />
-                          <p className="text-xs text-muted-foreground">List the active ingredients</p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="side_effects" className="font-medium">Side Effects</Label>
-                          <Textarea
-                            id="side_effects"
-                            value={sideEffects}
-                            onChange={(e) => setSideEffects(e.target.value)}
-                            placeholder="Possible side effects"
-                            rows={3}
-                          />
-                          <p className="text-xs text-muted-foreground">List any known side effects</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Label htmlFor="price" className="font-medium">
-                                Original Price (₹) <span className="text-destructive">*</span>
-                              </Label>
-                            </div>
-                            <Input
-                              id="price"
-                              type="number"
-                              step="0.01"
-                              value={originalPrice}
-                              onChange={(e) => setOriginalPrice(e.target.value)}
-                              placeholder="99.99"
-                              required
-                            />
-                            <p className="text-xs text-muted-foreground">Enter the MRP in ₹</p>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="image" className="font-medium">Image URL</Label>
-                            <Input
-                              id="image"
-                              value={imageUrl}
-                              onChange={(e) => setImageUrl(e.target.value)}
-                              placeholder="https://..."
-                            />
-                            <p className="text-xs text-muted-foreground">Paste a direct image URL (JPG/PNG)</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 pt-2">
-                          <Switch
-                            id="in-stock"
-                            checked={inStock}
-                            onCheckedChange={setInStock}
-                          />
-                          <Label htmlFor="in-stock" className="font-medium">
-                            In Stock
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Uncheck if this product is currently unavailable
-                          </p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="stock-quantity" className="font-medium">
-                            Stock Quantity
-                          </Label>
-                          <Input
-                            id="stock-quantity"
-                            type="number"
-                            min="0"
-                            value={stockQuantity}
-                            onChange={(e) => setStockQuantity(parseInt(e.target.value) || 0)}
-                            placeholder="0"
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Enter the current quantity available in stock
-                          </p>
-                        </div>
-
-
-
-                        <div className="flex gap-3">
-                          <Button type="submit" disabled={loading} className="w-full md:w-1/3">
-                            {loading ? (
-                              <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                                <span>{editingProductId ? "Updating..." : "Adding..."}</span>
-                              </div>
-                            ) : (
-                              editingProductId ? "Update Product" : "Add Product"
-                            )}
-                          </Button>
-                          {editingProductId && (
-                            <Button type="button" variant="outline" onClick={handleCancelEdit} className="w-full md:w-1/3">
-                              Cancel
-                            </Button>
-                          )}
-                        </div>
-                      </form>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Product Listing Section - Only shown in Manage Products section */}
-                {activeSection === "manage-products" && !editingProductId && (
-                  <Card className="shadow-md">
-                    <CardHeader>
-                      <CardTitle className="text-2xl">Manage Products</CardTitle>
-                      <CardDescription>View and manage your product inventory</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Search and Filter Controls */}
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="pt-4 pl-4 text-left">                      {/* Search and Filter Controls */}
                       <div className="mb-6 space-y-4">
                         <div className="flex flex-col sm:flex-row gap-4">
                           <div className="flex-1">
@@ -1634,14 +1431,10 @@ const Owner = () => {
                               <h3 className="text-lg font-medium mb-2">No products found</h3>
                               <p className="text-muted-foreground">
                                 {products.length === 0 
-                                  ? "Add your first product using the \"Add Product\" section."
+                                  ? "Add your first product using the Add Medicines section."
                                   : "Try adjusting your search or filter criteria."}
                               </p>
-                              {products.length === 0 && (
-                                <Button onClick={() => setActiveSection("add-product")} className="mt-4">
-                                  Add Product
-                                </Button>
-                              )}
+
                             </div>
                           ) : (
                             <div className="space-y-4">
@@ -1717,212 +1510,117 @@ const Owner = () => {
                           )}
                         </>
                       )}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             )}
-
-            {/* Data Import Section */}
-            {activeSection === "data-import" && (
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    <Database className="w-6 h-6" />
-                    Medicine Data Import
-                  </CardTitle>
-                  <CardDescription>
-                    Import medicine data from various sources
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card 
-                      className={`cursor-pointer border-2 ${importSource === "manual" ? "border-primary" : ""}`}
-                      onClick={() => setImportSource("manual")}
-                    >
-                      <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Plus className="w-5 h-5" />
-                          Manual Entry
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                          Add medicines one by one using the manual form
-                        </p>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card 
-                      className={`cursor-pointer border-2 ${importSource === "csv" ? "border-primary" : ""}`}
-                      onClick={() => setImportSource("csv")}
-                    >
-                      <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <FileSpreadsheet className="w-5 h-5" />
-                          CSV/Excel Import
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                          Upload a spreadsheet with multiple medicine records
-                        </p>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card 
-                      className={`cursor-pointer border-2 ${importSource === "api" ? "border-primary" : ""}`}
-                      onClick={() => setImportSource("api")}
-                    >
-                      <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Database className="w-5 h-5" />
-                          API Import
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                          Connect to external medicine databases (coming soon)
-                        </p>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card 
-                      className={`cursor-pointer border-2 ${importSource === "indian_dataset" ? "border-primary" : ""}`}
-                      onClick={() => setImportSource("indian_dataset")}
-                    >
-                      <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Download className="w-5 h-5" />
-                          Indian Medicine Dataset
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                          Search and import from the Indian Medicine Dataset (250,000+ medicines)
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {importSource === "manual" && (
-                    <div className="mt-6">
-                      <h3 className="text-lg font-semibold mb-4">Manual Entry</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Use the "Add Product" section to manually enter medicine details.
-                      </p>
-                      <Button onClick={() => setActiveSection("add-product")}>
-                        Go to Add Product
-                      </Button>
-                    </div>
-                  )}
-
-                  {importSource === "csv" && (
-                    <div className="mt-6">
-                      <h3 className="text-lg font-semibold mb-4">CSV/Excel Import</h3>
-                      <ExcelUpload onSuccess={() => {
-                        fetchProducts();
-                        toast.success("Products uploaded successfully! Refresh the store to see changes.");
-                      }} />
-                    </div>
-                  )}
-
-                  {importSource === "api" && (
-                    <div className="mt-6">
-                      <h3 className="text-lg font-semibold mb-4">API Import</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Connect to external medicine databases. Note: This feature requires a valid API endpoint and key.
-                      </p>
-                      
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="api-endpoint">API Endpoint</Label>
-                          <Input
-                            id="api-endpoint"
-                            value={apiEndpoint}
-                            onChange={(e) => setApiEndpoint(e.target.value)}
-                            placeholder="https://api.medicinedatabase.com/v1/medicines"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="api-key">API Key</Label>
-                          <Input
-                            id="api-key"
-                            type="password"
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            placeholder="Enter your API key"
-                          />
-                        </div>
-                        
-                        {isImporting && (
-                          <div className="space-y-2">
-                            <p className="text-sm text-muted-foreground">Importing data...</p>
-                            <div className="w-full bg-secondary rounded-full h-2.5">
-                              <div 
-                                className="bg-primary h-2.5 rounded-full transition-all duration-300" 
-                                style={{ width: `${importProgress}%` }}
-                              ></div>
-                            </div>
-                            <p className="text-xs text-muted-foreground text-right">{importProgress}%</p>
-                          </div>
-                        )}
-                        
-                        <div className="flex gap-2">
-                          <Button 
-                            onClick={handleApiImport} 
-                            disabled={isImporting}
-                          >
-                            {isImporting ? "Importing..." : "Import Data"}
-                          </Button>
-                          
-                          <Button 
-                            variant="outline"
-                            onClick={() => {
-                              setApiEndpoint("https://api.example.com/medicines");
-                              setApiKey("sample-api-key-12345");
-                            }}
-                          >
-                            Use Sample Credentials
-                          </Button>
-                        </div>
-                        
-                        <Card className="mt-6 border border-dashed bg-muted/30">
-                          <CardHeader>
-                            <CardTitle className="text-md">Note</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-sm text-muted-foreground">
-                              Currently, there are no freely available public APIs for Indian medicine data. 
-                              This feature is designed to work with commercial medicine databases that you may subscribe to.
-                              When you obtain access to such an API, you can use this interface to import medicine data automatically.
-                            </p>
-                            <p className="text-sm text-muted-foreground mt-2">
-                              For now, we recommend using the CSV/Excel import option with our template for bulk data entry.
-                            </p>
-                          </CardContent>
-                        </Card>
+                            
+            {/* Category Management Section */}
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="manage-categories">
+                    <AccordionTrigger>
+                      <div className="py-2 pl-4 text-left">
+                        <CardTitle className="text-2xl">Manage Categories</CardTitle>
+                        <CardDescription>Add, edit, or delete product categories</CardDescription>
                       </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pt-4 pl-4 text-left space-y-6">
+                    {/* Category Form */}
+                    <Card className="border border-dashed bg-muted/30">
+                      <CardHeader>
+                        <CardTitle className="text-lg">
+                          {editingCategoryId ? "Edit Category" : "Add New Category"}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={editingCategoryId ? handleUpdateCategory : handleAddCategory} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="category-name">Category Name</Label>
+                            <Input
+                              id="category-name"
+                              value={categoryName}
+                              onChange={(e) => setCategoryName(e.target.value)}
+                              placeholder="Enter category name"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button type="submit" disabled={loading}>
+                              {loading ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                                  <span>{editingCategoryId ? "Updating..." : "Adding..."}</span>
+                                </div>
+                              ) : editingCategoryId ? (
+                                "Update Category"
+                              ) : (
+                                "Add Category"
+                              )}
+                            </Button>
+                            {editingCategoryId && (
+                              <Button type="button" variant="outline" onClick={handleCancelCategoryEdit}>
+                                Cancel
+                              </Button>
+                            )}
+                          </div>
+                        </form>
+                      </CardContent>
+                    </Card>
+
+                    {/* Categories List */}
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-semibold">Existing Categories</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {categories.length} category{categories.length !== 1 ? 'es' : ''} in your store
+                        </p>
+                      </div>
+                      
+                      {categories.length === 0 ? (
+                        <div className="text-center py-8 border border-dashed rounded-lg">
+                          <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="text-lg font-medium mb-2">No categories yet</h3>
+                          <p className="text-muted-foreground mb-4">
+                            Add your first category to organize your products.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {categories.map((category) => (
+                            <Card key={category.id} className="flex items-center justify-between p-4">
+                              <div>
+                                <h4 className="font-medium">{category.name}</h4>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditCategory(category)}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteCategory(category.id, category.name)}
+                                >
+                                  <Trash className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  
-                  {importSource === "indian_dataset" && (
-                    <div className="mt-6">
-                      <h3 className="text-lg font-semibold mb-4">Indian Medicine Dataset Import</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Search and import medicines from the comprehensive Indian Medicine Dataset containing over 250,000 medicines.
-                      </p>
-                      <IndianMedicineDatasetImport categories={categories} />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-
-
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+            
+      </div>
+    )}
+    
             {/* Orders Management Section */}
             {activeSection === "orders" && (
               <Card className="shadow-md">
@@ -2250,103 +1948,6 @@ const Owner = () => {
                         "Update Discount"
                       )}
                     </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeSection === "manage-categories" && (
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-2xl">Manage Categories</CardTitle>
-                  <CardDescription>Add, edit, or delete product categories</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Category Form */}
-                  <Card className="border border-dashed bg-muted/30">
-                    <CardHeader>
-                      <CardTitle className="text-lg">
-                        {editingCategoryId ? "Edit Category" : "Add New Category"}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <form onSubmit={editingCategoryId ? handleUpdateCategory : handleAddCategory} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="category-name">Category Name</Label>
-                          <Input
-                            id="category-name"
-                            value={categoryName}
-                            onChange={(e) => setCategoryName(e.target.value)}
-                            placeholder="Enter category name"
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button type="submit" disabled={loading}>
-                            {loading ? (
-                              <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                                <span>{editingCategoryId ? "Updating..." : "Adding..."}</span>
-                              </div>
-                            ) : editingCategoryId ? (
-                              "Update Category"
-                            ) : (
-                              "Add Category"
-                            )}
-                          </Button>
-                          {editingCategoryId && (
-                            <Button type="button" variant="outline" onClick={handleCancelCategoryEdit}>
-                              Cancel
-                            </Button>
-                          )}
-                        </div>
-                      </form>
-                    </CardContent>
-                  </Card>
-
-                  {/* Categories List */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">Existing Categories</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {categories.length} category{categories.length !== 1 ? 'es' : ''} in your store
-                      </p>
-                    </div>
-                    
-                    {categories.length === 0 ? (
-                      <div className="text-center py-8 border border-dashed rounded-lg">
-                        <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No categories yet</h3>
-                        <p className="text-muted-foreground mb-4">
-                          Add your first category to organize your products.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {categories.map((category) => (
-                          <Card key={category.id} className="flex items-center justify-between p-4">
-                            <div>
-                              <h4 className="font-medium">{category.name}</h4>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditCategory(category)}
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDeleteCategory(category.id, category.name)}
-                              >
-                                <Trash className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>

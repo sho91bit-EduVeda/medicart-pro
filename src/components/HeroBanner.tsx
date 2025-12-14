@@ -39,8 +39,12 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
   const isStoreOpenByTime = () => {
     const now = new Date();
     const currentHour = now.getHours();
-    // Store hours: 8 AM (8) to 11 PM (23)
-    return currentHour >= 8 && currentHour < 23;
+    const currentMinute = now.getMinutes();
+    // Store hours: 8 AM (8) to 10:30 PM (22:30)
+    if (currentHour < 8) return false;
+    if (currentHour > 22) return false;
+    if (currentHour === 22 && currentMinute > 30) return false;
+    return true;
   };
 
   // Function to check if store is actually open (considering manual closure)
@@ -60,9 +64,9 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
     },
     {
       icon: Clock,
-      title: "Store Hours: 8 AM - 11 PM",
+      title: "Store Hours: 8 AM - 10:30 PM",
       description: "Visit our pharmacy during business hours for immediate assistance",
-      details: "Our physical store is open daily from 8 AM to 11 PM. Speak with our pharmacists for personalized advice and immediate assistance.",
+      details: "Our physical store is open daily from 8 AM to 10:30 PM. Speak with our pharmacists for personalized advice and immediate assistance.",
       // Add status badge to this feature
       status: isStoreActuallyOpen() ? "OPEN" : "CLOSED"
     }

@@ -58,6 +58,7 @@ const CategoryPage = () => {
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchPopup, setShowSearchPopup] = useState(false);
+  const [isSearchResult, setIsSearchResult] = useState(false); // Track if popup is from search vs direct product view
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -121,6 +122,7 @@ const CategoryPage = () => {
   const handleSuggestionSelect = (product: Product) => {
     setSearchQuery(product.name);
     setShowSuggestions(false);
+    setIsSearchResult(true); // This is from a search
     setShowSearchPopup(true);
   };
 
@@ -128,6 +130,7 @@ const CategoryPage = () => {
   const handleSearchSubmit = () => {
     if (searchQuery.trim()) {
       setShowSuggestions(false);
+      setIsSearchResult(true); // This is from a search
       setShowSearchPopup(true);
     }
   };
@@ -506,9 +509,11 @@ const CategoryPage = () => {
         isOpen={showSearchPopup} 
         onClose={() => {
           setShowSearchPopup(false);
+          setIsSearchResult(false); // Reset search context
           // Clear the search query when closing the popup to show all products
           setSearchQuery("");
         }} 
+        showBackButton={isSearchResult} // Only show back button when it's actually a search result
       />
 
       {/* Main Content with animations */}
@@ -640,6 +645,7 @@ const CategoryPage = () => {
                   requires_prescription={product.requires_prescription}
                   onClick={() => {
                     setSearchQuery(product.name);
+                    setIsSearchResult(false); // Not a search result, direct product view
                     setShowSearchPopup(true);
                   }}
                 />
