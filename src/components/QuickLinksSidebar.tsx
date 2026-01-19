@@ -1,11 +1,11 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { 
-  Package, 
-  Mail, 
-  TrendingUp, 
-  ChevronRight, 
+import {
+  Package,
+  Mail,
+  TrendingUp,
+  ChevronRight,
   ChevronLeft,
   ShoppingCart,
   Bell,
@@ -23,6 +23,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
+import LottieAnimation from "./LottieAnimation";
+import quickLinksAnim from "@/assets/animations/quick-links.json";
 
 interface QuickLink {
   id: string;
@@ -37,7 +39,7 @@ export function QuickLinksSidebar() {
   const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  
+
   // Define links for authenticated users (owners)
   const ownerLinks: QuickLink[] = [
     {
@@ -69,7 +71,7 @@ export function QuickLinksSidebar() {
       requiresAuth: true
     }
   ];
-  
+
   // Define links for non-authenticated users
   const guestLinks: QuickLink[] = [
     {
@@ -85,10 +87,10 @@ export function QuickLinksSidebar() {
       path: "#request-medicine"
     }
   ];
-  
+
   // Select appropriate links based on authentication status
   const quickLinks = isAuthenticated ? ownerLinks : guestLinks;
-  
+
   const handleLinkClick = (link: QuickLink) => {
     // Special handling for request medicine for non-authenticated users
     if (!isAuthenticated && link.id === "request-medicine") {
@@ -96,7 +98,7 @@ export function QuickLinksSidebar() {
       setIsOpen(false);
       return;
     }
-    
+
     // Navigate to the specified path
     if (link.path.startsWith("/")) {
       // For owner dashboard links, we need to handle hash navigation properly
@@ -134,7 +136,7 @@ export function QuickLinksSidebar() {
         className="w-14 h-14 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <Zap className="h-6 w-6" />
+        <LottieAnimation animationData={quickLinksAnim} width={35} height={35} />
       </Button>
 
       {/* Bubble menu with animations */}
@@ -149,23 +151,23 @@ export function QuickLinksSidebar() {
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
             />
-            
+
             {/* Bubble menu container */}
             <motion.div
               className="absolute bottom-16 right-0 w-64 bg-background border rounded-xl shadow-xl p-2 z-50"
               initial={{ opacity: 0, scale: 0.8, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 20 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 300, 
-                damping: 25 
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 25
               }}
             >
               <div className="flex flex-col gap-1">
                 {quickLinks.map((link) => {
                   const Icon = link.icon;
-                  
+
                   // Special handling for request medicine for guests
                   if (!isAuthenticated && link.id === "request-medicine") {
                     return (
@@ -191,7 +193,7 @@ export function QuickLinksSidebar() {
                               <Icon className="w-5 h-5" />
                             </motion.div>
                             <span className="font-medium">{link.label}</span>
-                            
+
                             {/* Hover animation indicator */}
                             {hoveredItem === link.id && (
                               <motion.div
@@ -207,7 +209,7 @@ export function QuickLinksSidebar() {
                       </RequestMedicineSheet>
                     );
                   }
-                  
+
                   return (
                     <motion.div
                       key={link.id}
@@ -231,7 +233,7 @@ export function QuickLinksSidebar() {
                           <Icon className="w-5 h-5" />
                         </motion.div>
                         <span className="font-medium">{link.label}</span>
-                        
+
                         {/* Hover animation indicator */}
                         {hoveredItem === link.id && (
                           <motion.div

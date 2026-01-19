@@ -5,6 +5,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { StockStatus } from "@/components/StockStatus";
 import RequestMedicineSheet from "@/components/RequestMedicineSheet";
 import { motion, useAnimation } from "framer-motion";
+import LottieAnimation from "./LottieAnimation";
 
 interface ProductCardProps {
   id: string;
@@ -18,6 +19,8 @@ interface ProductCardProps {
   onClick?: () => void;
   variants?: any;
   custom?: any;
+  category_id?: string;
+  category_animation_data?: any;
 }
 
 // Map product names to appropriate icons
@@ -45,6 +48,7 @@ export default function ProductCard({
   onClick,
   variants,
   custom,
+  category_animation_data,
 }: ProductCardProps) {
   const { items: wishlistItems, addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlist();
   
@@ -117,6 +121,12 @@ export default function ProductCard({
             alt={name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
+        ) : category_animation_data ? (
+          <div className="w-full h-full bg-gradient-to-br from-primary/5 to-secondary/5 flex items-center justify-center">
+            <div className="w-16 h-16">
+              <LottieAnimation animationData={category_animation_data} />
+            </div>
+          </div>
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/5 to-secondary/5 flex items-center justify-center">
             <IconComponent className="w-16 h-16 text-primary" />

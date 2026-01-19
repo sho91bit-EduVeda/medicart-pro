@@ -9,6 +9,14 @@ import { Package, Store, Search, Pill, Baby, Stethoscope, Syringe } from "lucide
 import ProductCard from "@/components/ProductCard";
 import { motion, useReducedMotion } from "framer-motion";
 
+// Import animations
+import allergyAnim from "@/assets/animations/category-allergy.json";
+import antibioticsAnim from "@/assets/animations/category-antibiotics.json";
+import babyAnim from "@/assets/animations/category-baby.json";
+import coldFluAnim from "@/assets/animations/category-cold-flu.json";
+import painAnim from "@/assets/animations/category-pain.json";
+import vitaminsAnim from "@/assets/animations/category-vitamins.json";
+
 interface Product {
   id: string;
   name: string;
@@ -36,6 +44,58 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [discountPercentage] = useState(0); // In a real app, this would come from settings
+
+  // Define Category interface
+  interface Category {
+    id: string;
+    name: string;
+    description?: string;
+  }
+
+  // Define category animations
+  const categoryAnimations: Record<string, any> = {
+    "Baby Products": babyAnim,
+    "Allergy": allergyAnim,
+    "Cold & Flu": coldFluAnim,
+    "Antibiotics": antibioticsAnim,
+    "Pain Relief": painAnim,
+    "Vitamins": vitaminsAnim,
+    "Proton Pump Inhibitor": painAnim,
+  };
+
+  // Actually, let's fetch categories separately
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const q = query(collection(db, "categories"));
+        const querySnapshot = await getDocs(q);
+        const categoriesData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Category[];
+        
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Function to get category name by ID
+  const getCategoryNameById = (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : '';
+  };
+
+  // Function to get animation data for a category
+  const getCategoryAnimation = (categoryName: string) => {
+    // Return specific animation if exists, otherwise default to pain animation
+    return categoryAnimations[categoryName] || painAnim;
+  };
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -261,6 +321,7 @@ const Products = () => {
                       in_stock={product.in_stock}
                       quantity={product.stock_quantity || 0}
                       requires_prescription={product.requires_prescription}
+                      category_animation_data={product.category_id ? getCategoryAnimation(getCategoryNameById(product.category_id)) : undefined}
                     />
                   </motion.div>
                 ))}

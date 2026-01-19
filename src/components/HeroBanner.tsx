@@ -1,12 +1,12 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ShieldCheck, 
-  Clock, 
+import {
+  ShieldCheck,
+  Clock,
   Store,
-  Heart, 
-  Pill, 
+  Heart,
+  Pill,
   Stethoscope,
   ChevronDown,
   ChevronUp,
@@ -23,13 +23,18 @@ import {
 import StoreReviewForm from "@/components/StoreReviewForm";
 import { motion, useScroll, useTransform, useInView, useAnimation } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth"; // Import useAuth hook
+import LottieAnimation from "./LottieAnimation";
+import heroAnim from "@/assets/animations/hero-pharmacy.json";
+import trustSupportAnim from "@/assets/animations/trust-support.json";
+import trustProductsAnim from "@/assets/animations/trust-products.json";
+import trustSatisfiedAnim from "@/assets/animations/trust-satisfied.json";
 
 export const HeroBanner = ({ discountPercentage }: { discountPercentage: number }) => {
   const [expandedFeature, setExpandedFeature] = useState<number | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const { deliveryEnabled, storeClosed } = useFeatureFlags(); // Use the new feature flags
   const { isAuthenticated, userName } = useAuth(); // Get authentication state and user name
-  
+
   // Animation refs and controls
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, margin: "-20% 0px" });
@@ -59,7 +64,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
     {
       icon: ShieldCheck,
       title: "100% Genuine Medicines",
-      description: "All our products are sourced directly from manufacturers with authenticity guarantee",
+      description: "All our products are sourced directly from manufacturers",
       details: "We verify every supplier and maintain strict quality control standards to ensure you receive only genuine medications."
     },
     {
@@ -77,65 +82,67 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
   };
 
   return (
-    <motion.section 
+    <motion.section
       ref={ref}
       className="relative overflow-hidden rounded-2xl mx-4 mt-6 shadow-xl bg-gradient-to-br from-primary/5 to-secondary/5 border"
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={{
         hidden: { opacity: 0, y: 40 },
-        visible: { 
-          opacity: 1, 
+        visible: {
+          opacity: 1,
           y: 0,
-          transition: { 
+          transition: {
             duration: 0.6,
             ease: "easeOut"
           }
         }
       }}
     >
-      <div className="container mx-auto px-6 py-12">
+      <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
-          <motion.div 
-            className="space-y-6"
+          <motion.div
+            className="space-y-8"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            <Badge variant="secondary" className="rounded-full px-4 py-1 text-sm font-medium bg-gradient-to-r from-primary/20 to-secondary/20">
-              <Heart className="w-4 h-4 mr-2 text-primary" />
-              Trusted by 10,000+ Families
-            </Badge>
-            
-            <motion.h1 
-              className="text-4xl md:text-5xl font-bold leading-tight"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              {isAuthenticated && userName ? (
-                <>
-                  Welcome, <span className="text-primary">{userName}</span>!
-                </>
-              ) : (
-                <>
-                  Your <span className="text-primary">Trusted</span> Healthcare Partner
-                </>
-              )}
-            </motion.h1>
-            
-            <motion.p 
-              className="text-lg text-muted-foreground max-w-2xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
-              Quality medicines and healthcare products available at our physical store with complete privacy and professional care.
-            </motion.p>
-            
-            <motion.div 
-              className="flex flex-wrap items-center gap-4 pt-4"
+            <div className="space-y-4">
+              <Badge variant="secondary" className="rounded-full px-4 py-1 text-sm font-medium bg-gradient-to-r from-primary/20 to-secondary/20 w-fit">
+                <Heart className="w-4 h-4 mr-2 text-primary" />
+                Trusted by 10,000+ Families
+              </Badge>
+
+              <motion.h1
+                className="text-4xl md:text-5xl font-bold leading-tight"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                {isAuthenticated && userName ? (
+                  <>
+                    Welcome, <span className="text-primary">{userName}</span>!
+                  </>
+                ) : (
+                  <>
+                    Your <span className="text-primary">Trusted</span> Healthcare Partner
+                  </>
+                )}
+              </motion.h1>
+
+              <motion.p
+                className="text-lg text-muted-foreground max-w-2xl"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                Quality medicines and healthcare products available at our physical store with complete privacy and professional care.
+              </motion.p>
+            </div>
+
+            <motion.div
+              className="flex flex-wrap items-center gap-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.5 }}
@@ -143,44 +150,81 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
               {discountPercentage > 0 && (
                 <div className="inline-flex items-center bg-gradient-to-r from-primary/10 to-accent/10 backdrop-blur-sm text-primary px-6 py-3 rounded-full font-bold text-lg border border-primary/20">
                   <span className="animate-pulse">🔥</span>
-                  <span className="ml-2">Upto {discountPercentage}% OFF on all products!</span>
+                  <span className="ml-2">Upto {discountPercentage}% OFF!</span>
                 </div>
               )}
-              
+
               {/* Leave a Store Review Button - Hidden when owner is logged in */}
               {!isAuthenticated && (
                 <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
                   <DialogTrigger asChild>
-                    <motion.button 
-                      className="rounded-full px-6 py-3 flex items-center gap-2 bg-background hover:bg-accent transition-colors border-primary/30"
+                    <motion.button
+                      className="rounded-full px-6 py-3 flex items-center gap-2 bg-background hover:bg-accent transition-colors border-primary/30 shadow-sm"
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                       transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
                       <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                       Leave a Store Review
-                      <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                     </motion.button>
                   </DialogTrigger>
                   <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Store Review</DialogTitle>
                     </DialogHeader>
-                    <StoreReviewForm 
-                      onClose={() => setShowReviewDialog(false)} 
+                    <StoreReviewForm
+                      onClose={() => setShowReviewDialog(false)}
                       onSubmit={() => {
                         // Refresh reviews if needed
-                      }} 
+                      }}
                     />
                   </DialogContent>
                 </Dialog>
               )}
             </motion.div>
+
+            {/* Stats Grid - Moved to Left for Balance */}
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: { opacity: 1 }
+              }}
+            >
+              <motion.div
+                className="bg-background/60 backdrop-blur-sm border rounded-xl p-3 text-center flex flex-col items-center justify-center min-h-[120px]"
+                whileHover={{ y: -5 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <div className="flex-1 flex items-center justify-center">
+                  <LottieAnimation animationData={trustSupportAnim} width={90} height={90} className="mx-auto" />
+                </div>
+                <div className="text-xs text-muted-foreground font-medium mt-1">Support</div>
+              </motion.div>
+              <motion.div
+                className="bg-background/60 backdrop-blur-sm border rounded-xl p-3 text-center flex flex-col items-center justify-center min-h-[120px]"
+                whileHover={{ y: -5 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <LottieAnimation animationData={trustProductsAnim} width={80} height={80} className="mx-auto mb-1" />
+                <div className="text-xl font-bold text-primary">5000+</div>
+                <div className="text-xs text-muted-foreground font-medium">Products</div>
+              </motion.div>
+              <motion.div
+                className="bg-background/60 backdrop-blur-sm border rounded-xl p-3 text-center flex flex-col items-center justify-center min-h-[120px]"
+                whileHover={{ y: -5 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <LottieAnimation animationData={trustSatisfiedAnim} width={80} height={80} className="mx-auto mb-1" />
+                <div className="text-xl font-bold text-primary">99%</div>
+                <div className="text-xs text-muted-foreground font-medium">Satisfied</div>
+              </motion.div>
+            </motion.div>
           </motion.div>
-          
-          {/* Right Content - Features with staggered animation */}
-          <motion.div 
-            className="space-y-4"
+
+          {/* Right Content - Animation & Features */}
+          <motion.div
+            className="space-y-6 flex flex-col justify-center mt-8 md:-mt-24"
             initial="hidden"
             animate="visible"
             variants={{
@@ -193,125 +237,96 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
               }
             }}
           >
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <motion.div 
-                  key={index} 
-                  className="bg-background/50 backdrop-blur-sm rounded-2xl p-5 border border-primary/10 hover:border-primary/30 transition-all duration-300 cursor-pointer"
-                  onClick={() => toggleFeature(index)}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: { opacity: 1, y: 0 }
-                  }}
-                  whileHover={{ y: -5 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20">
-                      <Icon className="w-6 h-6 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-lg">{feature.title}</h3>
-                          {/* Show OPEN/CLOSED badge for store hours */}
-                          {index === 1 && (
-                            <Badge 
-                              className={`rounded-full px-2 py-1 text-xs font-medium ${
-                                isStoreActuallyOpen() 
-                                  ? "bg-green-100 text-green-800" 
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {isStoreActuallyOpen() ? "OPEN" : "CLOSED"}
-                            </Badge>
-                          )}
-                        </div>
-                        {expandedFeature === index ? (
-                          <ChevronUp className="w-5 h-5 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                        )}
-                      </div>
-                      <p className="text-muted-foreground mt-2">{feature.description}</p>
-                      {expandedFeature === index && (
-                        <p className="text-sm text-muted-foreground mt-3 pt-3 border-t border-primary/10">
-                          {feature.details}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-            
-            {/* Stats with staggered animation */}
-            <motion.div 
-              className="grid grid-cols-3 gap-4 pt-4"
+            {/* Hero Animation - Main Visual - Desktop Only */}
+            <motion.div
+              className="w-full max-w-[550px] mx-auto hidden md:block"
               variants={{
-                hidden: { opacity: 0 },
-                visible: { opacity: 1 }
+                hidden: { opacity: 0, scale: 0.9 },
+                visible: { opacity: 1, scale: 1 }
               }}
             >
-              <motion.div 
-                className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-4 text-center"
-                whileHover={{ y: -5 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0 }
-                }}
-              >
-                <div className="text-2xl font-bold text-primary">24/7</div>
-                <div className="text-sm text-muted-foreground">Support</div>
-              </motion.div>
-              <motion.div 
-                className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-4 text-center"
-                whileHover={{ y: -5 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0 }
-                }}
-              >
-                <div className="text-2xl font-bold text-primary">5000+</div>
-                <div className="text-sm text-muted-foreground">Products</div>
-              </motion.div>
-              <motion.div 
-                className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-4 text-center"
-                whileHover={{ y: -5 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0 }
-                }}
-              >
-                <div className="text-2xl font-bold text-primary">99%</div>
-                <div className="text-sm text-muted-foreground">Satisfied</div>
-              </motion.div>
+              <LottieAnimation animationData={heroAnim} className="w-full h-auto" />
             </motion.div>
+
+            {/* Feature Cards */}
+            <div className="space-y-4">
+              {features.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <motion.div
+                    key={index}
+                    className="bg-background/80 backdrop-blur-sm rounded-xl p-4 border border-primary/10 hover:border-primary/30 transition-all duration-300 cursor-pointer shadow-sm"
+                    onClick={() => toggleFeature(index)}
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 shrink-0">
+                        <Icon className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-bold text-base md:text-lg">{feature.title}</h3>
+                            {index === 1 && (
+                              <Badge
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider ${isStoreActuallyOpen()
+                                  ? "bg-green-100 text-green-700 border-green-200"
+                                  : "bg-red-100 text-red-700 border-red-200"
+                                  }`}
+                                variant="outline"
+                              >
+                                {isStoreActuallyOpen() ? "OPEN" : "CLOSED"}
+                              </Badge>
+                            )}
+                          </div>
+                          {expandedFeature === index ? (
+                            <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-muted-foreground text-sm mt-1">{feature.description}</p>
+                        {expandedFeature === index && (
+                          <motion.p
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            className="text-sm text-muted-foreground mt-3 pt-3 border-t border-primary/10"
+                          >
+                            {feature.details}
+                          </motion.p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
           </motion.div>
         </div>
       </div>
-      
+
       {/* Decorative Elements with parallax effect */}
-      <motion.div 
+      <motion.div
         className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl"
         initial={{ y: 0 }}
         animate={{ y: -20 }}
-        transition={{ 
+        transition={{
           duration: 2,
           repeat: Infinity,
           repeatType: "reverse",
           ease: "easeInOut"
         }}
       ></motion.div>
-      <motion.div 
+      <motion.div
         className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-secondary/10 blur-3xl"
         initial={{ y: 0 }}
         animate={{ y: 20 }}
-        transition={{ 
+        transition={{
           duration: 2,
           repeat: Infinity,
           repeatType: "reverse",

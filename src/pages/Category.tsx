@@ -19,6 +19,15 @@ import { SearchPopup } from "@/components/SearchPopup";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 import { LoginPopup } from "@/components/LoginPopup";
 import { motion, useReducedMotion } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
+
+// Import animations
+import allergyAnim from "@/assets/animations/category-allergy.json";
+import antibioticsAnim from "@/assets/animations/category-antibiotics.json";
+import babyAnim from "@/assets/animations/category-baby.json";
+import coldFluAnim from "@/assets/animations/category-cold-flu.json";
+import painAnim from "@/assets/animations/category-pain.json";
+import vitaminsAnim from "@/assets/animations/category-vitamins.json";
 
 interface Product {
   id: string;
@@ -44,6 +53,22 @@ interface Category {
   name: string;
   description?: string;
 }
+
+const categoryAnimations: Record<string, any> = {
+  "Baby Products": babyAnim,
+  "Allergy": allergyAnim,
+  "Cold & Flu": coldFluAnim,
+  "Antibiotics": antibioticsAnim,
+  "Pain Relief": painAnim,
+  "Vitamins": vitaminsAnim,
+  "Proton Pump Inhibitor": painAnim,
+};
+
+// Function to get animation data for a category
+const getCategoryAnimation = (categoryName: string) => {
+  // Return specific animation if exists, otherwise default to pain animation
+  return categoryAnimations[categoryName] || painAnim;
+};
 
 const CategoryPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -643,6 +668,7 @@ const CategoryPage = () => {
                   in_stock={product.in_stock}
                   quantity={product.stock_quantity || 0}
                   requires_prescription={product.requires_prescription}
+                  category_animation_data={category ? getCategoryAnimation(category.name) : undefined}
                   onClick={() => {
                     setSearchQuery(product.name);
                     setIsSearchResult(false); // Not a search result, direct product view

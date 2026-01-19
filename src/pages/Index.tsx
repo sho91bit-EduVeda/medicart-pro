@@ -20,7 +20,7 @@ import { SearchPopup } from "@/components/SearchPopup";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { 
+import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -55,6 +55,13 @@ import {
 } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, useReducedMotion, useAnimation, useInView } from "framer-motion";
 
+import allergyAnim from "@/assets/animations/category-allergy.json";
+import antibioticsAnim from "@/assets/animations/category-antibiotics.json";
+import babyAnim from "@/assets/animations/category-baby.json";
+import coldFluAnim from "@/assets/animations/category-cold-flu.json";
+import painAnim from "@/assets/animations/category-pain.json";
+import vitaminsAnim from "@/assets/animations/category-vitamins.json";
+
 interface Category {
   id: string;
   name: string;
@@ -87,6 +94,16 @@ const categoryImages: Record<string, string> = {
   "Antibiotics": antibioticsImage,
 };
 
+const categoryAnimations: Record<string, any> = {
+  "Baby Products": babyAnim,
+  "Allergy": allergyAnim,
+  "Cold & Flu": coldFluAnim,
+  "Antibiotics": antibioticsAnim,
+  "Pain Relief": painAnim,
+  "Vitamins": vitaminsAnim,
+  "Proton Pump Inhibitor": painAnim,
+};
+
 const Index = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -94,17 +111,17 @@ const Index = () => {
   const { isAuthenticated, signOut, checkAuth, user } = useAuth();
   const prefersReducedMotion = useReducedMotion();
   const { scrollY } = useScroll();
-  
+
   // Animation controls for scroll effects
   const headerControls = useAnimation();
   const heroControls = useAnimation();
-  
+
   // Refs for scroll-triggered animations
   const categoriesRef = useRef(null);
   const productsRef = useRef(null);
   const recommendationsRef = useRef(null);
   const footerRef = useRef(null);
-  
+
   const isCategoriesInView = useInView(categoriesRef, { once: false, margin: "-20% 0px" });
   const isProductsInView = useInView(productsRef, { once: false, margin: "-20% 0px" });
   const isRecommendationsInView = useInView(recommendationsRef, { once: false, margin: "-20% 0px" });
@@ -116,12 +133,12 @@ const Index = () => {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
+
       lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -130,7 +147,7 @@ const Index = () => {
   // Apply header animation based on scroll direction
   useEffect(() => {
     if (prefersReducedMotion) return;
-    
+
     // Always keep header visible - removed the hiding behavior when scrolling down
     headerControls.start({
       y: 0,
@@ -155,6 +172,18 @@ const Index = () => {
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
+
+  // Function to get category name by ID
+  const getCategoryNameById = (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : '';
+  };
+
+  // Function to get animation data for a category
+  const getCategoryAnimation = (categoryName: string) => {
+    // Return specific animation if exists, otherwise default to pain animation
+    return categoryAnimations[categoryName] || painAnim;
+  };
 
   useEffect(() => {
     fetchData();
@@ -253,7 +282,7 @@ const Index = () => {
   // Fetch autocomplete suggestions
   const fetchSuggestions = async (searchTerm: string) => {
     if (!searchTerm.trim()) return;
-    
+
     try {
       // Get products that start with the searchTerm
       const productsQuery = query(
@@ -262,13 +291,13 @@ const Index = () => {
         where("name", "<=", searchTerm + "\uf8ff"),
         limit(5)
       );
-      
+
       const querySnapshot = await getDocs(productsQuery);
       const productsData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...(doc.data() as any)
       })) as Product[];
-      
+
       setSuggestions(productsData);
     } catch (error) {
       console.error("Failed to fetch suggestions:", error);
@@ -339,15 +368,15 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Quick Links Sidebar - Only show when authenticated */}
       {isAuthenticated && <QuickLinksSidebar />}
-      
+
       {/* Header with scroll-aware animation */}
-      <motion.header 
+      <motion.header
         className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
         initial={{ y: prefersReducedMotion ? 0 : -100 }}
         animate={headerControls}
-        transition={{ 
-          type: "spring", 
-          stiffness: 300, 
+        transition={{
+          type: "spring",
+          stiffness: 300,
           damping: 30,
           mass: 1
         }}
@@ -362,7 +391,7 @@ const Index = () => {
                 {/* Desktop view - Full business name */}
                 <h1 className="hidden md:block text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
                 <p className="hidden md:block text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
-                
+
                 {/* Mobile view - Shortened business name */}
                 <div className="md:hidden">
                   <h1 className="text-xl font-bold">Kalyanam</h1>
@@ -370,18 +399,18 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            
+
             <nav className="hidden md:flex items-center gap-1">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="text-primary-foreground hover:bg-white/20"
                 onClick={() => setShowReviews(true)}
               >
                 Reviews
               </Button>
               {isAuthenticated && (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="text-primary-foreground hover:bg-white/20"
                   onClick={() => navigate("/owner#manage-products")}
                 >
@@ -396,7 +425,7 @@ const Index = () => {
                 </RequestMedicineSheet>
               )}
             </nav>
-                
+
             {/* Search Box - Hidden on mobile */}
             <div className="hidden md:flex flex-1 max-w-md mx-4 relative">
               <div className="relative w-full">
@@ -423,7 +452,7 @@ const Index = () => {
                   <Search className="w-4 h-4" />
                 </motion.button>
               </div>
-              
+
               {/* Autocomplete Suggestions */}
               {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-60 overflow-y-auto">
@@ -434,9 +463,9 @@ const Index = () => {
                       onClick={() => handleSuggestionSelect(product)}
                     >
                       {product.image_url ? (
-                        <img 
-                          src={product.image_url} 
-                          alt={product.name} 
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
                           className="w-10 h-10 object-cover rounded"
                         />
                       ) : (
@@ -462,16 +491,16 @@ const Index = () => {
                 </div>
               )}
             </div>
-                
+
             <div className="flex items-center gap-2">
               {/* Notification Bell */}
               <NotificationBell />
-              
+
               {/* Owner Login/Logout buttons on the extreme right */}
               <div className="hidden md:flex items-center gap-1">
                 {isAuthenticated ? (
                   <>
-                    <motion.button 
+                    <motion.button
                       className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
                       onClick={() => navigate("/owner")}
                       whileHover={{ scale: 1.05 }}
@@ -480,7 +509,7 @@ const Index = () => {
                     >
                       Dashboard
                     </motion.button>
-                    <motion.button 
+                    <motion.button
                       className="rounded-full p-2 transition-colors flex items-center justify-center bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       onClick={async () => {
                         await signOut();
@@ -497,7 +526,7 @@ const Index = () => {
                 ) : (
                   <LoginPopup
                     trigger={
-                      <motion.button 
+                      <motion.button
                         className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -512,7 +541,7 @@ const Index = () => {
 
               <div className="hidden md:flex items-center gap-1">
                 {deliveryEnabled && (
-                  <motion.button 
+                  <motion.button
                     className="rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
                     onClick={() => navigate("/wishlist")}
                     title="Wishlist"
@@ -529,19 +558,19 @@ const Index = () => {
                   </motion.button>
                 )}
               </div>
-        
+
               <div title="Shopping Cart">
                 <ShoppingCart discountPercentage={discountPercentage} />
               </div>
-              
+
               {/* Mobile menu button - Pass onReviewsClick and onOwnerLoginClick props */}
-              <MobileMenu 
+              <MobileMenu
                 onReviewsClick={() => setShowReviews(true)}
                 onOwnerLoginClick={() => document.getElementById('mobile-owner-login-trigger')?.click()}
               />
             </div>
           </div>
-          
+
           {/* Mobile Search Box - Visible only on mobile */}
           <div className="md:hidden mt-3 px-2 relative">
             <div className="relative">
@@ -568,7 +597,7 @@ const Index = () => {
                 <Search className="w-4 h-4" />
               </motion.button>
             </div>
-            
+
             {/* Autocomplete Suggestions */}
             {showSuggestions && suggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-60 overflow-y-auto">
@@ -579,9 +608,9 @@ const Index = () => {
                     onClick={() => handleSuggestionSelect(product)}
                   >
                     {product.image_url ? (
-                      <img 
-                        src={product.image_url} 
-                        alt={product.name} 
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
                         className="w-10 h-10 object-cover rounded"
                       />
                     ) : (
@@ -626,21 +655,21 @@ const Index = () => {
       <HeroBanner discountPercentage={discountPercentage} />
 
       {/* Search Popup */}
-      <SearchPopup 
-        searchQuery={searchQuery} 
-        isOpen={showSearchPopup} 
+      <SearchPopup
+        searchQuery={searchQuery}
+        isOpen={showSearchPopup}
         onClose={() => {
           setShowSearchPopup(false);
           setIsSearchResult(false); // Reset search context
           // Clear the search query when closing the popup to show all products
           setSearchQuery("");
-        }} 
+        }}
         showBackButton={isSearchResult} // Only show back button when it's actually a search result
       />
 
       <div className="container mx-auto px-4 py-12">
         {/* Categories Section with scroll-triggered animation */}
-        <motion.section 
+        <motion.section
           ref={categoriesRef}
           className="mb-16"
           initial="hidden"
@@ -671,6 +700,7 @@ const Index = () => {
                 name={category.name}
                 description={category.description}
                 imageUrl={categoryImages[category.name]}
+                animationData={getCategoryAnimation(category.name)}
                 productCount={products.filter(p => p.category_id === category.id).length}
                 variants={{
                   hidden: { opacity: 0, y: 20 },
@@ -698,7 +728,7 @@ const Index = () => {
                   }
                 }}
               />
-              <motion.button 
+              <motion.button
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-lg px-4 h-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 text-sm font-medium shadow-sm"
                 onClick={handleProductsSearchSubmit}
                 whileHover={{ scale: 1.05 }}
@@ -708,7 +738,7 @@ const Index = () => {
                 Search
               </motion.button>
             </div>
-            
+
             <div className="mt-4 flex flex-wrap gap-2 justify-center">
               <motion.button className="rounded-full px-3 py-1.5 text-xs border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300"
                 whileHover={{ y: -2 }}
@@ -741,9 +771,9 @@ const Index = () => {
             </div>
           </div>
         </section>
-        
+
         {/* Products Grid with scroll-triggered animation */}
-        <motion.section 
+        <motion.section
           ref={productsRef}
           className="mb-16"
           initial="hidden"
@@ -819,14 +849,14 @@ const Index = () => {
               </motion.button>
             </div>
           </div>
-          
+
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-3"></div>
               <p className="text-muted-foreground text-sm">Loading products...</p>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <motion.div 
+            <motion.div
               className="text-center py-12 rounded-xl bg-muted/50"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -849,7 +879,7 @@ const Index = () => {
               </motion.button>
             </motion.div>
           ) : (
-            <motion.div 
+            <motion.div
               className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
               initial="hidden"
               animate="visible"
@@ -874,6 +904,7 @@ const Index = () => {
                   in_stock={product.in_stock}
                   quantity={product.stock_quantity || 0}
                   requires_prescription={product.requires_prescription}
+                  category_animation_data={product.category_id ? getCategoryAnimation(getCategoryNameById(product.category_id)) : undefined}
                   onClick={() => {
                     setSearchQuery(product.name);
                     setIsSearchResult(false); // Not a search result, direct product view
@@ -891,7 +922,7 @@ const Index = () => {
 
         {/* Product Recommendations */}
         <section className="mb-16">
-          <ProductRecommendations 
+          <ProductRecommendations
             onProductClick={(productName) => {
               setSearchQuery(productName);
               setIsSearchResult(false); // Not a search result, direct product view
@@ -912,7 +943,7 @@ const Index = () => {
       </Dialog>
 
       {/* Footer with scroll-triggered animation */}
-      <motion.footer 
+      <motion.footer
         ref={footerRef}
         className="bg-muted py-12 mt-16 border-t"
         initial="hidden"
@@ -924,7 +955,7 @@ const Index = () => {
         transition={{ duration: 0.5 }}
       >
         <div className="container mx-auto px-4 py-16">
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12"
             initial="hidden"
             animate="visible"
@@ -971,7 +1002,7 @@ const Index = () => {
                 </motion.button>
               </div>
             </motion.div>
-            
+
             <motion.div variants={{
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 }
@@ -979,8 +1010,8 @@ const Index = () => {
               <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-3">
                 <li>
-                  <motion.button 
-                    onClick={() => navigate("/")} 
+                  <motion.button
+                    onClick={() => navigate("/")}
                     className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
                     whileHover={{ x: 5 }}
                   >
@@ -988,8 +1019,8 @@ const Index = () => {
                   </motion.button>
                 </li>
                 <li>
-                  <motion.button 
-                    onClick={() => navigate("/about")} 
+                  <motion.button
+                    onClick={() => navigate("/about")}
                     className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
                     whileHover={{ x: 5 }}
                   >
@@ -997,8 +1028,8 @@ const Index = () => {
                   </motion.button>
                 </li>
                 <li>
-                  <motion.button 
-                    onClick={() => navigate("/products")} 
+                  <motion.button
+                    onClick={() => navigate("/products")}
                     className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
                     whileHover={{ x: 5 }}
                   >
@@ -1006,8 +1037,8 @@ const Index = () => {
                   </motion.button>
                 </li>
                 <li>
-                  <motion.button 
-                    onClick={() => navigate("/offers")} 
+                  <motion.button
+                    onClick={() => navigate("/offers")}
                     className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
                     whileHover={{ x: 5 }}
                   >
@@ -1015,8 +1046,8 @@ const Index = () => {
                   </motion.button>
                 </li>
                 <li>
-                  <motion.button 
-                    onClick={() => navigate("/contact")} 
+                  <motion.button
+                    onClick={() => navigate("/contact")}
                     className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
                     whileHover={{ x: 5 }}
                   >
@@ -1025,7 +1056,7 @@ const Index = () => {
                 </li>
               </ul>
             </motion.div>
-            
+
             <motion.div variants={{
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 }
@@ -1034,8 +1065,8 @@ const Index = () => {
               <ul className="space-y-3">
                 {categories.slice(0, 5).map((category) => (
                   <li key={category.id}>
-                    <motion.button 
-                      onClick={() => navigate(`/category/${category.id}`)} 
+                    <motion.button
+                      onClick={() => navigate(`/category/${category.id}`)}
                       className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
                       whileHover={{ x: 5 }}
                     >
@@ -1045,7 +1076,7 @@ const Index = () => {
                 ))}
               </ul>
             </motion.div>
-            
+
             <motion.div variants={{
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 }
@@ -1075,8 +1106,8 @@ const Index = () => {
               </ul>
             </motion.div>
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1102,22 +1133,22 @@ const Index = () => {
               </TooltipProvider>
             </div>
             <div className="flex gap-6">
-              <motion.button 
-                onClick={() => navigate("/privacy-policy")} 
+              <motion.button
+                onClick={() => navigate("/privacy-policy")}
                 className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
                 whileHover={{ y: -2 }}
               >
                 Privacy Policy
               </motion.button>
-              <motion.button 
-                onClick={() => navigate("/terms-of-service")} 
+              <motion.button
+                onClick={() => navigate("/terms-of-service")}
                 className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
                 whileHover={{ y: -2 }}
               >
                 Terms of Service
               </motion.button>
-              <motion.button 
-                onClick={() => navigate("/shipping-policy")} 
+              <motion.button
+                onClick={() => navigate("/shipping-policy")}
                 className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
                 whileHover={{ y: -2 }}
               >
