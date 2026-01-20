@@ -1,7 +1,7 @@
-import { useFeatureFlags } from "../hooks/useFeatureFlags"
-import { Card } from "./ui/card"
-import { ScrollArea } from "./ui/scroll-area"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
+import { useFeatureFlags } from "../../hooks/useFeatureFlags"
+import { Card } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { X } from "lucide-react"
 
 interface Product {
@@ -23,9 +23,9 @@ interface ProductComparisonProps {
 }
 
 export function ProductComparison({ products, onRemoveProduct }: ProductComparisonProps) {
-  const { productComparison } = useFeatureFlags()
+  const { productRecommendations } = useFeatureFlags()
 
-  if (!productComparison || products.length === 0) return null
+  if (!productRecommendations || products.length === 0) return null
 
   return (
     <Card className="p-4">

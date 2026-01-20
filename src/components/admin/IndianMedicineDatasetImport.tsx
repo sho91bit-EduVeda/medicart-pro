@@ -142,6 +142,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
         return productsData;
       }
     } catch (error) {
+      // Log error for debugging
       console.error("Error searching local products:", error);
       return [];
     }
@@ -162,6 +163,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
       
       return filtered.slice(0, 50); // Limit to 50 results
     } catch (error) {
+      // Log error for debugging
       console.error("Error fetching medicines:", error);
       return [];
     }
@@ -203,6 +205,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
         }
       }
     } catch (error) {
+      // Log error for debugging
       console.error("Error during search:", error);
       toast.error("An error occurred during search. Please try again.");
     } finally {
@@ -340,6 +343,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
       setMedicines([]);
       setSearchPerformed(false);
     } catch (error: any) {
+      // Log error for debugging
       console.error("Error adding medicine:", error);
       toast.error(error.message || "Failed to add medicine");
     }
@@ -380,6 +384,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
       
       toast.success("Category added successfully!");
     } catch (error: any) {
+      // Log error for debugging
       console.error("Error adding category:", error);
       toast.error(error.message || "Failed to add category");
     } finally {

@@ -3,14 +3,14 @@ import { auth, db } from "@/integrations/firebase/config";
 import { collection, addDoc, query, where, orderBy, getDocs } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
-import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
-import { Input } from "./ui/input";
-import { Card, CardContent } from "./ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Star, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 interface Review {
   id: string;

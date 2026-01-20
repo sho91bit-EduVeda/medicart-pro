@@ -4,20 +4,20 @@ import { db } from "@/integrations/firebase/config";
 import { collection, getDocs, query, where, orderBy, doc, getDoc, limit } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import ProductCard from "@/components/ProductCard";
+import ProductCard from "@/components/product/ProductCard";
 import { Search, Package, PackagePlus, Heart, User, LogOut, Store, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { whatsappService } from "@/services/whatsappService";
-import { ShoppingCart } from "@/components/ShoppingCart";
-import { NotificationBell } from "@/components/NotificationBell";
+import { ShoppingCart } from "@/components/common/ShoppingCart";
+import NotificationBell from "@/components/common/NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
-import RequestMedicineSheet from "@/components/RequestMedicineSheet";
-import { MobileMenu } from "@/components/MobileMenu";
-import { SearchPopup } from "@/components/SearchPopup";
+import RequestMedicineSheet from "@/components/common/RequestMedicineSheet";
+import { MobileMenu } from "@/components/layout/MobileMenu";
+import { SearchPopup } from "@/components/common/SearchPopup";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
-import { LoginPopup } from "@/components/LoginPopup";
+import { LoginPopup } from "@/components/user/LoginPopup";
 import { motion, useReducedMotion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 
@@ -256,7 +256,7 @@ const CategoryPage = () => {
     <div className="min-h-screen bg-background">
       {/* Header with animation */}
       <motion.header 
-        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-600 text-white shadow-xl"
         initial={{ y: prefersReducedMotion ? 0 : -100 }}
         animate={{ y: 0 }}
         transition={{ 
@@ -295,6 +295,10 @@ const CategoryPage = () => {
                     variant="ghost" 
                     size="sm" 
                     className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                    onClick={(e) => {
+                      // Prevent event from bubbling up to nav
+                      e.stopPropagation();
+                    }}
                   >
                     Track Unavailable Medicines
                   </Button>
@@ -306,6 +310,10 @@ const CategoryPage = () => {
                   variant="ghost" 
                   size="sm" 
                   className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium flex items-center gap-2"
+                  onClick={(e) => {
+                    // Prevent event from bubbling up to nav
+                    e.stopPropagation();
+                  }}
                 >
                   <PackagePlus className="w-4 h-4" />
                   Request Medicine
@@ -325,6 +333,8 @@ const CategoryPage = () => {
                   onChange={handleSearchChange}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
+                      e.preventDefault();
+                      e.stopPropagation();
                       handleSearchSubmit();
                     }
                   }}
@@ -464,6 +474,8 @@ const CategoryPage = () => {
                 onChange={handleSearchChange}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
                     handleSearchSubmit();
                   }
                 }}
@@ -628,6 +640,10 @@ const CategoryPage = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  onClick={(e) => {
+                    // Prevent event from bubbling up to parent components
+                    e.stopPropagation();
+                  }}
                 >
                   <PackagePlus className="w-4 h-4" />
                   Request Medicine in this Category

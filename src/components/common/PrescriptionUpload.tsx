@@ -2,11 +2,11 @@ import { useState } from "react";
 import { auth, db, storage } from "@/integrations/firebase/config";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc } from "firebase/firestore";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Alert, AlertDescription } from "./ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, FileText, CheckCircle, AlertCircle, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -94,9 +94,10 @@ export function PrescriptionUpload({ orderId, onUploadComplete }: PrescriptionUp
       if (onUploadComplete) {
         onUploadComplete(publicUrl);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error);
-      setError(error.message || 'Failed to upload prescription');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload prescription';
+      setError(errorMessage);
       toast.error('Failed to upload prescription');
     } finally {
       setUploading(false);

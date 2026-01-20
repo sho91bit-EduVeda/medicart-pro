@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Download, Plus, TrendingUp, Trash } from "lucide-react";
 import { format } from "date-fns";
-import { SearchableProductDropdown } from "@/components/SearchableProductDropdown";
+import { SearchableProductDropdown } from "@/components/product/SearchableProductDropdown";
 
 // Import Recharts components
 import {

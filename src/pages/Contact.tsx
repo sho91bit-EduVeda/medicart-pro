@@ -90,7 +90,7 @@ const Contact = () => {
     <div className="min-h-screen bg-background">
       {/* Header with animation */}
       <motion.header 
-        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-600 text-white shadow-xl"
         initial={{ y: prefersReducedMotion ? 0 : -100 }}
         animate={{ y: 0 }}
         transition={{ 
@@ -450,7 +450,7 @@ const Contact = () => {
       
       {/* Footer with animation */}
       <motion.footer 
-        className="bg-gradient-to-r from-primary/5 to-secondary/5 border-t mt-12"
+        className="bg-gradient-to-r from-blue-700 via-indigo-800 to-purple-700 text-white border-t mt-12 shadow-2xl"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.3, duration: 0.6 }}
@@ -468,18 +468,18 @@ const Contact = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.5 }}
             >
-              <p className="text-muted-foreground text-sm">
+              <p className="text-blue-100 text-sm">
                 © 2025 Kalyanam Pharmaceuticals. All rights reserved.
               </p>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <p className="text-muted-foreground text-sm cursor-help underline decoration-dashed">
+                    <p className="text-blue-100 text-sm cursor-help underline decoration-dashed">
                       Created By Shobhit Shukla (+91-9643000619)
                     </p>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-blue-100">
                       If you need to move your business online as well, contact here.
                     </p>
                   </TooltipContent>
@@ -494,7 +494,7 @@ const Contact = () => {
             >
               <motion.button 
                 onClick={() => navigate("/privacy-policy")}
-                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                className="text-left text-blue-100 hover:text-blue-200 text-sm transition-colors"
                 whileHover={{ y: -2 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
@@ -502,7 +502,7 @@ const Contact = () => {
               </motion.button>
               <motion.button 
                 onClick={() => navigate("/terms-of-service")}
-                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                className="text-left text-blue-100 hover:text-blue-200 text-sm transition-colors"
                 whileHover={{ y: -2 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
@@ -510,7 +510,7 @@ const Contact = () => {
               </motion.button>
               <motion.button 
                 onClick={() => navigate("/shipping-policy")}
-                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                className="text-left text-blue-100 hover:text-blue-200 text-sm transition-colors"
                 whileHover={{ y: -2 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >

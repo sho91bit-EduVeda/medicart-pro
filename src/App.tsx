@@ -20,7 +20,7 @@ import TermsOfService from "./pages/TermsOfService";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import NotFound from "./pages/NotFound";
 import ProductSelectorDemo from "./pages/ProductSelectorDemo";
-import AccordionDemo from "./components/AccordionDemo";
+import AccordionDemo from "./components/ui-custom/AccordionDemo";
 
 const queryClient = new QueryClient();
 

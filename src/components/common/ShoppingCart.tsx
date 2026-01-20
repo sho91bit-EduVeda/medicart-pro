@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { useCart } from "@/hooks/useCart";
 import { useNavigate } from "react-router-dom";
-import { Button } from "./ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "./ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { ShoppingCart as CartIcon, Trash2, Plus, Minus } from "lucide-react";
-import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface ShoppingCartProps {
@@ -150,7 +150,7 @@ export function ShoppingCart({ discountPercentage }: ShoppingCartProps) {
                   </div>
                 </div>
 
-                <Button className="w-full rounded-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" size="lg" onClick={() => navigate('/checkout')}>
+                <Button className="w-full rounded-full bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-600 hover:from-blue-700 hover:via-indigo-800 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300" size="lg" onClick={() => navigate('/checkout')}>
                   Proceed to In-Store Pickup
                 </Button>
               </div>

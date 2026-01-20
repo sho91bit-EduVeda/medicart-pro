@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import StoreReviews from "@/components/StoreReviews";
-import StoreReviewForm from "@/components/StoreReviewForm";
+import StoreReviews from "@/components/user/StoreReviews";
+import StoreReviewForm from "@/components/user/StoreReviewForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -16,7 +16,7 @@ const Reviews = () => {
     <div className="min-h-screen bg-background">
       {/* Header with animation */}
       <motion.header 
-        className="sticky top-0 z-10 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-600 text-white shadow-xl"
         initial={{ y: prefersReducedMotion ? 0 : -100 }}
         animate={{ y: 0 }}
         transition={{ 

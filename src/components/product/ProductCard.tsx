@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Heart, PackagePlus, Pill, Stethoscope, Baby, Syringe, Package, Bandage, Thermometer, HeartPulse } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";
-import { StockStatus } from "@/components/StockStatus";
-import RequestMedicineSheet from "@/components/RequestMedicineSheet";
-import { motion, useAnimation } from "framer-motion";
-import LottieAnimation from "./LottieAnimation";
+import { StockStatus } from "@/components/common/StockStatus";
+import RequestMedicineSheet from "@/components/common/RequestMedicineSheet";
+import { motion, useAnimation, Variants } from "framer-motion";
+import LottieAnimation from "../common/LottieAnimation";
 
 interface ProductCardProps {
   id: string;
@@ -17,10 +17,11 @@ interface ProductCardProps {
   requires_prescription?: boolean;
   discountPercentage?: number;
   onClick?: () => void;
-  variants?: any;
-  custom?: any;
+  variants?: Variants;
+  custom?: Record<string, unknown>;
   category_id?: string;
   category_animation_data?: any;
+  showRequestOption?: boolean;
 }
 
 // Map product names to appropriate icons
@@ -49,6 +50,7 @@ export default function ProductCard({
   variants,
   custom,
   category_animation_data,
+  showRequestOption = true,
 }: ProductCardProps) {
   const { items: wishlistItems, addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlist();
   
@@ -99,8 +101,8 @@ export default function ProductCard({
 
   const discountedPrice = original_price * (1 - discountPercentage / 100);
 
-  // Show request button only when out of stock
-  const showRequestButton = quantity === 0;
+  // Show request button only when out of stock AND showRequestOption is true
+  const showRequestButton = quantity === 0 && showRequestOption;
 
   return (
     <motion.div 
@@ -141,10 +143,14 @@ export default function ProductCard({
 
         {showRequestButton && (
           <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-            <RequestMedicineSheet medicineName={name}>
+            <RequestMedicineSheet medicineName={name} isFromProductSection={true}>
               <Button
                 size="sm"
                 className="rounded-full shadow-md bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 h-7 px-2"
+                onClick={(e) => {
+                  // Prevent event from bubbling up to the card
+                  e.stopPropagation();
+                }}
               >
                 <PackagePlus className="w-3 h-3 mr-1" />
                 <span className="text-xs">Request</span>
@@ -180,10 +186,14 @@ export default function ProductCard({
         {/* Show request button only when out of stock */}
         {showRequestButton && (
           <div className="flex flex-col gap-1.5">
-            <RequestMedicineSheet medicineName={name}>
+            <RequestMedicineSheet medicineName={name} isFromProductSection={true}>
               <Button 
                 size="sm"
                 className="w-full rounded-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 h-8 text-xs px-2"
+                onClick={(e) => {
+                  // Prevent event from bubbling up to the card
+                  e.stopPropagation();
+                }}
               >
                 <PackagePlus className="w-3 h-3 mr-1" />
                 Request

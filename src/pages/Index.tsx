@@ -5,18 +5,17 @@ import { db } from "@/integrations/firebase/config";
 import { collection, getDocs, query, where, orderBy, doc, getDoc, limit } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import ProductCard from "@/components/ProductCard";
-import CategoryCard from "@/components/CategoryCard";
-import { ProductFilters, FilterOptions } from "@/components/ProductFilters";
-import { StockStatus } from "@/components/StockStatus";
+import ProductCard from "@/components/product/ProductCard";
+import CategoryCard from "@/components/common/CategoryCard";
+import { ProductFilters, FilterOptions } from "@/components/product/ProductFilters";
+import { StockStatus } from "@/components/common/StockStatus";
 import { ShieldCheck, Search, Store, Package, Heart, User, LogOut, LogIn, Pill, Star } from "lucide-react";
 import { toast } from "sonner";
 import { whatsappService } from "@/services/whatsappService";
-import { ShoppingCart } from "@/components/ShoppingCart";
-import { NotificationBell } from "@/components/NotificationBell";
-import { ProductRecommendations } from "@/components/ProductRecommendations";
-import { HeroBanner } from "@/components/HeroBanner";
-import { SearchPopup } from "@/components/SearchPopup";
+import { ShoppingCart } from "@/components/common/ShoppingCart";
+import { ProductRecommendations } from "@/components/product/ProductRecommendations";
+import { HeroBanner } from "@/components/layout/HeroBanner";
+import { SearchPopup } from "@/components/common/SearchPopup";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -35,14 +34,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import StoreReviewForm from "@/components/StoreReviewForm";
-import StoreReviews from "@/components/StoreReviews";
-import RequestMedicineSheet from "@/components/RequestMedicineSheet";
-import { MobileMenu } from "@/components/MobileMenu";
-import AnnouncementMarquee from "@/components/AnnouncementMarquee";
-import KalyanamLogo from "@/components/svgs/KalyanamLogo";
-import { LoginPopup } from "@/components/LoginPopup";
-import { QuickLinksSidebar } from "@/components/QuickLinksSidebar";
+import StoreReviewForm from "@/components/user/StoreReviewForm";
+import StoreReviews from "@/components/user/StoreReviews";
+import RequestMedicineSheet from "@/components/common/RequestMedicineSheet";
+import { MobileMenu } from "@/components/layout/MobileMenu";
+import LogoutButton from "@/components/common/LogoutButton";
+import AnnouncementMarquee from "@/components/layout/AnnouncementMarquee";
+import logoImage from "@/assets/Logo.png";
+import NotificationBell from "@/components/common/NotificationBell";
+import { LoginPopup } from "@/components/user/LoginPopup";
+import { QuickLinksSidebar } from "@/components/layout/QuickLinksSidebar";
 import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
 import coldFluImage from "@/assets/category-cold-flu.jpg";
@@ -371,7 +372,7 @@ const Index = () => {
 
       {/* Header with scroll-aware animation */}
       <motion.header
-        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-xl"
         initial={{ y: prefersReducedMotion ? 0 : -100 }}
         animate={headerControls}
         transition={{
@@ -384,8 +385,8 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10 shadow-lg">
-                <KalyanamLogo className="w-8 h-8" />
+              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
+                <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-8 h-8 object-contain" />
               </div>
               <div>
                 {/* Desktop view - Full business name */}
@@ -403,7 +404,7 @@ const Index = () => {
             <nav className="hidden md:flex items-center gap-1">
               <Button
                 variant="ghost"
-                className="text-primary-foreground hover:bg-white/20"
+                className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
                 onClick={() => setShowReviews(true)}
               >
                 Reviews
@@ -411,7 +412,7 @@ const Index = () => {
               {isAuthenticated && (
                 <Button
                   variant="ghost"
-                  className="text-primary-foreground hover:bg-white/20"
+                  className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
                   onClick={() => navigate("/owner#manage-products")}
                 >
                   Inventory
@@ -419,7 +420,14 @@ const Index = () => {
               )}
               {!isAuthenticated && (
                 <RequestMedicineSheet>
-                  <Button variant="ghost" className="text-primary-foreground hover:bg-white/20">
+                  <Button 
+                    variant="ghost" 
+                    className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
+                    onClick={(e) => {
+                      // Prevent event from bubbling up to nav
+                      e.stopPropagation();
+                    }}
+                  >
                     Request Medicine
                   </Button>
                 </RequestMedicineSheet>
@@ -433,17 +441,19 @@ const Index = () => {
                 <Input
                   type="search"
                   placeholder="Search medicines..."
-                  className="pl-10 pr-12 py-2 w-full rounded-full bg-white/20 border-none text-primary-foreground placeholder:text-primary-foreground/70 focus-visible:ring-2 focus-visible:ring-white/50"
+                  className="pl-10 pr-12 h-10 w-full rounded-full bg-white/10 border-none text-white placeholder:text-white/60 focus-visible:ring-2 focus-visible:ring-white/40 transition-all shadow-inner"
                   value={searchQuery}
                   onChange={handleSearchChange}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
+                      e.preventDefault();
+                      e.stopPropagation();
                       handleSearchSubmit();
                     }
                   }}
                 />
                 <motion.button
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 text-primary-foreground hover:bg-white/20 z-10"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 rounded-full p-2 text-white hover:bg-white/20 z-10"
                   onClick={handleSearchSubmit}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
@@ -501,7 +511,7 @@ const Index = () => {
                 {isAuthenticated ? (
                   <>
                     <motion.button
-                      className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                      className="rounded-full px-5 h-10 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm"
                       onClick={() => navigate("/owner")}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -509,25 +519,13 @@ const Index = () => {
                     >
                       Dashboard
                     </motion.button>
-                    <motion.button
-                      className="rounded-full p-2 transition-colors flex items-center justify-center bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      onClick={async () => {
-                        await signOut();
-                        toast.success("Logged out successfully");
-                      }}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      title="Logout"
-                    >
-                      <LogOut className="w-4 h-4" />
-                    </motion.button>
+                    <LogoutButton />
                   </>
                 ) : (
                   <LoginPopup
                     trigger={
                       <motion.button
-                        className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                        className="rounded-full px-5 h-10 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -583,6 +581,8 @@ const Index = () => {
                 onChange={handleSearchChange}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
                     handleSearchSubmit();
                   }
                 }}
@@ -910,6 +910,7 @@ const Index = () => {
                     setIsSearchResult(false); // Not a search result, direct product view
                     setShowSearchPopup(true);
                   }}
+                  showRequestOption={false}
                   variants={{
                     hidden: { opacity: 0, y: 20 },
                     visible: { opacity: 1, y: 0 }
@@ -934,18 +935,36 @@ const Index = () => {
 
       {/* Reviews Dialog */}
       <Dialog open={showReviews} onOpenChange={setShowReviews}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Store Reviews</DialogTitle>
-          </DialogHeader>
-          <StoreReviews />
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 gap-0 border-none shadow-2xl">
+          {/* Gradient Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+            <DialogHeader className="relative z-10">
+              <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
+                <span className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                  <Star className="w-5 h-5" />
+                </span>
+                Store Reviews
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+          <div className="flex-1 overflow-y-auto bg-slate-50 p-6 relative max-h-[calc(90vh-100px)]">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
+              backgroundSize: '30px 30px',
+              opacity: 0.3
+            }}></div>
+            <div className="relative z-10">
+              <StoreReviews />
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Footer with scroll-triggered animation */}
       <motion.footer
         ref={footerRef}
-        className="bg-muted py-12 mt-16 border-t"
+        className="bg-gradient-to-r from-blue-700 via-indigo-800 to-purple-700 text-white py-12 mt-16 border-t shadow-2xl"
         initial="hidden"
         animate={isFooterInView ? "visible" : "hidden"}
         variants={{
@@ -974,26 +993,26 @@ const Index = () => {
               visible: { opacity: 1, y: 0 }
             }}>
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-secondary shadow-md">
-                  <Store className="w-6 h-6 text-primary-foreground" />
+                <div className="p-2 rounded-xl bg-white shadow-md">
+                  <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-6 h-6 object-contain" />
                 </div>
-                <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Kalyanam Pharmaceuticals</h2>
+                <h2 className="text-xl font-bold text-white">Kalyanam Pharmaceuticals</h2>
               </div>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-blue-100 text-sm">
                 Your trusted healthcare partner delivering quality pharmaceutical products and expert solutions right to your doorstep.
               </p>
               <div className="flex gap-3">
-                <motion.button className="rounded-full p-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
+                <motion.button className="rounded-full p-2 border border-white/20 bg-white/10 hover:bg-white/20 text-white" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
                   </svg>
                 </motion.button>
-                <motion.button className="rounded-full p-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
+                <motion.button className="rounded-full p-2 border border-white/20 bg-white/10 hover:bg-white/20 text-white" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
                   </svg>
                 </motion.button>
-                <motion.button className="rounded-full p-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
+                <motion.button className="rounded-full p-2 border border-white/20 bg-white/10 hover:bg-white/20 text-white" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
                     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
@@ -1007,12 +1026,12 @@ const Index = () => {
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 }
             }}>
-              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <h3 className="text-lg font-semibold mb-4 text-white">Quick Links</h3>
               <ul className="space-y-3">
                 <li>
                   <motion.button
                     onClick={() => navigate("/")}
-                    className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                    className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
                     whileHover={{ x: 5 }}
                   >
                     Home
@@ -1021,7 +1040,7 @@ const Index = () => {
                 <li>
                   <motion.button
                     onClick={() => navigate("/about")}
-                    className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                    className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
                     whileHover={{ x: 5 }}
                   >
                     About Us
@@ -1030,7 +1049,7 @@ const Index = () => {
                 <li>
                   <motion.button
                     onClick={() => navigate("/products")}
-                    className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                    className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
                     whileHover={{ x: 5 }}
                   >
                     Products
@@ -1039,7 +1058,7 @@ const Index = () => {
                 <li>
                   <motion.button
                     onClick={() => navigate("/offers")}
-                    className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                    className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
                     whileHover={{ x: 5 }}
                   >
                     Offers
@@ -1048,7 +1067,7 @@ const Index = () => {
                 <li>
                   <motion.button
                     onClick={() => navigate("/contact")}
-                    className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                    className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
                     whileHover={{ x: 5 }}
                   >
                     Contact
@@ -1061,13 +1080,13 @@ const Index = () => {
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 }
             }}>
-              <h3 className="text-lg font-semibold mb-4">Categories</h3>
+              <h3 className="text-lg font-semibold mb-4 text-white">Categories</h3>
               <ul className="space-y-3">
                 {categories.slice(0, 5).map((category) => (
                   <li key={category.id}>
                     <motion.button
                       onClick={() => navigate(`/category/${category.id}`)}
-                      className="text-left text-muted-foreground hover:text-primary transition-colors text-sm w-full"
+                      className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
                       whileHover={{ x: 5 }}
                     >
                       {category.name}
@@ -1081,8 +1100,8 @@ const Index = () => {
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 }
             }}>
-              <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
-              <ul className="space-y-3 text-muted-foreground">
+              <h3 className="text-lg font-semibold mb-4 text-white">Contact Info</h3>
+              <ul className="space-y-3 text-blue-100">
                 <li className="flex items-start gap-3">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-1 flex-shrink-0">
                     <path d="M20 10c0-4.4-3.6-8-8-8s-8 3.6-8 8 3.6 8 8 8 8-3.6 8-8z"></path>
@@ -1114,18 +1133,18 @@ const Index = () => {
             transition={{ delay: 0.5 }}
           >
             <div className="flex flex-col items-center md:items-start gap-1">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-blue-100 text-sm">
                 © 2025 Kalyanam Pharmaceuticals. All rights reserved.
               </p>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <p className="text-muted-foreground text-sm cursor-help underline decoration-dashed">
+                    <p className="text-blue-100 text-sm cursor-help underline decoration-dashed">
                       Created By Shobhit Shukla (+91-9643000619)
                     </p>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-blue-100">
                       If you need to move your business online as well, contact here.
                     </p>
                   </TooltipContent>
@@ -1135,21 +1154,21 @@ const Index = () => {
             <div className="flex gap-6">
               <motion.button
                 onClick={() => navigate("/privacy-policy")}
-                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                className="text-left text-blue-100 hover:text-white text-sm transition-colors"
                 whileHover={{ y: -2 }}
               >
                 Privacy Policy
               </motion.button>
               <motion.button
                 onClick={() => navigate("/terms-of-service")}
-                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                className="text-left text-blue-100 hover:text-white text-sm transition-colors"
                 whileHover={{ y: -2 }}
               >
                 Terms of Service
               </motion.button>
               <motion.button
                 onClick={() => navigate("/shipping-policy")}
-                className="text-left text-muted-foreground hover:text-primary text-sm transition-colors"
+                className="text-left text-blue-100 hover:text-white text-sm transition-colors"
                 whileHover={{ y: -2 }}
               >
                 Shipping Policy

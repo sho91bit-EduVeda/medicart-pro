@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 const Lottie = lazy(() => import('lottie-react'));
 
 interface LottieAnimationProps {
-    animationData: any;
+    animationData: Record<string, unknown>;
     width?: string | number;
     height?: string | number;
     loop?: boolean;
@@ -61,11 +61,11 @@ const LottieAnimation: React.FC<LottieAnimationProps> = ({
             {inView ? (
                 <Suspense fallback={<div className="flex items-center justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
                     <div style={{ width: '100%', height: '100%' }}>
-                        <DotLottieWrapper
+                        <Lottie
                             animationData={animationData}
                             loop={loop}
                             autoplay={autoplay}
-                        //   speed={speed} // lottie-react component prop handling varies, usually passed directly or via lottieRef
+                            style={{ width: '100%', height: '100%' }}
                         />
                     </div>
                 </Suspense>
@@ -76,18 +76,6 @@ const LottieAnimation: React.FC<LottieAnimationProps> = ({
     );
 };
 
-// Wrapper to handle lottie-react specifics cleanly
-const DotLottieWrapper = ({ animationData, loop, autoplay }: any) => {
-    // We need to suppress the speed prop here as lottie-react handles it via ref or slightly differently in some versions
-    // but standard autoplay/loop props work fine on the main component.
-    return (
-        <Lottie
-            animationData={animationData}
-            loop={loop}
-            autoplay={autoplay}
-            style={{ width: '100%', height: '100%' }}
-        />
-    );
-};
+
 
 export default LottieAnimation;

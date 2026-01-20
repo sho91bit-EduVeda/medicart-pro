@@ -5,9 +5,9 @@ import { db } from "@/integrations/firebase/config";
 import { doc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart } from "lucide-react";
-import ProductCard from "@/components/ProductCard";
+import ProductCard from "@/components/product/ProductCard";
 import { useAuth } from "@/hooks/useAuth";
-import { SearchPopup } from "@/components/SearchPopup";
+import { SearchPopup } from "@/components/common/SearchPopup";
 import { motion, useReducedMotion } from "framer-motion";
 
 interface Product {

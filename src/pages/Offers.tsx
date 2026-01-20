@@ -67,7 +67,7 @@ const Offers = () => {
 
   const renderOfferCard = (offer: Offer) => (
     <Card key={offer.id} className="overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5 relative">
+      <CardHeader className="bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 relative border-b border-blue-200/30">
         <div className="absolute top-4 right-4">
           <Badge variant="secondary" className="text-lg py-1 px-3">
             {offer.discount} OFF
@@ -116,7 +116,7 @@ const Offers = () => {
     <div className="min-h-screen bg-background">
       {/* Header with animation */}
       <motion.header 
-        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-600 text-white shadow-xl"
         initial={{ y: prefersReducedMotion ? 0 : -100 }}
         animate={{ y: 0 }}
         transition={{ 

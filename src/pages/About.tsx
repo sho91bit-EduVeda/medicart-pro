@@ -13,7 +13,7 @@ const About = () => {
     <div className="min-h-screen bg-background">
       {/* Header with animation */}
       <motion.header 
-        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-600 text-white shadow-xl"
         initial={{ y: prefersReducedMotion ? 0 : -100 }}
         animate={{ y: 0 }}
         transition={{ 
@@ -342,7 +342,7 @@ const About = () => {
             Under the ownership of Pallavan Dixit, we assure you that Kalyanam will always be there for everyone.
           </motion.p>
           <motion.button 
-            className="rounded-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 px-6 py-3 text-base font-medium text-primary-foreground"
+            className="rounded-full bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-600 hover:from-blue-700 hover:via-indigo-800 hover:to-purple-700 px-6 py-3 text-base font-medium text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
             onClick={() => navigate("/contact")}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

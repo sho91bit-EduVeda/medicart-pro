@@ -3,7 +3,7 @@ import { db } from "@/integrations/firebase/config";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SearchableProductDropdown } from "@/components/SearchableProductDropdown";
+import { SearchableProductDropdown } from "@/components/product/SearchableProductDropdown";
 import { Pencil, Trash } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

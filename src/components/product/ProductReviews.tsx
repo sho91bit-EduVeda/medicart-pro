@@ -1,10 +1,10 @@
 import { useState } from "react"
-import { useFeatureFlags } from "../hooks/useFeatureFlags"
-import { Card } from "./ui/card"
+import { useFeatureFlags } from "../../hooks/useFeatureFlags"
+import { Card } from "@/components/ui/card"
 import { StarIcon } from "lucide-react"
-import { Button } from "./ui/button"
-import { Textarea } from "./ui/textarea"
-import { cn } from "../lib/utils"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { cn } from "../../lib/utils"
 
 interface Review {
   id: string
@@ -26,7 +26,7 @@ export function ProductReviews({
   reviews,
   onAddReview,
 }: ProductReviewsProps) {
-  const { reviews: reviewsEnabled } = useFeatureFlags()
+  const { productReviews: reviewsEnabled } = useFeatureFlags()
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState("")
   const [hoverRating, setHoverRating] = useState(0)

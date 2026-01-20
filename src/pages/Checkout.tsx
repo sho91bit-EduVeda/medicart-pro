@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { PrescriptionUpload } from "@/components/PrescriptionUpload";
+import { PrescriptionUpload } from "@/components/common/PrescriptionUpload";
 import { toast } from "sonner";
 import { Store, ShoppingBag, CreditCard, MapPin, FileText, ArrowLeft } from "lucide-react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";

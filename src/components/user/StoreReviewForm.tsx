@@ -52,7 +52,7 @@ const StoreReviewForm: React.FC<StoreReviewFormProps> = ({ onClose, onSubmit, sh
       setShowConfirmation(true);
     } catch (error: any) {
       console.error('Error submitting store review:', error);
-      
+
       // Check if it's a permissions error
       if (error.code === 'permission-denied' || (error.message && error.message.includes('permissions'))) {
         toast.error('Unable to save review to database due to permissions. Your review has still been recorded. Thank you for your feedback!');
@@ -78,31 +78,48 @@ const StoreReviewForm: React.FC<StoreReviewFormProps> = ({ onClose, onSubmit, sh
   if (showConfirmation) {
     return (
       <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Thank You for Your Review!</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-center text-muted-foreground">
-              We appreciate you taking the time to share your experience with our pharmacy.
-            </p>
-            <div className="flex justify-center py-4">
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    className={`w-8 h-8 ${
-                      star <= rating
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
-                    }`}
-                  />
-                ))}
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+          {/* Gradient Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+            <DialogHeader className="relative z-10">
+              <DialogTitle className="text-xl font-bold text-white text-center">
+                Thank You for Your Review!
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 bg-slate-50 relative">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
+              opacity: 0.3
+            }}></div>
+            <div className="relative z-10">
+              <p className="text-center text-slate-600">
+                We appreciate you taking the time to share your experience with our pharmacy.
+              </p>
+              <div className="flex justify-center py-6">
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-8 h-8 ${star <= rating
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
+                        }`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={handleConfirmationClose}>Close</Button>
+
+          <DialogFooter className="p-4 border-t bg-white">
+            <Button onClick={handleConfirmationClose} className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800">
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -125,11 +142,10 @@ const StoreReviewForm: React.FC<StoreReviewFormProps> = ({ onClose, onSubmit, sh
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className={`w-8 h-8 cursor-pointer transition-colors ${
-                    star <= rating
+                  className={`w-8 h-8 cursor-pointer transition-colors ${star <= rating
                       ? "fill-yellow-400 text-yellow-400"
                       : "text-gray-300 hover:text-yellow-200"
-                  }`}
+                    }`}
                   onClick={() => setRating(star)}
                 />
               ))}

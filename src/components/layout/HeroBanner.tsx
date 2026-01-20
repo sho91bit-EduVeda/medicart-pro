@@ -20,10 +20,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import StoreReviewForm from "@/components/StoreReviewForm";
+import StoreReviewForm from "@/components/user/StoreReviewForm";
 import { motion, useScroll, useTransform, useInView, useAnimation } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth"; // Import useAuth hook
-import LottieAnimation from "./LottieAnimation";
+import LottieAnimation from "../common/LottieAnimation";
 import heroAnim from "@/assets/animations/hero-pharmacy.json";
 import trustSupportAnim from "@/assets/animations/trust-support.json";
 import trustProductsAnim from "@/assets/animations/trust-products.json";
@@ -84,7 +84,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
   return (
     <motion.section
       ref={ref}
-      className="relative overflow-hidden rounded-2xl mx-4 mt-6 shadow-xl bg-gradient-to-br from-primary/5 to-secondary/5 border"
+      className="relative overflow-hidden rounded-2xl mx-4 mt-6 shadow-xl bg-gradient-to-br from-blue-500/5 via-indigo-500/5 to-purple-500/5 border border-blue-200/30"
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={{
@@ -109,8 +109,8 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
             transition={{ delay: 0.2, duration: 0.5 }}
           >
             <div className="space-y-4">
-              <Badge variant="secondary" className="rounded-full px-4 py-1 text-sm font-medium bg-gradient-to-r from-primary/20 to-secondary/20 w-fit">
-                <Heart className="w-4 h-4 mr-2 text-primary" />
+              <Badge variant="secondary" className="rounded-full px-4 py-1 text-sm font-medium bg-gradient-to-r from-blue-100 to-indigo-100 border-blue-200 text-blue-700 w-fit">
+                <Heart className="w-4 h-4 mr-2 text-blue-600" />
                 Trusted by 10,000+ Families
               </Badge>
 
@@ -122,11 +122,11 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
               >
                 {isAuthenticated && userName ? (
                   <>
-                    Welcome, <span className="text-primary">{userName}</span>!
+                    Welcome, <span className="text-blue-600">{userName}</span>!
                   </>
                 ) : (
                   <>
-                    Your <span className="text-primary">Trusted</span> Healthcare Partner
+                    Your <span className="text-blue-600">Trusted</span> Healthcare Partner
                   </>
                 )}
               </motion.h1>
@@ -148,7 +148,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
               transition={{ delay: 0.5, duration: 0.5 }}
             >
               {discountPercentage > 0 && (
-                <div className="inline-flex items-center bg-gradient-to-r from-primary/10 to-accent/10 backdrop-blur-sm text-primary px-6 py-3 rounded-full font-bold text-lg border border-primary/20">
+                <div className="inline-flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 backdrop-blur-sm text-blue-700 px-6 py-3 rounded-full font-bold text-lg border border-blue-200">
                   <span className="animate-pulse">🔥</span>
                   <span className="ml-2">Upto {discountPercentage}% OFF!</span>
                 </div>
@@ -168,16 +168,34 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
                       Leave a Store Review
                     </motion.button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Store Review</DialogTitle>
-                    </DialogHeader>
-                    <StoreReviewForm
-                      onClose={() => setShowReviewDialog(false)}
-                      onSubmit={() => {
-                        // Refresh reviews if needed
-                      }}
-                    />
+                  <DialogContent className="max-w-md max-h-[90vh] overflow-hidden p-0 gap-0 border-none shadow-2xl">
+                    {/* Gradient Header */}
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white relative overflow-hidden">
+                      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                      <DialogHeader className="relative z-10">
+                        <DialogTitle className="text-xl font-bold text-white flex items-center gap-3">
+                          <span className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                            <Star className="w-5 h-5" />
+                          </span>
+                          Write a Store Review
+                        </DialogTitle>
+                      </DialogHeader>
+                    </div>
+                    <div className="overflow-y-auto bg-slate-50 relative max-h-[calc(90vh-100px)]">
+                      <div className="absolute inset-0" style={{
+                        backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
+                        backgroundSize: '20px 20px',
+                        opacity: 0.3
+                      }}></div>
+                      <div className="relative z-10">
+                        <StoreReviewForm
+                          onClose={() => setShowReviewDialog(false)}
+                          onSubmit={() => {
+                            // Refresh reviews if needed
+                          }}
+                        />
+                      </div>
+                    </div>
                   </DialogContent>
                 </Dialog>
               )}
@@ -237,9 +255,20 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
               }
             }}
           >
-            {/* Hero Animation - Main Visual - Desktop Only */}
+            {/* Hero Animation - Mobile */}
             <motion.div
-              className="w-full max-w-[550px] mx-auto hidden md:block"
+              className="w-full max-w-[300px] mx-auto md:hidden mb-6"
+              variants={{
+                hidden: { opacity: 0, scale: 0.9 },
+                visible: { opacity: 1, scale: 1 }
+              }}
+            >
+              <LottieAnimation animationData={heroAnim} className="w-full h-auto" />
+            </motion.div>
+
+            {/* Hero Animation - Desktop */}
+            <motion.div
+              className="w-full max-w-[550px] mx-auto hidden md:block mb-6"
               variants={{
                 hidden: { opacity: 0, scale: 0.9 },
                 visible: { opacity: 1, scale: 1 }
@@ -265,8 +294,8 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 shrink-0">
-                        <Icon className="w-6 h-6 text-primary" />
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 shrink-0">
+                        <Icon className="w-6 h-6 text-blue-700" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
@@ -306,13 +335,15 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
                 );
               })}
             </div>
+
+
           </motion.div>
         </div>
       </div>
 
       {/* Decorative Elements with parallax effect */}
       <motion.div
-        className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl"
+        className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-blue-200/30 blur-3xl"
         initial={{ y: 0 }}
         animate={{ y: -20 }}
         transition={{
@@ -323,7 +354,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
         }}
       ></motion.div>
       <motion.div
-        className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-secondary/10 blur-3xl"
+        className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-indigo-200/30 blur-3xl"
         initial={{ y: 0 }}
         animate={{ y: 20 }}
         transition={{

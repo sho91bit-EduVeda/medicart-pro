@@ -6,7 +6,7 @@ import { collection, getDocs, addDoc, doc, getDoc, setDoc, query, orderBy, delet
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FeatureFlagsPanel } from "@/components/FeatureFlagsPanel";
+import { FeatureFlagsPanel } from "@/components/common/FeatureFlagsPanel";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,18 +20,19 @@ import {
 import { toast } from "sonner";
 import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { ExcelUpload } from "@/components/ExcelUpload";
-import { IndianMedicineDatasetImport } from "@/components/IndianMedicineDatasetImport";
-import { StorePurchase } from "@/components/StorePurchase";
+import { ExcelUpload } from "@/components/common/ExcelUpload";
+import { IndianMedicineDatasetImport } from "@/components/admin/IndianMedicineDatasetImport";
+import { StorePurchase } from "@/components/layout/StorePurchase";
 
 import { seedDatabase } from "@/utils/seedData";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import SidebarBackground from "@/components/svgs/SidebarBackground";
-import RequestMedicineSheet from "@/components/RequestMedicineSheet";
-import RequestDetailsModal from "@/components/RequestDetailsModal";
-import { NotificationBell } from "@/components/NotificationBell";
+import RequestMedicineSheet from "@/components/common/RequestMedicineSheet";
+import RequestDetailsModal from "@/components/common/RequestDetailsModal";
+import NotificationBell from "@/components/common/NotificationBell";
+import LogoutButton from "@/components/common/LogoutButton";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
-import SalesReporting from "@/components/SalesReporting"; // Import SalesReporting component
+import SalesReporting from "@/components/admin/SalesReporting"; // Import SalesReporting component
 import { 
   Sheet, 
   SheetContent, 
@@ -92,7 +93,8 @@ const Owner = () => {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   // Navigation state
-  const [activeSection, setActiveSection] = useState<string>("manage-inventory");  const [activeCategory, setActiveCategory] = useState("Inventory");
+  const [activeSection, setActiveSection] = useState<string>("manage-inventory");
+  const [activeCategory, setActiveCategory] = useState("Inventory");
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -1004,7 +1006,7 @@ const Owner = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header with animation */}
       <motion.header 
-        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
+        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-xl"
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ 
@@ -1022,7 +1024,7 @@ const Owner = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10 shadow-lg">
+              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
                 <KalyanamLogo className="w-8 h-8" />
               </div>
               <div>
@@ -1030,7 +1032,7 @@ const Owner = () => {
                 <div className="sm:hidden">
                   <h1 className="text-xl font-bold">Dashboard</h1>
                 </div>
-                <p className="text-sm text-primary-foreground/90 hidden sm:block">
+                <p className="text-sm text-white/90 hidden sm:block">
                   {userName ? `Welcome, ${userName}!` : "Manage your medical store"}
                 </p>
               </div>
@@ -1040,7 +1042,7 @@ const Owner = () => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="md:hidden text-primary-foreground hover:bg-white/20 rounded-full"
+                className="md:hidden text-white hover:bg-white/20 rounded-full"
                 onClick={() => navigate("/")}
               >
                 <Store className="w-6 h-6" />
@@ -1051,7 +1053,7 @@ const Owner = () => {
 
               
               <motion.button 
-                className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium hidden md:flex items-center gap-2"
+                className="rounded-full px-4 py-2 text-white hover:bg-white/20 transition-colors font-medium hidden md:flex items-center gap-2"
                 onClick={seedDatabase}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -1061,7 +1063,7 @@ const Owner = () => {
                 <span className="hidden sm:inline">Seed DB</span>
               </motion.button>
               <motion.button 
-                className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium hidden md:flex items-center gap-2"
+                className="rounded-full px-4 py-2 text-white hover:bg-white/20 transition-colors font-medium hidden md:flex items-center gap-2"
                 onClick={() => navigate("/")}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -1070,21 +1072,12 @@ const Owner = () => {
                 <Store className="w-5 h-5" />
                 <span className="hidden sm:inline">View Store</span>
               </motion.button>
-              <motion.button 
-                className="rounded-full p-2 transition-colors flex items-center justify-center bg-destructive text-destructive-foreground hover:bg-destructive/90 hidden md:flex"
-                onClick={handleLogout}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4" />
-              </motion.button>              
+              <LogoutButton />              
               {/* Mobile menu trigger - Moved to the extreme right */}
               <Sheet>
                 <SheetTrigger asChild className="md:hidden">
                   <motion.button 
-                    className="rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
+                    className="rounded-full p-2 text-white hover:bg-white/20 transition-colors"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -1157,18 +1150,7 @@ const Owner = () => {
                         <Store className="w-5 h-5" />
                         <span className="font-medium">View Store</span>
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        onClick={() => {
-                          handleLogout();
-                          // Close the sheet
-                          document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
-                        }} 
-                        className="w-full justify-start gap-3 py-6 text-left mt-2"
-                      >
-                        <LogOut className="w-5 h-5" />
-                        <span className="font-medium">Logout</span>
-                      </Button>
+                      <LogoutButton className="w-full justify-start gap-3 py-6 text-left mt-2" />
                     </div>
                   </div>
                 </SheetContent>
@@ -1331,24 +1313,24 @@ const Owner = () => {
 
             {/* Content Sections */}
             {activeSection === "data-import" && (
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    <Database className="w-6 h-6" />
-                    Add Medicines
-                  </CardTitle>
-                  <CardDescription>
-                    Automatically searches your inventory first, then the Indian Medicine Dataset
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <p className="text-muted-foreground mb-4">
-                      Automatically searches your current inventory first to restock existing medicines. 
-                      If not found locally, it searches the extensive Indian Medicine Dataset with over 250,000 medicines and adds them directly to your inventory.
-                    </p>
+              <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 pb-4 border-b border-slate-200">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <h3 className="text-lg font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                      <Database className="w-5 h-5" />
+                      Add Medicines
+                    </h3>
                   </div>
-                  <IndianMedicineDatasetImport categories={categories} onCategoriesChange={fetchCategories} />
+                  <div className="pt-4 space-y-6">
+                    <div>
+                      <p className="text-muted-foreground mb-4">
+                        Automatically searches your current inventory first to restock existing medicines. 
+                        If not found locally, it searches the extensive Indian Medicine Dataset with over 250,000 medicines and adds them directly to your inventory.
+                      </p>
+                    </div>
+                    <IndianMedicineDatasetImport categories={categories} onCategoriesChange={fetchCategories} />
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -1362,15 +1344,24 @@ const Owner = () => {
                 {/* Product Listing Section - Only shown in Manage Inventory section */}
                 {!editingProductId && (
                   <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="manage-products">
-                      <AccordionTrigger>
-                        <div className="py-2 pl-4 text-left">
-                          <CardTitle className="text-2xl">Manage Products</CardTitle>
-                          <CardDescription>View and manage your product inventory</CardDescription>
+                    <AccordionItem value="manage-products" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
+                      <AccordionTrigger className="p-0">
+                        <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors">
+                          <div className="flex items-center gap-3 pb-2">
+                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                            <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                              <Package className="w-5 h-5 text-blue-600" />
+                              Manage Products
+                            </h3>
+                          </div>
+                          <div className="pt-2">
+                            <p className="text-sm text-slate-600">View and manage your product inventory</p>
+                          </div>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="pt-4 pl-4 text-left">                      {/* Search and Filter Controls */}
+                      <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                        <div className="text-left">
+                          {/* Search and Filter Controls */}
                       <div className="mb-6 space-y-4">
                         <div className="flex flex-col sm:flex-row gap-4">
                           <div className="flex-1">
@@ -1418,7 +1409,7 @@ const Owner = () => {
                           </div>
                         )}
                       </div>
-
+                      
                       {productsLoading ? (
                         <div className="flex justify-center py-8">
                           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -1434,7 +1425,7 @@ const Owner = () => {
                                   ? "Add your first product using the Add Medicines section."
                                   : "Try adjusting your search or filter criteria."}
                               </p>
-
+                      
                             </div>
                           ) : (
                             <div className="space-y-4">
@@ -1513,53 +1504,603 @@ const Owner = () => {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
+                {/* Category Management Section - Part of same Accordion */}
+                <AccordionItem value="manage-categories" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
+                  <AccordionTrigger className="p-0">
+                    <div className="p-6 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors">
+                      <div className="flex items-center gap-3 pb-2">
+                        <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                          <Database className="w-5 h-5 text-purple-600" />
+                          Manage Categories
+                        </h3>
+                      </div>
+                      <div className="pt-2">
+                        <p className="text-sm text-slate-600">Add, edit, or delete product categories</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                    <div className="text-left space-y-6">
+                      {/* Category Form */}
+                      <Card className="border border-dashed bg-muted/30">
+                        <CardHeader>
+                          <CardTitle className="text-lg">
+                            {editingCategoryId ? "Edit Category" : "Add New Category"}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <form onSubmit={editingCategoryId ? handleUpdateCategory : handleAddCategory} className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="category-name">Category Name</Label>
+                              <Input
+                                id="category-name"
+                                value={categoryName}
+                                onChange={(e) => setCategoryName(e.target.value)}
+                                placeholder="Enter category name"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button type="submit" disabled={loading}>
+                                {loading ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                                    <span>{editingCategoryId ? "Updating..." : "Adding..."}</span>
+                                  </div>
+                                ) : editingCategoryId ? (
+                                  "Update Category"
+                                ) : (
+                                  "Add Category"
+                                )}
+                              </Button>
+                              {editingCategoryId && (
+                                <Button type="button" variant="outline" onClick={handleCancelCategoryEdit}>
+                                  Cancel
+                                </Button>
+                              )}
+                            </div>
+                          </form>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Categories List */}
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-lg font-semibold">Existing Categories</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {categories.length} category{categories.length !== 1 ? 'es' : ''} in your store
+                          </p>
+                        </div>
+                                      
+                        {categories.length === 0 ? (
+                          <div className="text-center py-8 border border-dashed rounded-lg">
+                            <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-medium mb-2">No categories yet</h3>
+                            <p className="text-muted-foreground mb-4">
+                              Add your first category to organize your products.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {categories.map((category) => (
+                              <Card key={category.id} className="flex items-center justify-between p-4">
+                                <div>
+                                  <h4 className="font-medium">{category.name}</h4>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditCategory(category)}
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteCategory(category.id, category.name)}
+                                  >
+                                    <Trash className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               </Accordion>
             )}
-                            
-            {/* Category Management Section */}
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="manage-categories">
-                    <AccordionTrigger>
-                      <div className="py-2 pl-4 text-left">
-                        <CardTitle className="text-2xl">Manage Categories</CardTitle>
-                        <CardDescription>Add, edit, or delete product categories</CardDescription>
+          </div>
+        )}
+    
+            {/* Orders Management Section */}
+            {activeSection === "orders" && (
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="orders-management" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
+                  <AccordionTrigger className="p-0">
+                    <div className="p-6 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 transition-colors">
+                      <div className="flex items-center gap-3 pb-2">
+                        <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                          <Package className="w-5 h-5 text-emerald-600" />
+                          Order Management
+                        </h3>
                       </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="pt-4 pl-4 text-left space-y-6">
-                    {/* Category Form */}
-                    <Card className="border border-dashed bg-muted/30">
+                      <div className="pt-2">
+                        <p className="text-sm text-slate-600">Manage customer orders and pickup requests</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                    <div className="space-y-6">
+                      {/* Delivery Status Banner */}
+                      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h4 className="font-semibold text-yellow-800">In-Store Pickup Mode</h4>
+                            <p className="text-sm text-yellow-700 mt-1">
+                              Orders are for in-store pickup only.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Orders List */}
+                      <div className="space-y-4">
+                        {ordersLoading ? (
+                          <div className="flex justify-center py-8">
+                            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          </div>
+                        ) : orders.length === 0 ? (
+                          <div className="text-center py-8">
+                            <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-medium mb-2">No orders yet</h3>
+                            <p className="text-muted-foreground">
+                              Pickup orders will appear here when customers place them.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {orders.map((order) => (
+                              <div key={order.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-sm text-muted-foreground">#{order.order_number}</span>
+                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                        order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                                        order.status === 'processing' ? 'bg-purple-100 text-purple-800' :
+                                        order.status === 'shipped' ? 'bg-indigo-100 text-indigo-800' :
+                                        order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                                        'bg-red-100 text-red-800'
+                                      }`}>
+                                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                      {new Date(order.created_at).toLocaleDateString()} • ₹{order.total_amount.toFixed(2)}
+                                    </p>
+                                    <p className="text-sm mt-1">
+                                      {order.delivery_address?.full_name || 'N/A'} • In-Store Pickup
+                                    </p>
+                                  </div>
+                                  
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => {
+                                        // TODO: Implement order details view
+                                        toast.info("Order details feature coming soon");
+                                      }}
+                                    >
+                                      View Details
+                                    </Button>
+                                    <Button 
+                                      variant="default" 
+                                      size="sm"
+                                      onClick={() => {
+                                        // TODO: Implement order status update
+                                        toast.info("Order status update feature coming soon");
+                                      }}
+                                    >
+                                      Update Status
+                                    </Button>
+                                  </div>
+                                </div>
+                                
+                                {/* Delivery/Pickup Info */}
+                                <div className="mt-3 pt-3 border-t text-sm">
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Store className="w-4 h-4" />
+                                    <span>In-Store Pickup</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
+
+            {activeSection === "requests" && (
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="medicine-requests" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
+                  <AccordionTrigger className="p-0">
+                    <div className="p-6 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 transition-colors">
+                      <div className="flex items-center gap-3 pb-2">
+                        <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                          <Mail className="w-5 h-5 text-amber-600" />
+                          Customer Medicine Requests
+                        </h3>
+                      </div>
+                      <div className="pt-2">
+                        <p className="text-sm text-slate-600">Manage customer requests for unavailable medicines</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="text-lg font-semibold">Recent Requests</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Customers requesting unavailable medicines
+                          </p>
+                        </div>
+                        <RequestMedicineSheet>
+                          <Button variant="secondary" className="flex items-center gap-2">
+                            <Mail className="w-4 h-4" />
+                            New Request
+                          </Button>
+                        </RequestMedicineSheet>
+                      </div>
+                      
+                      {/* Filter and Sort Controls */}
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1">
+                          <Input
+                            placeholder="Search requests..."
+                            value={requestSearchQuery}
+                            onChange={(e) => setRequestSearchQuery(e.target.value)}
+                            className="w-full"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Select value={requestStatusFilter} onValueChange={(value: any) => setRequestStatusFilter(value)}>
+                            <SelectTrigger className="w-[120px] sm:w-[180px]">
+                              <SelectValue placeholder="All Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Status</SelectItem>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="in_progress">In Progress</SelectItem>
+                              <SelectItem value="resolved">Resolved</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select value={requestSortBy} onValueChange={(value: any) => setRequestSortBy(value)}>
+                            <SelectTrigger className="w-[120px] sm:w-[180px]">
+                              <SelectValue placeholder="Sort By" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="created_at">Date</SelectItem>
+                              <SelectItem value="medicine_name">Medicine</SelectItem>
+                              <SelectItem value="customer_name">Customer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            variant="outline" 
+                            onClick={() => setRequestSortOrder(requestSortOrder === "asc" ? "desc" : "asc")}
+                            className="flex items-center gap-2"
+                          >
+                            {requestSortOrder === "asc" ? "↑" : "↓"}
+                          </Button>
+                          {(requestSearchQuery || requestStatusFilter !== "all") && (
+                            <Button 
+                              variant="outline" 
+                              onClick={() => {
+                                setRequestSearchQuery("");
+                                setRequestStatusFilter("all");
+                              }}
+                            >
+                              Reset
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {requestsLoading ? (
+                        <div className="flex justify-center py-8">
+                          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : filteredAndSortedRequests.length === 0 ? (
+                        <div className="border rounded-lg p-6 text-center">
+                          <Mail className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="text-lg font-medium mb-2">No requests found</h3>
+                          <p className="text-muted-foreground mb-4">
+                            {requests.length === 0 
+                              ? "When customers request medicines that are not currently available, they will appear here."
+                              : "No requests match your current filters. Try adjusting your search or filter criteria."}
+                          </p>
+                          <RequestMedicineSheet>
+                            <Button variant="secondary" className="flex items-center gap-2 mx-auto">
+                              <Mail className="w-4 h-4" />
+                              Create Test Request
+                            </Button>
+                          </RequestMedicineSheet>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {filteredAndSortedRequests.map((request) => (
+                            <div key={request.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h4 className="font-semibold">{request.medicine_name}</h4>
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                      request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                      request.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                                      'bg-green-100 text-green-800'
+                                    }`}>
+                                      {request.status.replace('_', ' ')}
+                                    </span>
+                                  </div>
+                                  <div className="text-sm text-muted-foreground space-y-1">
+                                    <p>Requested by: {request.customer_name}</p>
+                                    <p>Contact: {request.email} | {request.phone}</p>
+                                    {request.message && (
+                                      <p className="mt-2 p-2 bg-muted rounded">
+                                        <MessageSquare className="w-3 h-3 inline mr-1" />
+                                        {request.message}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedRequest(request);
+                                      setIsModalOpen(true);
+                                    }}
+                                  >
+                                    View Details
+                                  </Button>
+                                  <Select 
+                                    value={request.status} 
+                                    onValueChange={(value: any) => handleUpdateRequestStatus(request.id, value)}
+                                  >
+                                    <SelectTrigger className="w-[120px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="pending">Pending</SelectItem>
+                                      <SelectItem value="in_progress">In Progress</SelectItem>
+                                      <SelectItem value="resolved">Resolved</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => handleDeleteRequest(request.id, request.medicine_name)}
+                                  >
+                                    <Trash className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+                                Requested on {new Date(request.created_at).toLocaleDateString()}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
+
+            {activeSection === "settings" && (
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="store-settings" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
+                  <AccordionTrigger className="p-0">
+                    <div className="p-6 bg-gradient-to-r from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 transition-colors">
+                      <div className="flex items-center gap-3 pb-2">
+                        <div className="w-3 h-3 rounded-full bg-violet-500"></div>
+                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                          <Settings className="w-5 h-5 text-violet-600" />
+                          Store Settings
+                        </h3>
+                      </div>
+                      <div className="pt-2">
+                        <p className="text-sm text-slate-600">Configure your store's global settings</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 rounded-full bg-primary/10">
+                            <Percent className="w-6 h-6 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <Label htmlFor="discount" className="text-lg font-semibold">
+                              Global Discount Percentage
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Applied to all products in the store
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Input
+                            id="discount"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={discountPercentage}
+                            onChange={(e) => setDiscountPercentage(parseFloat(e.target.value) || 0)}
+                            className="max-w-[120px] sm:max-w-xs"
+                          />
+                          <span className="text-2xl font-bold text-primary">{discountPercentage}%</span>
+                        </div>
+                        <Button onClick={handleUpdateDiscount} disabled={loading} className="w-full md:w-1/3">
+                          {loading ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                              <span>Updating...</span>
+                            </div>
+                          ) : (
+                            "Update Discount"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
+
+            {/* Offers Management Section */}
+            {activeSection === "offers" && (
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="manage-offers" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
+                  <AccordionTrigger className="p-0">
+                    <div className="p-6 bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 transition-colors">
+                      <div className="flex items-center gap-3 pb-2">
+                        <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                          <Percent className="w-5 h-5 text-rose-600" />
+                          Manage Offers
+                        </h3>
+                      </div>
+                      <div className="pt-2">
+                        <p className="text-sm text-slate-600">Create and manage promotional offers</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                    <div className="space-y-6">
+                      {/* Offer Form */}
+                      <Card className="border border-dashed bg-muted/30">
                       <CardHeader>
                         <CardTitle className="text-lg">
-                          {editingCategoryId ? "Edit Category" : "Add New Category"}
+                          {editingOfferId ? "Edit Offer" : "Create New Offer"}
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <form onSubmit={editingCategoryId ? handleUpdateCategory : handleAddCategory} className="space-y-4">
+                        <form onSubmit={editingOfferId ? handleUpdateOffer : handleAddOffer} className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="offer-title">Offer Title <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="offer-title"
+                                value={offerTitle}
+                                onChange={(e) => setOfferTitle(e.target.value)}
+                                placeholder="e.g., Summer Health Sale"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="offer-discount">Discount <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="offer-discount"
+                                value={offerDiscount}
+                                onChange={(e) => setOfferDiscount(e.target.value)}
+                                placeholder="e.g., 20% or BOGO"
+                                required
+                              />
+                            </div>
+                          </div>
+                          
                           <div className="space-y-2">
-                            <Label htmlFor="category-name">Category Name</Label>
-                            <Input
-                              id="category-name"
-                              value={categoryName}
-                              onChange={(e) => setCategoryName(e.target.value)}
-                              placeholder="Enter category name"
+                            <Label htmlFor="offer-description">Description</Label>
+                            <Textarea
+                              id="offer-description"
+                              value={offerDescription}
+                              onChange={(e) => setOfferDescription(e.target.value)}
+                              placeholder="Brief description of the offer"
+                              rows={2}
                             />
                           </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="offer-validity">Validity Date <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="offer-validity"
+                                type="date"
+                                value={offerValidity}
+                                onChange={(e) => setOfferValidity(e.target.value)}
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="offer-category">Category</Label>
+                              <Input
+                                id="offer-category"
+                                value={offerCategory}
+                                onChange={(e) => setOfferCategory(e.target.value)}
+                                placeholder="e.g., Vitamins & Supplements"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="offer-terms">Terms & Conditions</Label>
+                            <Textarea
+                              id="offer-terms"
+                              value={offerTerms}
+                              onChange={(e) => setOfferTerms(e.target.value)}
+                              placeholder="Terms and conditions for this offer"
+                              rows={3}
+                            />
+                          </div>
+                          
+                          <div className="flex items-center gap-3 pt-2">
+                            <Switch
+                              id="offer-enabled"
+                              checked={offerEnabled}
+                              onCheckedChange={setOfferEnabled}
+                            />
+                            <Label htmlFor="offer-enabled" className="font-medium">
+                              Offer Enabled
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Toggle to enable or disable this offer
+                            </p>
+                          </div>
+                          
                           <div className="flex gap-2">
                             <Button type="submit" disabled={loading}>
                               {loading ? (
                                 <div className="flex items-center gap-2">
                                   <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                                  <span>{editingCategoryId ? "Updating..." : "Adding..."}</span>
+                                  <span>{editingOfferId ? "Updating..." : "Creating..."}</span>
                                 </div>
-                              ) : editingCategoryId ? (
-                                "Update Category"
+                              ) : editingOfferId ? (
+                                "Update Offer"
                               ) : (
-                                "Add Category"
+                                "Create Offer"
                               )}
                             </Button>
-                            {editingCategoryId && (
-                              <Button type="button" variant="outline" onClick={handleCancelCategoryEdit}>
+                            {editingOfferId && (
+                              <Button type="button" variant="outline" onClick={handleCancelOfferEdit}>
                                 Cancel
                               </Button>
                             )}
@@ -1567,721 +2108,225 @@ const Owner = () => {
                         </form>
                       </CardContent>
                     </Card>
-
-                    {/* Categories List */}
+                    </div>
+                    {/* Offers List */}
                     <div className="space-y-4">
                       <div>
-                        <h3 className="text-lg font-semibold">Existing Categories</h3>
+                        <h3 className="text-lg font-semibold">Current Offers</h3>
                         <p className="text-sm text-muted-foreground">
-                          {categories.length} category{categories.length !== 1 ? 'es' : ''} in your store
+                          {offers.length} offer{offers.length !== 1 ? 's' : ''} in your store
                         </p>
                       </div>
                       
-                      {categories.length === 0 ? (
+                      {offersLoading ? (
+                        <div className="flex justify-center py-8">
+                          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : offers.length === 0 ? (
                         <div className="text-center py-8 border border-dashed rounded-lg">
-                          <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                          <h3 className="text-lg font-medium mb-2">No categories yet</h3>
+                          <Percent className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="text-lg font-medium mb-2">No offers yet</h3>
                           <p className="text-muted-foreground mb-4">
-                            Add your first category to organize your products.
+                            Create your first offer to attract customers.
                           </p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {categories.map((category) => (
-                            <Card key={category.id} className="flex items-center justify-between p-4">
-                              <div>
-                                <h4 className="font-medium">{category.name}</h4>
+                        <div className="space-y-4">
+                          {offers.map((offer) => (
+                            <Card key={offer.id} className="p-4">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h4 className="font-medium">{offer.title}</h4>
+                                    <Badge variant={offer.enabled ? "default" : "secondary"}>
+                                      {offer.enabled ? "Enabled" : "Disabled"}
+                                    </Badge>
+                                    <Badge variant="secondary">
+                                      {offer.discount} OFF
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mb-2">
+                                    {offer.description}
+                                  </p>
+                                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                    <span>Valid till: {offer.validity}</span>
+                                    {offer.category && <span>• Category: {offer.category}</span>}
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditOffer(offer)}
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant={offer.enabled ? "secondary" : "default"}
+                                    size="sm"
+                                    onClick={() => handleToggleOffer(offer.id, offer.enabled)}
+                                  >
+                                    {offer.enabled ? "Disable" : "Enable"}
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteOffer(offer.id, offer.title)}
+                                  >
+                                    <Trash className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEditCategory(category)}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => handleDeleteCategory(category.id, category.name)}
-                                >
-                                  <Trash className="w-4 h-4" />
-                                </Button>
-                              </div>
+                              {offer.terms && (
+                                <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+                                  <span className="font-medium">Terms:</span> {offer.terms}
+                                </div>
+                              )}
                             </Card>
                           ))}
                         </div>
                       )}
                     </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            
-      </div>
-    )}
-    
-            {/* Orders Management Section */}
-            {activeSection === "orders" && (
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    <Package className="w-6 h-6" />
-                    Order Management
-                  </CardTitle>
-                  <CardDescription>
-                    Manage customer in-store pickup orders
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {/* Delivery Status Banner */}
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h4 className="font-semibold text-yellow-800">In-Store Pickup Mode</h4>
-                          <p className="text-sm text-yellow-700 mt-1">
-                            Orders are for in-store pickup only.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Orders List */}
-                    <div className="space-y-4">
-                      {ordersLoading ? (
-                        <div className="flex justify-center py-8">
-                          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                      ) : orders.length === 0 ? (
-                        <div className="text-center py-8">
-                          <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                          <h3 className="text-lg font-medium mb-2">No orders yet</h3>
-                          <p className="text-muted-foreground">
-                            Pickup orders will appear here when customers place them.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {orders.map((order) => (
-                            <div key={order.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-mono text-sm text-muted-foreground">#{order.order_number}</span>
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                      order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                      order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                                      order.status === 'processing' ? 'bg-purple-100 text-purple-800' :
-                                      order.status === 'shipped' ? 'bg-indigo-100 text-indigo-800' :
-                                      order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                                      'bg-red-100 text-red-800'
-                                    }`}>
-                                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm text-muted-foreground mt-1">
-                                    {new Date(order.created_at).toLocaleDateString()} • ₹{order.total_amount.toFixed(2)}
-                                  </p>
-                                  <p className="text-sm mt-1">
-                                    {order.delivery_address?.full_name || 'N/A'} • In-Store Pickup
-                                  </p>
-                                </div>
-                                
-                                <div className="flex gap-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => {
-                                      // TODO: Implement order details view
-                                      toast.info("Order details feature coming soon");
-                                    }}
-                                  >
-                                    View Details
-                                  </Button>
-                                  <Button 
-                                    variant="default" 
-                                    size="sm"
-                                    onClick={() => {
-                                      // TODO: Implement order status update
-                                      toast.info("Order status update feature coming soon");
-                                    }}
-                                  >
-                                    Update Status
-                                  </Button>
-                                </div>
-                              </div>
-                              
-                              {/* Delivery/Pickup Info */}
-                              <div className="mt-3 pt-3 border-t text-sm">
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <Store className="w-4 h-4" />
-                                  <span>In-Store Pickup</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeSection === "requests" && (
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    <Mail className="w-6 h-6" />
-                    Customer Medicine Requests
-                  </CardTitle>
-                  <CardDescription>
-                    View and manage requests from customers for medicines that are currently unavailable
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="text-lg font-semibold">Recent Requests</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Customers requesting unavailable medicines
-                        </p>
-                      </div>
-                      <RequestMedicineSheet>
-                        <Button variant="secondary" className="flex items-center gap-2">
-                          <Mail className="w-4 h-4" />
-                          New Request
-                        </Button>
-                      </RequestMedicineSheet>
-                    </div>
-                    
-                    {/* Filter and Sort Controls */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="flex-1">
-                        <Input
-                          placeholder="Search requests..."
-                          value={requestSearchQuery}
-                          onChange={(e) => setRequestSearchQuery(e.target.value)}
-                          className="w-full"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Select value={requestStatusFilter} onValueChange={(value: any) => setRequestStatusFilter(value)}>
-                          <SelectTrigger className="w-[120px] sm:w-[180px]">
-                            <SelectValue placeholder="All Status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="in_progress">In Progress</SelectItem>
-                            <SelectItem value="resolved">Resolved</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Select value={requestSortBy} onValueChange={(value: any) => setRequestSortBy(value)}>
-                          <SelectTrigger className="w-[120px] sm:w-[180px]">
-                            <SelectValue placeholder="Sort By" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="created_at">Date</SelectItem>
-                            <SelectItem value="medicine_name">Medicine</SelectItem>
-                            <SelectItem value="customer_name">Customer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setRequestSortOrder(requestSortOrder === "asc" ? "desc" : "asc")}
-                          className="flex items-center gap-2"
-                        >
-                          {requestSortOrder === "asc" ? "↑" : "↓"}
-                        </Button>
-                        {(requestSearchQuery || requestStatusFilter !== "all") && (
-                          <Button 
-                            variant="outline" 
-                            onClick={() => {
-                              setRequestSearchQuery("");
-                              setRequestStatusFilter("all");
-                            }}
-                          >
-                            Reset
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {requestsLoading ? (
-                      <div className="flex justify-center py-8">
-                        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                    ) : filteredAndSortedRequests.length === 0 ? (
-                      <div className="border rounded-lg p-6 text-center">
-                        <Mail className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No requests found</h3>
-                        <p className="text-muted-foreground mb-4">
-                          {requests.length === 0 
-                            ? "When customers request medicines that are not currently available, they will appear here."
-                            : "No requests match your current filters. Try adjusting your search or filter criteria."}
-                        </p>
-                        <RequestMedicineSheet>
-                          <Button variant="secondary" className="flex items-center gap-2 mx-auto">
-                            <Mail className="w-4 h-4" />
-                            Create Test Request
-                          </Button>
-                        </RequestMedicineSheet>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {filteredAndSortedRequests.map((request) => (
-                          <div key={request.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h4 className="font-semibold">{request.medicine_name}</h4>
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                    request.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                                    'bg-green-100 text-green-800'
-                                  }`}>
-                                    {request.status.replace('_', ' ')}
-                                  </span>
-                                </div>
-                                <div className="text-sm text-muted-foreground space-y-1">
-                                  <p>Requested by: {request.customer_name}</p>
-                                  <p>Contact: {request.email} | {request.phone}</p>
-                                  {request.message && (
-                                    <p className="mt-2 p-2 bg-muted rounded">
-                                      <MessageSquare className="w-3 h-3 inline mr-1" />
-                                      {request.message}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex flex-col sm:flex-row gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedRequest(request);
-                                    setIsModalOpen(true);
-                                  }}
-                                >
-                                  View Details
-                                </Button>
-                                <Select 
-                                  value={request.status} 
-                                  onValueChange={(value: any) => handleUpdateRequestStatus(request.id, value)}
-                                >
-                                  <SelectTrigger className="w-[120px]">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="in_progress">In Progress</SelectItem>
-                                    <SelectItem value="resolved">Resolved</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm"
-                                  onClick={() => handleDeleteRequest(request.id, request.medicine_name)}
-                                >
-                                  <Trash className="w-4 h-4 mr-2" />
-                                  Delete
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-                              Requested on {new Date(request.created_at).toLocaleDateString()}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeSection === "settings" && (
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-2xl">Store Settings</CardTitle>
-                  <CardDescription>Configure store-wide discount percentage</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-full bg-primary/10">
-                        <Percent className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <Label htmlFor="discount" className="text-lg font-semibold">
-                          Global Discount Percentage
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          Applied to all products in the store
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Input
-                        id="discount"
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="1"
-                        value={discountPercentage}
-                        onChange={(e) => setDiscountPercentage(parseFloat(e.target.value) || 0)}
-                        className="max-w-[120px] sm:max-w-xs"
-                      />
-                      <span className="text-2xl font-bold text-primary">{discountPercentage}%</span>
-                    </div>
-                    <Button onClick={handleUpdateDiscount} disabled={loading} className="w-full md:w-1/3">
-                      {loading ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                          <span>Updating...</span>
-                        </div>
-                      ) : (
-                        "Update Discount"
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Offers Management Section */}
-            {activeSection === "offers" && (
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    <Percent className="w-6 h-6" />
-                    Manage Offers
-                  </CardTitle>
-                  <CardDescription>
-                    Create and manage special offers and discounts
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Offer Form */}
-                  <Card className="border border-dashed bg-muted/30">
-                    <CardHeader>
-                      <CardTitle className="text-lg">
-                        {editingOfferId ? "Edit Offer" : "Create New Offer"}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <form onSubmit={editingOfferId ? handleUpdateOffer : handleAddOffer} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="offer-title">Offer Title <span className="text-destructive">*</span></Label>
-                            <Input
-                              id="offer-title"
-                              value={offerTitle}
-                              onChange={(e) => setOfferTitle(e.target.value)}
-                              placeholder="e.g., Summer Health Sale"
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="offer-discount">Discount <span className="text-destructive">*</span></Label>
-                            <Input
-                              id="offer-discount"
-                              value={offerDiscount}
-                              onChange={(e) => setOfferDiscount(e.target.value)}
-                              placeholder="e.g., 20% or BOGO"
-                              required
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="offer-description">Description</Label>
-                          <Textarea
-                            id="offer-description"
-                            value={offerDescription}
-                            onChange={(e) => setOfferDescription(e.target.value)}
-                            placeholder="Brief description of the offer"
-                            rows={2}
-                          />
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="offer-validity">Validity Date <span className="text-destructive">*</span></Label>
-                            <Input
-                              id="offer-validity"
-                              type="date"
-                              value={offerValidity}
-                              onChange={(e) => setOfferValidity(e.target.value)}
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="offer-category">Category</Label>
-                            <Input
-                              id="offer-category"
-                              value={offerCategory}
-                              onChange={(e) => setOfferCategory(e.target.value)}
-                              placeholder="e.g., Vitamins & Supplements"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="offer-terms">Terms & Conditions</Label>
-                          <Textarea
-                            id="offer-terms"
-                            value={offerTerms}
-                            onChange={(e) => setOfferTerms(e.target.value)}
-                            placeholder="Terms and conditions for this offer"
-                            rows={3}
-                          />
-                        </div>
-                        
-                        <div className="flex items-center gap-3 pt-2">
-                          <Switch
-                            id="offer-enabled"
-                            checked={offerEnabled}
-                            onCheckedChange={setOfferEnabled}
-                          />
-                          <Label htmlFor="offer-enabled" className="font-medium">
-                            Offer Enabled
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Toggle to enable or disable this offer
-                          </p>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <Button type="submit" disabled={loading}>
-                            {loading ? (
-                              <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                                <span>{editingOfferId ? "Updating..." : "Creating..."}</span>
-                              </div>
-                            ) : editingOfferId ? (
-                              "Update Offer"
-                            ) : (
-                              "Create Offer"
-                            )}
-                          </Button>
-                          {editingOfferId && (
-                            <Button type="button" variant="outline" onClick={handleCancelOfferEdit}>
-                              Cancel
-                            </Button>
-                          )}
-                        </div>
-                      </form>
-                    </CardContent>
-                  </Card>
-
-                  {/* Offers List */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">Current Offers</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {offers.length} offer{offers.length !== 1 ? 's' : ''} in your store
-                      </p>
-                    </div>
-                    
-                    {offersLoading ? (
-                      <div className="flex justify-center py-8">
-                        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                    ) : offers.length === 0 ? (
-                      <div className="text-center py-8 border border-dashed rounded-lg">
-                        <Percent className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No offers yet</h3>
-                        <p className="text-muted-foreground mb-4">
-                          Create your first offer to attract customers.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {offers.map((offer) => (
-                          <Card key={offer.id} className="p-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h4 className="font-medium">{offer.title}</h4>
-                                  <Badge variant={offer.enabled ? "default" : "secondary"}>
-                                    {offer.enabled ? "Enabled" : "Disabled"}
-                                  </Badge>
-                                  <Badge variant="secondary">
-                                    {offer.discount} OFF
-                                  </Badge>
-                                </div>
-                                <p className="text-sm text-muted-foreground mb-2">
-                                  {offer.description}
-                                </p>
-                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                  <span>Valid till: {offer.validity}</span>
-                                  {offer.category && <span>• Category: {offer.category}</span>}
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEditOffer(offer)}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant={offer.enabled ? "secondary" : "default"}
-                                  size="sm"
-                                  onClick={() => handleToggleOffer(offer.id, offer.enabled)}
-                                >
-                                  {offer.enabled ? "Disable" : "Enable"}
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => handleDeleteOffer(offer.id, offer.title)}
-                                >
-                                  <Trash className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            {offer.terms && (
-                              <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-                                <span className="font-medium">Terms:</span> {offer.terms}
-                              </div>
-                            )}
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             )}
             
             {activeSection === "announcements" && (
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-2xl">Manage Announcements</CardTitle>
-                  <CardDescription>Create and manage announcements that appear at the top of the store homepage</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Announcement Form */}
-                  <Card className="border border-dashed bg-muted/30">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Create New Announcement</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <form onSubmit={handleAddAnnouncement} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="announcement-text">Announcement Text</Label>
-                          <Textarea
-                            id="announcement-text"
-                            value={announcementText}
-                            onChange={(e) => setAnnouncementText(e.target.value)}
-                            placeholder="Enter your announcement text"
-                            rows={3}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Priority Level</Label>
-                          <div className="flex gap-4">
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                id="priority-normal"
-                                name="priority"
-                                value="normal"
-                                checked={announcementPriority === "normal"}
-                                onChange={() => setAnnouncementPriority("normal")}
-                                className="h-4 w-4 text-primary"
-                              />
-                              <Label htmlFor="priority-normal">Normal</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                id="priority-high"
-                                name="priority"
-                                value="high"
-                                checked={announcementPriority === "high"}
-                                onChange={() => setAnnouncementPriority("high")}
-                                className="h-4 w-4 text-primary"
-                              />
-                              <Label htmlFor="priority-high">High (will show a visual indicator)</Label>
-                            </div>
-                          </div>
-                        </div>
-                        <Button type="submit" disabled={loading}>
-                          {loading ? (
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                              <span>Adding...</span>
-                            </div>
-                          ) : (
-                            "Add Announcement"
-                          )}
-                        </Button>
-                      </form>
-                    </CardContent>
-                  </Card>
-
-                  {/* Announcements List */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">Current Announcements</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {announcements.length} announcement{announcements.length !== 1 ? 's' : ''} currently active
-                      </p>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="manage-announcements" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
+                  <AccordionTrigger className="p-0">
+                    <div className="p-6 bg-gradient-to-r from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 transition-colors">
+                      <div className="flex items-center gap-3 pb-2">
+                        <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                          <Bell className="w-5 h-5 text-cyan-600" />
+                          Manage Announcements
+                        </h3>
+                      </div>
+                      <div className="pt-2">
+                        <p className="text-sm text-slate-600">Create and manage store announcements</p>
+                      </div>
                     </div>
-                    
-                    {announcementsLoading ? (
-                      <div className="flex justify-center py-8">
-                        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                    ) : announcements.length === 0 ? (
-                      <div className="text-center py-8 border border-dashed rounded-lg">
-                        <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No announcements yet</h3>
-                        <p className="text-muted-foreground mb-4">
-                          Create your first announcement to display important information to customers.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {announcements.map((announcement) => (
-                          <Card key={announcement.id} className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h4 className="font-medium">{announcement.text}</h4>
-                                  {announcement.priority === "high" && (
-                                    <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
-                                      High Priority
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                  Posted: {new Date(announcement.created_at).toLocaleDateString()} at {new Date(announcement.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                </p>
-                              </div>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDeleteAnnouncement(announcement.id)}
-                              >
-                                <Trash className="w-4 h-4" />
-                              </Button>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                    <div className="space-y-6">
+                      {/* Announcement Form */}
+                      <Card className="border border-dashed bg-muted/30">
+                        <CardHeader>
+                          <CardTitle className="text-lg">Create New Announcement</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <form onSubmit={handleAddAnnouncement} className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="announcement-text">Announcement Text</Label>
+                              <Textarea
+                                id="announcement-text"
+                                value={announcementText}
+                                onChange={(e) => setAnnouncementText(e.target.value)}
+                                placeholder="Enter your announcement text"
+                                rows={3}
+                              />
                             </div>
-                          </Card>
-                        ))}
+                            <div className="space-y-2">
+                              <Label>Priority Level</Label>
+                              <div className="flex gap-4">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    id="priority-normal"
+                                    name="priority"
+                                    value="normal"
+                                    checked={announcementPriority === "normal"}
+                                    onChange={() => setAnnouncementPriority("normal")}
+                                    className="h-4 w-4 text-primary"
+                                  />
+                                  <Label htmlFor="priority-normal">Normal</Label>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    id="priority-high"
+                                    name="priority"
+                                    value="high"
+                                    checked={announcementPriority === "high"}
+                                    onChange={() => setAnnouncementPriority("high")}
+                                    className="h-4 w-4 text-primary"
+                                  />
+                                  <Label htmlFor="priority-high">High (will show a visual indicator)</Label>
+                                </div>
+                              </div>
+                            </div>
+                            <Button type="submit" disabled={loading}>
+                              {loading ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                                  <span>Adding...</span>
+                                </div>
+                              ) : (
+                                "Add Announcement"
+                              )}
+                            </Button>
+                          </form>
+                        </CardContent>
+                      </Card>
+
+                      {/* Announcements List */}
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-lg font-semibold">Current Announcements</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {announcements.length} announcement{announcements.length !== 1 ? 's' : ''} currently active
+                          </p>
+                        </div>
+                        
+                        {announcementsLoading ? (
+                          <div className="flex justify-center py-8">
+                            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          </div>
+                        ) : announcements.length === 0 ? (
+                          <div className="text-center py-8 border border-dashed rounded-lg">
+                            <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-medium mb-2">No announcements yet</h3>
+                            <p className="text-muted-foreground mb-4">
+                              Create your first announcement to display important information to customers.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {announcements.map((announcement) => (
+                              <Card key={announcement.id} className="p-4">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <h4 className="font-medium">{announcement.text}</h4>
+                                      {announcement.priority === "high" && (
+                                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                                          High Priority
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                      Posted: {new Date(announcement.created_at).toLocaleDateString()} at {new Date(announcement.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteAnnouncement(announcement.id)}
+                                  >
+                                    <Trash className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             )}
 
             {/* Sales Reporting Section */}
@@ -2290,18 +2335,18 @@ const Owner = () => {
             )}
 
             {activeSection === "features" && (
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    <Package className="w-6 h-6" />
-                    Feature Flags
-                  </CardTitle>
-                  <CardDescription>
-                    Toggle various features of your store
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FeatureFlagsPanel />
+              <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 pb-4 border-b border-slate-200">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <h3 className="text-lg font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                      <Package className="w-5 h-5" />
+                      Feature Flags
+                    </h3>
+                  </div>
+                  <div className="pt-4">
+                    <FeatureFlagsPanel />
+                  </div>
                 </CardContent>
               </Card>
             )}

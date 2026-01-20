@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import ProductSelectorTable from "@/components/ProductSelectorTable";
+import ProductSelectorTable from "@/components/product/ProductSelectorTable";
 import { motion } from "framer-motion";
 
 const ProductSelectorDemo = () => {

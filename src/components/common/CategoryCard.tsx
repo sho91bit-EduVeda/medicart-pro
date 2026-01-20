@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { Pill, Stethoscope, Baby, Syringe, Package, Bandage, Thermometer, Heart, ArrowRight } from "lucide-react";
 import LottieAnimation from "./LottieAnimation";
 import { cn } from "@/lib/utils";
@@ -10,8 +10,8 @@ interface CategoryCardProps {
   description?: string;
   imageUrl?: string;
   productCount?: number;
-  variants?: any;
-  animationData?: any;
+  variants?: Variants;
+  animationData?: Record<string, unknown>;
 }
 
 // Map category names to appropriate icons

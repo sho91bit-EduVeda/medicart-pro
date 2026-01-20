@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
-import { Slider } from "./ui/slider"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Label } from "./ui/label"
-import { useFeatureFlags } from "../hooks/useFeatureFlags"
+import { Slider } from "@/components/ui/slider"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { useFeatureFlags } from "../../hooks/useFeatureFlags"
 
 export interface FilterOptions {
   priceRange: [number, number];

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { db } from "@/integrations/firebase/config";
 import { collection, query, where, orderBy, limit, getDocs, doc, getDoc, DocumentData } from "firebase/firestore";
 import ProductCard from "./ProductCard";
@@ -43,13 +43,7 @@ export function ProductRecommendations({
   const isInView = useInView(ref, { once: false, margin: "-20% 0px" });
   const controls = useAnimation();
 
-  useEffect(() => {
-    if (productRecommendations) {
-      loadRecommendations();
-    }
-  }, [currentProductId, categoryId, productRecommendations]);
-
-  const loadRecommendations = async () => {
+  const loadRecommendations = useCallback(async () => {
     setLoading(true);
     try {
       // Simplified query without composite index requirement
@@ -115,7 +109,13 @@ export function ProductRecommendations({
     } finally {
       setLoading(false);
     }
-  };
+  }, [categoryId, currentProductId, limitCount]);
+
+  useEffect(() => {
+    if (productRecommendations) {
+      loadRecommendations();
+    }
+  }, [currentProductId, categoryId, productRecommendations, loadRecommendations]);
 
   // Don't show recommendations if delivery is disabled
   if (!productRecommendations || !deliveryEnabled || loading || products.length === 0) {
@@ -171,6 +171,7 @@ export function ProductRecommendations({
             in_stock={product.in_stock}
             quantity={product.stock_quantity || 0}
             onClick={onProductClick ? () => onProductClick(product.name) : undefined}
+            showRequestOption={false}
             variants={{
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,15 +13,22 @@ import { auth } from '@/integrations/firebase/config';
 interface RequestMedicineFormProps {
   medicineName?: string;
   onClose?: () => void;
+  isFromProductSection?: boolean;
 }
 
-const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName = '', onClose }) => {
+const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName = '', onClose, isFromProductSection = false }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [medicine, setMedicine] = useState(medicineName);
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Set default message when component mounts
+  useEffect(() => {
+    // Set a default urgent message
+    setMessage('I need this medicine urgently. Can you please make it available and let me know when it arrives?');
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,84 +132,114 @@ const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName 
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Request Medicine Availability</CardTitle>
-        <CardDescription>
-          Let us know which medicine you're looking for and we'll notify you when it becomes available.
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your full name"
-              required
-            />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Card 1: Personal Information */}
+      <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 pb-4 border-b border-slate-200">
+            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+            <h3 className="text-lg font-bold text-slate-800 uppercase tracking-wide">Your Information</h3>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Enter your phone number"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="medicine">Medicine Name</Label>
-            <Input
-              id="medicine"
-              value={medicine}
-              onChange={(e) => setMedicine(e.target.value)}
-              placeholder="Enter medicine name"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="message">Additional Information</Label>
-            <Textarea
-              id="message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Any additional information about the medicine or your requirements..."
-              rows={3}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your full name"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+91 98765 43210"
+                required
+              />
+            </div>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2">
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? 'Submitting...' : 'Submit Request'}
+      </Card>
+      
+      {/* Card 2: Medicine Information */}
+      <Card className="bg-white rounded-xl shadow-sm border border-blue-100">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 pb-4 border-b border-blue-200">
+            <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+            <h3 className="text-lg font-bold text-slate-800 uppercase tracking-wide">Medicine Details</h3>
+          </div>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="medicine">Medicine Name *</Label>
+              <Input
+                id="medicine"
+                value={medicine}
+                onChange={(e) => {
+                  // Only allow changing medicine name if not from product section
+                  if (!isFromProductSection) {
+                    setMedicine(e.target.value);
+                  }
+                }}
+                placeholder={isFromProductSection ? "Medicine name is pre-filled and locked" : "Enter the name of the medicine you're looking for"}
+                required
+                readOnly={isFromProductSection}
+                className={isFromProductSection ? "cursor-not-allowed bg-muted" : ""}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="message">Additional Information</Label>
+              <Textarea
+                id="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Any additional details about the medicine, dosage, brand preferences, or urgency..."
+                rows={4}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Submit Buttons */}
+      <div className="flex flex-col gap-3 pt-2">
+        <Button type="submit" className="w-full h-11" disabled={submitting}>
+          {submitting ? (
+            <span className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              Submitting Request...
+            </span>
+          ) : 'Submit Medicine Request'}
+        </Button>
+        {onClose && (
+          <Button type="button" variant="outline" className="w-full h-11" onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}>
+            Cancel
           </Button>
-          {onClose && (
-            <Button type="button" variant="outline" className="w-full" onClick={onClose}>
-              Cancel
-            </Button>
-          )}
-        </CardFooter>
-      </form>
-    </Card>
+        )}
+      </div>
+    </form>
   );
 };
 

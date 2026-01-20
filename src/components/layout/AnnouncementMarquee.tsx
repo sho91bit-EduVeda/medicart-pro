@@ -26,7 +26,7 @@ const AnnouncementMarquee = () => {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const announcementsData = querySnapshot.docs.map(doc => ({
         id: doc.id,
-        ...(doc.data() as any)
+        ...(doc.data() as Omit<Announcement, 'id'>)
       })) as Announcement[];
       
       setAnnouncements(announcementsData);
