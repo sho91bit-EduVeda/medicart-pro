@@ -32,6 +32,7 @@ import RequestDetailsModal from "@/components/common/RequestDetailsModal";
 import NotificationBell from "@/components/common/NotificationBell";
 import LogoutButton from "@/components/common/LogoutButton";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
+import logoImage from "@/assets/Logo.png";
 import SalesReporting from "@/components/admin/SalesReporting"; // Import SalesReporting component
 import { 
   Sheet, 
@@ -1042,7 +1043,7 @@ const Owner = () => {
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
                 <div className="w-8 h-8 flex items-center justify-center">
-                  <img src="/src/assets/Logo.png" alt="Kalyanam Logo" className="w-6 h-6" />
+                  <img src={logoImage} alt="Kalyanam Logo" className="w-6 h-6" />
                 </div>
               </div>
               <div>
@@ -1085,37 +1086,39 @@ const Owner = () => {
                   <SheetHeader>
                     <SheetTitle>Menu</SheetTitle>
                   </SheetHeader>
-                  <div className="py-4 space-y-6">
-                    {/* Group navigation items by category */}
-                    {Array.from(new Set(navigationItems.map(item => item.category))).map((category) => (
-                      <div key={category}>
-                        <h3 className="text-sm font-semibold text-sidebar-accent-foreground/70 px-1 pb-2">{category}</h3>
-                        <div className="space-y-1">
-                          {navigationItems
-                            .filter(item => item.category === category)
-                            .map((item) => {
-                              const Icon = item.icon;
-                              return (
-                                <Button
-                                  key={item.id}
-                                  variant={activeSection === item.id ? "default" : "ghost"}
-                                  className="justify-start gap-3 w-full"
-                                  onClick={() => {
-                                    setActiveSection(item.id);
-                                    // Close the sheet using the proper Radix UI API
-                                    document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
-                                  }}
-                                >
-                                  <Icon className="w-5 h-5" />
-                                  <span className="font-medium">{item.label}</span>
-                                </Button>
-                              );
-                            })}
+                  <div className="flex flex-col h-[calc(100vh-100px)]">
+                    <div className="flex-1 overflow-y-auto space-y-6">
+                      {/* Group navigation items by category */}
+                      {Array.from(new Set(navigationItems.map(item => item.category))).map((category) => (
+                        <div key={category}>
+                          <h3 className="text-sm font-semibold text-sidebar-accent-foreground/70 px-1 pb-2">{category}</h3>
+                          <div className="space-y-1">
+                            {navigationItems
+                              .filter(item => item.category === category)
+                              .map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                  <Button
+                                    key={item.id}
+                                    variant={activeSection === item.id ? "default" : "ghost"}
+                                    className="justify-start gap-3 w-full"
+                                    onClick={() => {
+                                      setActiveSection(item.id);
+                                      // Close the sheet using the proper Radix UI API
+                                      document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
+                                    }}
+                                  >
+                                    <Icon className="w-5 h-5" />
+                                    <span className="font-medium">{item.label}</span>
+                                  </Button>
+                                );
+                              })}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                     
-                    <div className="space-y-1 pt-4 border-t">
+                    <div className="space-y-1 pt-4 border-t pb-4">
                       <Button 
                         variant="secondary" 
                         onClick={() => {
@@ -1140,9 +1143,14 @@ const Owner = () => {
                         <Database className="w-5 h-5" />
                         <span className="font-medium">Seed Database</span>
                       </Button>
-                      <div className="mt-4">
-                        <LogoutButton />
-                      </div>
+                      <Button 
+                        variant="destructive" 
+                        onClick={handleLogout}
+                        className="justify-start gap-3 w-full mt-4"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        <span className="font-medium">Logout</span>
+                      </Button>
                     </div>
                   </div>
                 </SheetContent>

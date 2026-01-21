@@ -47,11 +47,13 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
     try {
       await signOut();
       setOpen(false);
+      navigate('/');
       toast.success("Logged out successfully");
     } catch (error) {
       toast.error("Failed to logout");
     }
   };
+
 
   const menuItems = [
     {
@@ -112,36 +114,56 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
           <SheetTitle>Menu</SheetTitle>
         </SheetHeader>
         
-        <div className="mt-6 flex flex-col gap-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Button
-                key={item.id}
-                variant={item.active ? "default" : "ghost"}
-                className="justify-start gap-3 py-6 text-left"
-                onClick={item.action}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
-                {item.badge && (
-                  <span className="ml-auto bg-white text-primary rounded-full w-6 h-6 text-xs flex items-center justify-center">
-                    {item.badge}
-                  </span>
-                )}
-              </Button>
-            );
-          })}
+        <div className="flex flex-col h-[calc(100vh-100px)]">
+          <div className="flex-1 overflow-y-auto mt-4 flex flex-col gap-2">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Button
+                  key={item.id}
+                  variant={item.active ? "default" : "ghost"}
+                  className="justify-start gap-3 py-6 text-left"
+                  onClick={item.action}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                  {item.badge && (
+                    <span className="ml-auto bg-white text-primary rounded-full w-6 h-6 text-xs flex items-center justify-center">
+                      {item.badge}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
+          </div>
           
-          {isAuthenticated && (
-            <Button
-              variant="outline"
-              className="justify-start gap-3 py-6 text-left text-destructive hover:text-destructive hover:border-destructive"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="font-medium">Logout</span>
-            </Button>
+          {isAuthenticated ? (
+            <div className="pt-4 pb-4">
+              <Button 
+                variant="destructive" 
+                onClick={handleLogout}
+                className="justify-start gap-3 w-full"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="font-medium">Logout</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="pt-4 pb-4">
+              <Button 
+                variant="default" 
+                onClick={() => {
+                  setOpen(false);
+                  if (onOwnerLoginClick) {
+                    onOwnerLoginClick();
+                  }
+                }}
+                className="justify-start gap-3 w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                <User className="w-5 h-5" />
+                <span className="font-medium">Owner Login</span>
+              </Button>
+            </div>
           )}
         </div>
         
