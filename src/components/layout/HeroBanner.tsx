@@ -10,7 +10,8 @@ import {
   Stethoscope,
   ChevronDown,
   ChevronUp,
-  Star
+  Star,
+  Search
 } from "lucide-react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import {
@@ -21,13 +22,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import StoreReviewForm from "@/components/user/StoreReviewForm";
-import { motion, useScroll, useTransform, useInView, useAnimation } from "framer-motion";
+import { motion, useScroll, useTransform, useInView, useAnimation, Variants } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth"; // Import useAuth hook
 import LottieAnimation from "../common/LottieAnimation";
 import heroAnim from "@/assets/animations/hero-pharmacy.json";
 import trustSupportAnim from "@/assets/animations/trust-support.json";
 import trustProductsAnim from "@/assets/animations/trust-products.json";
 import trustSatisfiedAnim from "@/assets/animations/trust-satisfied.json";
+
+// Type assertion for animation data
+const typedHeroAnim = heroAnim as Record<string, unknown>;
+const typedTrustSupportAnim = trustSupportAnim as Record<string, unknown>;
+const typedTrustProductsAnim = trustProductsAnim as Record<string, unknown>;
+const typedTrustSatisfiedAnim = trustSatisfiedAnim as Record<string, unknown>;
 
 export const HeroBanner = ({ discountPercentage }: { discountPercentage: number }) => {
   const [expandedFeature, setExpandedFeature] = useState<number | null>(null);
@@ -99,9 +106,117 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
         }
       }}
     >
-      <div className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
+      <div className="container mx-auto px-4 py-3">
+        {/* MOBILE-FIRST PHARMACY ANIMATION-ONLY DESIGN */}
+        <div className="md:hidden space-y-3">
+          {/* PHARMACY ANIMATED IMAGE - TOP */}
+          <motion.div
+            className="relative w-full rounded-xl overflow-hidden bg-gradient-to-br from-blue-50 to-green-50 shadow-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="w-full h-48">
+              <LottieAnimation 
+                animationData={typedHeroAnim}
+                className="w-full h-full object-contain p-4"
+              />
+            </div>
+            <div className="absolute bottom-3 left-3 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full">
+              <span className="text-xs font-medium text-blue-600">Genuine Care</span>
+            </div>
+          </motion.div>
+
+          {/* CONDITIONAL WELCOME MESSAGE */}
+          {isAuthenticated && userName && (
+            <div className="space-y-1 text-left pl-1">
+              <h2 className="font-semibold text-lg text-blue-600">
+                Welcome, {userName}
+              </h2>
+            </div>
+          )}
+
+          {/* HEADLINE + TAGLINE */}
+          <div className="space-y-2 text-left pl-1">
+            <h1 className="font-semibold text-lg text-blue-600">
+              Your trusted neighborhood pharmacy
+            </h1>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Quality medicines and healthcare products with complete privacy and professional care.
+            </p>
+          </div>
+
+          {/* OFFER BADGE */}
+          <div className="flex justify-center">
+            <span className="bg-red-100 text-red-700 text-xs font-medium px-3 py-1.5 rounded-full">
+              Upto 5% OFF
+            </span>
+          </div>
+
+          {/* TRUST ICONS ROW WITH TEXT LABELS - MOBILE ONLY */}
+          <div className="flex justify-center gap-8 mt-2 mb-3">
+            <div className="flex flex-col items-center">
+              <div className="w-10 h-10 mb-1">
+                <LottieAnimation 
+                  animationData={typedTrustSupportAnim}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <span className="text-xs text-center text-muted-foreground font-medium">Support</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-10 h-10 mb-1">
+                <LottieAnimation 
+                  animationData={typedTrustProductsAnim}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <span className="text-xs text-center text-muted-foreground font-medium">Products</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-10 h-10 mb-1">
+                <LottieAnimation 
+                  animationData={typedTrustSatisfiedAnim}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <span className="text-xs text-center text-muted-foreground font-medium">Satisfied</span>
+            </div>
+          </div>
+
+          {/* TRUST LINE */}
+          <div className="flex justify-center">
+            <div className="flex items-center gap-1.5 bg-red-50 px-2.5 py-1 rounded-full">
+              <Heart className="w-3.5 h-3.5 text-red-500" />
+              <span className="font-medium text-xs text-red-700">Trusted by 10,000+ Families</span>
+            </div>
+          </div>
+
+          {/* STORE INFO */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>100% Genuine Medicines</span>
+              </div>
+              <span>•</span>
+            </div>
+            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mt-1">
+              <div className="flex items-center gap-1">
+                <Store className="w-3.5 h-3.5 text-green-600" />
+                <span className="font-medium text-green-600">Store is OPEN</span>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>8 AM - 10:30 PM</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* DESKTOP LAYOUT - Original design preserved */}
+        <div className="hidden md:grid md:grid-cols-2 gap-12 items-center">
           <motion.div
             className="space-y-8"
             initial={{ opacity: 0, x: -20 }}
@@ -115,15 +230,16 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
               </Badge>
 
               <motion.h1
-                className="text-4xl md:text-5xl font-bold leading-tight"
+                className="text-3xl md:text-4xl font-bold leading-tight"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
               >
                 {isAuthenticated && userName ? (
-                  <>
-                    Welcome, <span className="text-blue-600">{userName}</span>!
-                  </>
+                  <div className="text-center lg:text-left">
+                    <span className="block text-lg text-muted-foreground mb-1">Welcome,</span>
+                    <span className="text-blue-600">{userName}</span>
+                  </div>
                 ) : (
                   <>
                     Your <span className="text-blue-600">Trusted</span> Healthcare Partner
@@ -132,12 +248,12 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
               </motion.h1>
 
               <motion.p
-                className="text-lg text-muted-foreground max-w-2xl"
+                className="text-base md:text-lg text-muted-foreground max-w-2xl text-center lg:text-left"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.5 }}
               >
-                Quality medicines and healthcare products available at our physical store with complete privacy and professional care.
+                Quality medicines and healthcare products with complete privacy and professional care.
               </motion.p>
             </div>
 
@@ -215,7 +331,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 <div className="flex-1 flex items-center justify-center">
-                  <LottieAnimation animationData={trustSupportAnim} width={90} height={90} className="mx-auto" />
+                  <LottieAnimation animationData={typedTrustSupportAnim} width={90} height={90} className="mx-auto" />
                 </div>
                 <div className="text-xs text-muted-foreground font-medium mt-1">Support</div>
               </motion.div>
@@ -224,7 +340,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
                 whileHover={{ y: -5 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <LottieAnimation animationData={trustProductsAnim} width={80} height={80} className="mx-auto mb-1" />
+                <LottieAnimation animationData={typedTrustProductsAnim} width={80} height={80} className="mx-auto mb-1" />
                 <div className="text-xl font-bold text-primary">5000+</div>
                 <div className="text-xs text-muted-foreground font-medium">Products</div>
               </motion.div>
@@ -233,7 +349,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
                 whileHover={{ y: -5 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <LottieAnimation animationData={trustSatisfiedAnim} width={80} height={80} className="mx-auto mb-1" />
+                <LottieAnimation animationData={typedTrustSatisfiedAnim} width={80} height={80} className="mx-auto mb-1" />
                 <div className="text-xl font-bold text-primary">99%</div>
                 <div className="text-xs text-muted-foreground font-medium">Satisfied</div>
               </motion.div>
@@ -242,7 +358,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
 
           {/* Right Content - Animation & Features */}
           <motion.div
-            className="space-y-6 flex flex-col justify-center mt-8 md:-mt-24"
+            className="space-y-6 flex flex-col justify-center mt-8 lg:-mt-24"
             initial="hidden"
             animate="visible"
             variants={{
@@ -255,18 +371,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
               }
             }}
           >
-            {/* Hero Animation - Mobile */}
-            <motion.div
-              className="w-full max-w-[300px] mx-auto md:hidden mb-6"
-              variants={{
-                hidden: { opacity: 0, scale: 0.9 },
-                visible: { opacity: 1, scale: 1 }
-              }}
-            >
-              <LottieAnimation animationData={heroAnim} className="w-full h-auto" />
-            </motion.div>
-
-            {/* Hero Animation - Desktop */}
+            {/* Hero Animation - Desktop Only */}
             <motion.div
               className="w-full max-w-[550px] mx-auto hidden md:block mb-6"
               variants={{
@@ -274,7 +379,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
                 visible: { opacity: 1, scale: 1 }
               }}
             >
-              <LottieAnimation animationData={heroAnim} className="w-full h-auto" />
+              <LottieAnimation animationData={typedHeroAnim} className="w-full h-auto" />
             </motion.div>
 
             {/* Feature Cards */}

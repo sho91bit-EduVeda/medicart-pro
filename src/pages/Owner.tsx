@@ -18,7 +18,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt } from "lucide-react";
+import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt, Info, AlertCircle, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ExcelUpload } from "@/components/common/ExcelUpload";
 import { IndianMedicineDatasetImport } from "@/components/admin/IndianMedicineDatasetImport";
@@ -40,6 +40,12 @@ import {
   SheetTitle, 
   SheetTrigger 
 } from "@/components/ui/sheet";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Menu } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -116,6 +122,9 @@ const Owner = () => {
 
   // State for handling reminders
   const [reminders, setReminders] = useState<any[]>([]);
+  
+  // State for delivery banner visibility
+  const [showDeliveryBanner, setShowDeliveryBanner] = useState(true);
 
   // Filter and sort medicine requests
   const filteredAndSortedRequests = requests.filter(request => {
@@ -681,20 +690,32 @@ const Owner = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Fetch reminders for this user
+    // Fetch reminders for this user - simplified query to avoid composite index
     const remindersQuery = query(
       collection(db, 'notifications'),
-      where('user_id', '==', user.uid),
-      where('type', '==', 'medicine_request_reminder'),
-      where('read', '==', false),
-      orderBy('reminder_date', 'asc')
+      where('user_id', '==', user.uid)
     );
 
     const unsubscribe = onSnapshot(remindersQuery, (snapshot) => {
-      const remindersData = snapshot.docs.map(doc => ({
+      // Client-side filtering to avoid composite index requirement
+      const allNotifications: any[] = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      
+      // Filter for medicine request reminders that are unread
+      const remindersData = allNotifications.filter((notification: any) => 
+        notification.type === 'medicine_request_reminder' && 
+        notification.read === false
+      );
+      
+      // Sort by reminder_date client-side
+      remindersData.sort((a: any, b: any) => {
+        const dateA = a.reminder_date ? new Date(a.reminder_date).getTime() : 0;
+        const dateB = b.reminder_date ? new Date(b.reminder_date).getTime() : 0;
+        return dateA - dateB; // ascending order
+      });
+      
       setReminders(remindersData);
     });
 
@@ -1017,62 +1038,37 @@ const Owner = () => {
         }}
       >
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <motion.div 
-              className="flex items-center gap-3"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-            >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3">
               <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
-                <KalyanamLogo className="w-8 h-8" />
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <img src="/src/assets/Logo.png" alt="Kalyanam Logo" className="w-6 h-6" />
+                </div>
               </div>
               <div>
                 <h1 className="text-2xl font-bold hidden sm:block">Dashboard</h1>
                 <div className="sm:hidden">
                   <h1 className="text-xl font-bold">Dashboard</h1>
                 </div>
-                <p className="text-sm text-white/90 hidden sm:block">
+                <p className="text-sm text-white/90">
                   {userName ? `Welcome, ${userName}!` : "Manage your medical store"}
                 </p>
               </div>
-            </motion.div>
+            </div>
             <div className="flex items-center gap-3">
-              {/* View Store Button - Visible on mobile and desktop */}
+              {/* View Store button - Visible on all views */}
               <Button 
                 variant="ghost" 
-                size="icon" 
-                className="md:hidden text-white hover:bg-white/20 rounded-full"
+                size="icon"
                 onClick={() => navigate("/")}
+                className=""
               >
-                <Store className="w-6 h-6" />
+                <Store className="w-5 h-5 text-white" />
               </Button>
               
-              {/* Notification Bell */}
+              {/* Notification Bell - Only show if there are notifications */}
               <NotificationBell />
-
               
-              <motion.button 
-                className="rounded-full px-4 py-2 text-white hover:bg-white/20 transition-colors font-medium hidden md:flex items-center gap-2"
-                onClick={seedDatabase}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <Database className="w-4 h-4" />
-                <span className="hidden sm:inline">Seed DB</span>
-              </motion.button>
-              <motion.button 
-                className="rounded-full px-4 py-2 text-white hover:bg-white/20 transition-colors font-medium hidden md:flex items-center gap-2"
-                onClick={() => navigate("/")}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <Store className="w-5 h-5" />
-                <span className="hidden sm:inline">View Store</span>
-              </motion.button>
-              <LogoutButton />              
               {/* Mobile menu trigger - Moved to the extreme right */}
               <Sheet>
                 <SheetTrigger asChild className="md:hidden">
@@ -1085,47 +1081,53 @@ const Owner = () => {
                     <Menu className="w-6 h-6" />
                   </motion.button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[340px]">
+                <SheetContent side="right" className="w-[300px] sm:w-[340px] overflow-y-auto max-h-screen">
                   <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                      <KalyanamLogo className="w-8 h-8" />
-                      <span className="hidden sm:inline">Dashboard</span>
-                      <span className="sm:hidden text-xl">Dashboard</span>
-                    </SheetTitle>
-                    <p className="text-sm text-muted-foreground hidden sm:block">
-                      {userName ? `Welcome, ${userName}!` : "Manage your medical store"}
-                    </p>
+                    <SheetTitle>Menu</SheetTitle>
                   </SheetHeader>
-                  
-                  <div className="mt-6 flex flex-col gap-2">
-                    {/* Show only essential navigation items in mobile menu */}
-                    {navigationItems
-                      .filter(item => 
-                        item.id === "data-import" ||
-                        item.id === "store-purchase" ||
-                        item.id === "manage-inventory" || 
-                        item.id === "requests" || 
-                        item.id === "sales-reporting"
-                      )                      .map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <Button
-                            key={item.id}
-                            variant={activeSection === item.id ? "default" : "ghost"}
-                            className="justify-start gap-3 py-6 text-left pl-8"
-                            onClick={() => {
-                              setActiveSection(item.id);
-                              // Close the sheet using the proper Radix UI API
-                              document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
-                            }}
-                          >
-                            <Icon className="w-5 h-5" />
-                            <span className="font-medium">{item.label}</span>
-                          </Button>
-                        );
-                      })}
+                  <div className="py-4 space-y-6">
+                    {/* Group navigation items by category */}
+                    {Array.from(new Set(navigationItems.map(item => item.category))).map((category) => (
+                      <div key={category}>
+                        <h3 className="text-sm font-semibold text-sidebar-accent-foreground/70 px-1 pb-2">{category}</h3>
+                        <div className="space-y-1">
+                          {navigationItems
+                            .filter(item => item.category === category)
+                            .map((item) => {
+                              const Icon = item.icon;
+                              return (
+                                <Button
+                                  key={item.id}
+                                  variant={activeSection === item.id ? "default" : "ghost"}
+                                  className="justify-start gap-3 w-full"
+                                  onClick={() => {
+                                    setActiveSection(item.id);
+                                    // Close the sheet using the proper Radix UI API
+                                    document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
+                                  }}
+                                >
+                                  <Icon className="w-5 h-5" />
+                                  <span className="font-medium">{item.label}</span>
+                                </Button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    ))}
                     
-                    <div className="mt-4 pt-4 border-t">
+                    <div className="space-y-1 pt-4 border-t">
+                      <Button 
+                        variant="secondary" 
+                        onClick={() => {
+                          setActiveSection("features");
+                          // Close the sheet
+                          document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
+                        }} 
+                        className="justify-start gap-3 w-full"
+                      >
+                        <Settings className="w-5 h-5" />
+                        <span className="font-medium">Feature Flags</span>
+                      </Button>
                       <Button 
                         variant="secondary" 
                         onClick={() => {
@@ -1133,24 +1135,14 @@ const Owner = () => {
                           // Close the sheet
                           document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
                         }} 
-                        className="w-full justify-start gap-3 py-6 text-left"
+                        className="justify-start gap-3 w-full"
                       >
                         <Database className="w-5 h-5" />
                         <span className="font-medium">Seed Database</span>
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => {
-                          navigate("/");
-                          // Close the sheet
-                          document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
-                        }} 
-                        className="w-full justify-start gap-3 py-6 text-left mt-2"
-                      >
-                        <Store className="w-5 h-5" />
-                        <span className="font-medium">View Store</span>
-                      </Button>
-                      <LogoutButton className="w-full justify-start gap-3 py-6 text-left mt-2" />
+                      <div className="mt-4">
+                        <LogoutButton />
+                      </div>
                     </div>
                   </div>
                 </SheetContent>
@@ -1216,100 +1208,88 @@ const Owner = () => {
             transition={{ delay: 0.4 }}
           >
             {/* Delivery Status Banner with animation */}
-            {!deliveryEnabled && (
+            {!deliveryEnabled && showDeliveryBanner && (
               <motion.div 
-                className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3"
+                className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
               >
-                <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-yellow-800">Delivery Service Disabled</h3>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Medicine delivery is currently disabled. Enable it in the Feature Flags section when you're ready to start deliveries.
-                  </p>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <h3 className="text-sm font-medium text-yellow-800">Delivery Service Disabled</h3>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Medicine delivery is currently disabled. Enable it in the Feature Flags section when you're ready to start deliveries.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <Button 
+                        variant="link" 
+                        className="text-yellow-800 p-0 h-auto font-normal text-sm pl-0 mt-1"
+                        onClick={() => setActiveSection("features")}
+                      >
+                        Go to Feature Flags →
+                      </Button>
+                    </div>
+                  </div>
                   <Button 
-                    variant="link" 
-                    className="text-yellow-800 p-0 h-auto font-normal mt-2"
-                    onClick={() => setActiveSection("features")}
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 w-6 p-0 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-100"
+                    onClick={() => setShowDeliveryBanner(false)}
                   >
-                    Go to Feature Flags →
+                    <X className="w-4 h-4" />
                   </Button>
                 </div>
               </motion.div>
             )}
-
-            {/* Mobile Navigation with animation - Redesigned for better UX */}
+            
+            {/* Quick Stats Section - Mobile Only */}
             <motion.div 
-              className="md:hidden mb-6"
+              className="md:hidden grid grid-cols-2 gap-3 mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.6 }}
             >
-              {/* Category Tabs for Mobile */}
-              <div className="mb-4">
-                <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
-                  {Array.from(new Set(navigationItems.map(item => item.category))).map((category, index) => (
-                    <motion.div
-                      key={category}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.3 + index * 0.1 }}
-                      whileHover={{ y: -3 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full ${
-                          activeCategory === category 
-                            ? "bg-primary text-primary-foreground border-primary" 
-                            : "bg-background"
-                        }`}
-                        onClick={() => setActiveCategory(category)}
-                      >
-                        <span className="whitespace-nowrap text-xs font-medium">{category}</span>
-                      </Button>
-                    </motion.div>
-                  ))}
-                </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                <Package className="w-6 h-6 text-blue-600 mx-auto mb-1" />
+                <div className="text-lg font-bold text-blue-600">{orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString()).length}</div>
+                <div className="text-xs text-gray-600 mt-1">Today's Orders</div>
               </div>
-              
-              {/* Navigation Items for Active Category */}
-              <motion.div 
-                className="grid grid-cols-2 gap-3"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                {navigationItems
-                  .filter(item => item.category === activeCategory)
-                  .map((item, index) => {
-                    const Icon = item.icon;
-                    return (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 + index * 0.1 }}
-                        whileHover={{ y: -5, scale: 1.03 }}
-                        whileTap={{ scale: 0.95 }}
-                        whileFocus={{ scale: 1.03 }}
-                      >
-                        <Button
-                          variant={activeSection === item.id ? "default" : "outline"}
-                          className="flex flex-col items-center justify-center h-20 gap-2 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow w-full"
-                          onClick={() => setActiveSection(item.id)}
-                        >
-                          <Icon className="w-6 h-6" />
-                          <span className="text-xs font-medium text-center">{item.label}</span>
-                        </Button>
-                      </motion.div>
-                    );
-                  })}
-              </motion.div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                <TrendingUp className="w-6 h-6 text-green-600 mx-auto mb-1" />
+                <div className="text-lg font-bold text-green-600">₹{orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString()).reduce((sum, o) => sum + (o.total_amount || 0), 0).toFixed(0)}</div>
+                <div className="text-xs text-gray-600 mt-1">Revenue Today</div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                <AlertTriangle className="w-6 h-6 text-orange-600 mx-auto mb-1" />
+                <div className="text-lg font-bold text-orange-600">{products.filter(p => (p.stock_quantity || 0) < 10).length}</div>
+                <div className="text-xs text-gray-600 mt-1">Low Stock</div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                <Mail className="w-6 h-6 text-purple-600 mx-auto mb-1" />
+                <div className="text-lg font-bold text-purple-600">{requests.filter(r => r.status === 'pending').length}</div>
+                <div className="text-xs text-gray-600 mt-1">Pending Requests</div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                <Database className="w-6 h-6 text-teal-600 mx-auto mb-1" />
+                <div className="text-lg font-bold text-teal-600">{products.length}</div>
+                <div className="text-xs text-gray-600 mt-1">Total Products</div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                <Database className="w-6 h-6 text-indigo-600 mx-auto mb-1" />
+                <div className="text-lg font-bold text-indigo-600">{categories.length}</div>
+                <div className="text-xs text-gray-600 mt-1">Categories</div>
+              </div>
             </motion.div>
+
+
 
             {/* Content Sections */}
             {activeSection === "data-import" && (
@@ -1317,7 +1297,7 @@ const Owner = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 pb-4 border-b border-slate-200">
                     <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    <h3 className="text-lg font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
                       <Database className="w-5 h-5" />
                       Add Medicines
                     </h3>
@@ -1347,12 +1327,14 @@ const Owner = () => {
                     <AccordionItem value="manage-products" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
                       <AccordionTrigger className="p-0">
                         <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors">
-                          <div className="flex items-center gap-3 pb-2">
-                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                            <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                              <Package className="w-5 h-5 text-blue-600" />
-                              Manage Products
-                            </h3>
+                          <div className="flex items-center justify-between gap-3 pb-2">
+                            <div className="flex items-center gap-3">
+                              <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                                <Package className="w-5 h-5 text-blue-600" />
+                                Manage Products
+                              </h3>
+                            </div>
+                            <div className="text-sm text-blue-600 font-medium">({products.length} products)</div>
                           </div>
                           <div className="pt-2">
                             <p className="text-sm text-slate-600">View and manage your product inventory</p>
@@ -1508,12 +1490,14 @@ const Owner = () => {
                 <AccordionItem value="manage-categories" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
                   <AccordionTrigger className="p-0">
                     <div className="p-6 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors">
-                      <div className="flex items-center gap-3 pb-2">
-                        <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                          <Database className="w-5 h-5 text-purple-600" />
-                          Manage Categories
-                        </h3>
+                      <div className="flex items-center justify-between gap-3 pb-2">
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <Database className="w-5 h-5 text-purple-600" />
+                            Manage Categories
+                          </h3>
+                        </div>
+                        <div className="text-sm text-purple-600 font-medium">({categories.length} categories)</div>
                       </div>
                       <div className="pt-2">
                         <p className="text-sm text-slate-600">Add, edit, or delete product categories</p>
@@ -1525,7 +1509,7 @@ const Owner = () => {
                       {/* Category Form */}
                       <Card className="border border-dashed bg-muted/30">
                         <CardHeader>
-                          <CardTitle className="text-lg">
+                          <CardTitle className="text-sm sm:text-base">
                             {editingCategoryId ? "Edit Category" : "Add New Category"}
                           </CardTitle>
                         </CardHeader>
@@ -1566,7 +1550,7 @@ const Owner = () => {
                       {/* Categories List */}
                       <div className="space-y-4">
                         <div>
-                          <h3 className="text-lg font-semibold">Existing Categories</h3>
+                          <h3 className="text-sm font-semibold sm:text-base">Existing Categories</h3>
                           <p className="text-sm text-muted-foreground">
                             {categories.length} category{categories.length !== 1 ? 'es' : ''} in your store
                           </p>
@@ -1575,7 +1559,7 @@ const Owner = () => {
                         {categories.length === 0 ? (
                           <div className="text-center py-8 border border-dashed rounded-lg">
                             <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                            <h3 className="text-lg font-medium mb-2">No categories yet</h3>
+                            <h3 className="text-base font-medium mb-2">No categories yet</h3>
                             <p className="text-muted-foreground mb-4">
                               Add your first category to organize your products.
                             </p>
@@ -1623,8 +1607,7 @@ const Owner = () => {
                   <AccordionTrigger className="p-0">
                     <div className="p-6 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 transition-colors">
                       <div className="flex items-center gap-3 pb-2">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                        <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
                           <Package className="w-5 h-5 text-emerald-600" />
                           Order Management
                         </h3>
@@ -1658,7 +1641,7 @@ const Owner = () => {
                         ) : orders.length === 0 ? (
                           <div className="text-center py-8">
                             <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                            <h3 className="text-lg font-medium mb-2">No orders yet</h3>
+                            <h3 className="text-base font-medium mb-2">No orders yet</h3>
                             <p className="text-muted-foreground">
                               Pickup orders will appear here when customers place them.
                             </p>
@@ -1738,8 +1721,7 @@ const Owner = () => {
                   <AccordionTrigger className="p-0">
                     <div className="p-6 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 transition-colors">
                       <div className="flex items-center gap-3 pb-2">
-                        <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                        <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
                           <Mail className="w-5 h-5 text-amber-600" />
                           Customer Medicine Requests
                         </h3>
@@ -1753,7 +1735,7 @@ const Owner = () => {
                     <div className="space-y-6">
                       <div className="flex justify-between items-center">
                         <div>
-                          <h3 className="text-lg font-semibold">Recent Requests</h3>
+                          <h3 className="text-base font-semibold">Recent Requests</h3>
                           <p className="text-sm text-muted-foreground">
                             Customers requesting unavailable medicines
                           </p>
@@ -1826,7 +1808,7 @@ const Owner = () => {
                       ) : filteredAndSortedRequests.length === 0 ? (
                         <div className="border rounded-lg p-6 text-center">
                           <Mail className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                          <h3 className="text-lg font-medium mb-2">No requests found</h3>
+                          <h3 className="text-base font-medium mb-2">No requests found</h3>
                           <p className="text-muted-foreground mb-4">
                             {requests.length === 0 
                               ? "When customers request medicines that are not currently available, they will appear here."
@@ -1919,8 +1901,7 @@ const Owner = () => {
                   <AccordionTrigger className="p-0">
                     <div className="p-6 bg-gradient-to-r from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 transition-colors">
                       <div className="flex items-center gap-3 pb-2">
-                        <div className="w-3 h-3 rounded-full bg-violet-500"></div>
-                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                        <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
                           <Settings className="w-5 h-5 text-violet-600" />
                           Store Settings
                         </h3>
@@ -1938,7 +1919,7 @@ const Owner = () => {
                             <Percent className="w-6 h-6 text-primary" />
                           </div>
                           <div className="flex-1">
-                            <Label htmlFor="discount" className="text-lg font-semibold">
+                            <Label htmlFor="discount" className="text-base font-semibold">
                               Global Discount Percentage
                             </Label>
                             <p className="text-sm text-muted-foreground">
@@ -1983,8 +1964,7 @@ const Owner = () => {
                   <AccordionTrigger className="p-0">
                     <div className="p-6 bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 transition-colors">
                       <div className="flex items-center gap-3 pb-2">
-                        <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                        <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
                           <Percent className="w-5 h-5 text-rose-600" />
                           Manage Offers
                         </h3>
@@ -1999,7 +1979,7 @@ const Owner = () => {
                       {/* Offer Form */}
                       <Card className="border border-dashed bg-muted/30">
                       <CardHeader>
-                        <CardTitle className="text-lg">
+                        <CardTitle className="text-base">
                           {editingOfferId ? "Edit Offer" : "Create New Offer"}
                         </CardTitle>
                       </CardHeader>
@@ -2112,7 +2092,7 @@ const Owner = () => {
                     {/* Offers List */}
                     <div className="space-y-4">
                       <div>
-                        <h3 className="text-lg font-semibold">Current Offers</h3>
+                        <h3 className="text-base font-semibold">Current Offers</h3>
                         <p className="text-sm text-muted-foreground">
                           {offers.length} offer{offers.length !== 1 ? 's' : ''} in your store
                         </p>
@@ -2125,7 +2105,7 @@ const Owner = () => {
                       ) : offers.length === 0 ? (
                         <div className="text-center py-8 border border-dashed rounded-lg">
                           <Percent className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                          <h3 className="text-lg font-medium mb-2">No offers yet</h3>
+                          <h3 className="text-base font-medium mb-2">No offers yet</h3>
                           <p className="text-muted-foreground mb-4">
                             Create your first offer to attract customers.
                           </p>
@@ -2198,8 +2178,7 @@ const Owner = () => {
                   <AccordionTrigger className="p-0">
                     <div className="p-6 bg-gradient-to-r from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 transition-colors">
                       <div className="flex items-center gap-3 pb-2">
-                        <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
-                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                        <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
                           <Bell className="w-5 h-5 text-cyan-600" />
                           Manage Announcements
                         </h3>
@@ -2214,7 +2193,7 @@ const Owner = () => {
                       {/* Announcement Form */}
                       <Card className="border border-dashed bg-muted/30">
                         <CardHeader>
-                          <CardTitle className="text-lg">Create New Announcement</CardTitle>
+                          <CardTitle className="text-base">Create New Announcement</CardTitle>
                         </CardHeader>
                         <CardContent>
                           <form onSubmit={handleAddAnnouncement} className="space-y-4">
@@ -2274,7 +2253,7 @@ const Owner = () => {
                       {/* Announcements List */}
                       <div className="space-y-4">
                         <div>
-                          <h3 className="text-lg font-semibold">Current Announcements</h3>
+                          <h3 className="text-base font-semibold">Current Announcements</h3>
                           <p className="text-sm text-muted-foreground">
                             {announcements.length} announcement{announcements.length !== 1 ? 's' : ''} currently active
                           </p>
@@ -2287,7 +2266,7 @@ const Owner = () => {
                         ) : announcements.length === 0 ? (
                           <div className="text-center py-8 border border-dashed rounded-lg">
                             <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                            <h3 className="text-lg font-medium mb-2">No announcements yet</h3>
+                            <h3 className="text-base font-medium mb-2">No announcements yet</h3>
                             <p className="text-muted-foreground mb-4">
                               Create your first announcement to display important information to customers.
                             </p>
@@ -2339,7 +2318,7 @@ const Owner = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 pb-4 border-b border-slate-200">
                     <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    <h3 className="text-lg font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
                       <Package className="w-5 h-5" />
                       Feature Flags
                     </h3>

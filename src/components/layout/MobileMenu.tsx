@@ -107,17 +107,9 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
           </svg>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[300px] sm:w-[340px]">
+      <SheetContent side="right" className="w-[300px] sm:w-[340px] h-full overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10 shadow">
-              <KalyanamLogo className="w-8 h-8" />
-            </div>
-            <div>
-              <div className="text-lg font-bold">Kalyanam</div>
-              <div className="text-[0.6rem] text-muted-foreground uppercase tracking-wider">Pharmacy</div>
-            </div>
-          </SheetTitle>
+          <SheetTitle>Menu</SheetTitle>
         </SheetHeader>
         
         <div className="mt-6 flex flex-col gap-2">

@@ -125,7 +125,7 @@ export const LoginPopup = ({ trigger }: LoginPopupProps) => {
         {trigger}
       </DialogTrigger>
       <DialogContent
-        className="sm:max-w-md p-0 overflow-hidden rounded-2xl border-0 shadow-2xl"
+        className="sm:max-w-md h-full overflow-y-auto p-0 overflow-hidden rounded-2xl border-0 shadow-2xl"
         onKeyDown={handleKeyDown}
         tabIndex={0}
       >

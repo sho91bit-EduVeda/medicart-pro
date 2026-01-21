@@ -39,6 +39,10 @@ import StoreReviews from "@/components/user/StoreReviews";
 import RequestMedicineSheet from "@/components/common/RequestMedicineSheet";
 import { MobileMenu } from "@/components/layout/MobileMenu";
 import LogoutButton from "@/components/common/LogoutButton";
+import MobileAnnouncementBanner from "@/components/layout/MobileAnnouncementBanner";
+import MobileSearchTabs from "@/components/layout/MobileSearchTabs";
+import MobileCategoryCard from "@/components/common/MobileCategoryCard";
+import MobileProductCard from "@/components/product/MobileProductCard";
 import AnnouncementMarquee from "@/components/layout/AnnouncementMarquee";
 import logoImage from "@/assets/Logo.png";
 import NotificationBell from "@/components/common/NotificationBell";
@@ -639,8 +643,15 @@ const Index = () => {
         </div>
       </motion.header>
 
-      {/* Announcement Marquee */}
-      <AnnouncementMarquee />
+      {/* Mobile Announcement Banner */}
+      <div className="md:hidden">
+        <MobileAnnouncementBanner />
+      </div>
+      
+      {/* Desktop Announcement Marquee */}
+      <div className="hidden md:block">
+        <AnnouncementMarquee />
+      </div>
 
       {/* Hidden LoginPopup trigger for mobile */}
       <div className="hidden">
@@ -692,7 +703,28 @@ const Index = () => {
               <p className="text-muted-foreground text-sm">Browse our wide range of healthcare products</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          {/* Mobile Categories Grid */}
+          <div className="md:hidden grid grid-cols-2 gap-4">
+            {categories.map((category) => {
+              const productCount = products.filter(p => p.category_id === category.id).length;
+              // Hide categories with 0 products
+              if (productCount === 0) return null;
+              return (
+                <MobileCategoryCard
+                  key={category.id}
+                  id={category.id}
+                  name={category.name}
+                  description={category.description}
+                  imageUrl={categoryImages[category.name]}
+                  animationData={getCategoryAnimation(category.name)}
+                  productCount={productCount}
+                />
+              );
+            })}
+          </div>
+          
+          {/* Desktop Categories Grid */}
+          <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {categories.map((category) => (
               <CategoryCard
                 key={category.id}
@@ -711,8 +743,13 @@ const Index = () => {
           </div>
         </motion.section>
 
-        {/* Search Bar and Filters */}
-        <section className="mb-12">
+        {/* Mobile Search Tabs */}
+        <div className="md:hidden mb-6">
+          <MobileSearchTabs />
+        </div>
+
+        {/* Desktop Search Bar and Filters */}
+        <section className="hidden md:block mb-12">
           <div className="relative max-w-2xl mx-auto">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -879,45 +916,59 @@ const Index = () => {
               </motion.button>
             </motion.div>
           ) : (
-            <motion.div
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: {
-                    staggerChildren: 0.03
-                  }
-                }
-              }}
-            >
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  original_price={product.original_price}
-                  discountPercentage={discountPercentage}
-                  image_url={product.image_url}
-                  in_stock={product.in_stock}
-                  quantity={product.stock_quantity || 0}
-                  requires_prescription={product.requires_prescription}
-                  category_animation_data={product.category_id ? getCategoryAnimation(getCategoryNameById(product.category_id)) : undefined}
-                  onClick={() => {
-                    setSearchQuery(product.name);
-                    setIsSearchResult(false); // Not a search result, direct product view
-                    setShowSearchPopup(true);
-                  }}
-                  showRequestOption={false}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: { opacity: 1, y: 0 }
-                  }}
-                />
-              ))}
-            </motion.div>
+            <>
+              {/* Mobile Products Grid */}
+              <div className="md:hidden grid grid-cols-2 gap-4">
+                {filteredProducts.map((product) => (
+                  <MobileProductCard
+                    key={product.id}
+                    id={product.id}
+                    name={product.name}
+                    original_price={product.original_price}
+                    discountPercentage={discountPercentage}
+                    image_url={product.image_url}
+                    in_stock={product.in_stock}
+                    quantity={product.stock_quantity || 0}
+                    requires_prescription={product.requires_prescription}
+                    category_animation_data={product.category_id ? getCategoryAnimation(getCategoryNameById(product.category_id)) : undefined}
+                    onClick={() => {
+                      setSearchQuery(product.name);
+                      setIsSearchResult(false); // Not a search result, direct product view
+                      setShowSearchPopup(true);
+                    }}
+                    showRequestOption={false}
+                  />
+                ))}
+              </div>
+              
+              {/* Desktop Products Grid */}
+              <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    id={product.id}
+                    name={product.name}
+                    original_price={product.original_price}
+                    discountPercentage={discountPercentage}
+                    image_url={product.image_url}
+                    in_stock={product.in_stock}
+                    quantity={product.stock_quantity || 0}
+                    requires_prescription={product.requires_prescription}
+                    category_animation_data={product.category_id ? getCategoryAnimation(getCategoryNameById(product.category_id)) : undefined}
+                    onClick={() => {
+                      setSearchQuery(product.name);
+                      setIsSearchResult(false); // Not a search result, direct product view
+                      setShowSearchPopup(true);
+                    }}
+                    showRequestOption={false}
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </motion.section>
 

@@ -49,7 +49,7 @@ export function ShoppingCart({ discountPercentage }: ShoppingCartProps) {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-lg">
+      <SheetContent className="w-full h-full overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>In-Store Pickup Cart ({itemCount} items)</SheetTitle>
         </SheetHeader>

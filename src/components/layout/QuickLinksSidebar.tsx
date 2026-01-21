@@ -136,7 +136,7 @@ export function QuickLinksSidebar() {
         className="w-14 h-14 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <LottieAnimation animationData={quickLinksAnim} width={35} height={35} />
+        <LottieAnimation animationData={quickLinksAnim} width={65} height={65} />
       </Button>
 
       {/* Bubble menu with animations */}
@@ -154,7 +154,7 @@ export function QuickLinksSidebar() {
 
             {/* Bubble menu container */}
             <motion.div
-              className="absolute bottom-16 right-0 w-64 bg-popover border border-border rounded-xl shadow-2xl p-2 z-50"
+              className="absolute bottom-16 right-0 w-64 bg-background border rounded-xl shadow-xl p-2 z-50"
               initial={{ opacity: 0, scale: 0.8, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -183,12 +183,8 @@ export function QuickLinksSidebar() {
                         >
                           <Button
                             variant="ghost"
-                            className="w-full justify-start gap-3 py-4 text-left relative text-foreground hover:bg-accent hover:text-accent-foreground"
-                            onClick={(e) => {
-                              // Prevent event from bubbling up to parent components
-                              e.stopPropagation();
-                              setIsOpen(false); // Close menu when opening sheet
-                            }}
+                            className="w-full justify-start gap-3 py-4 text-left relative"
+                            onClick={() => setIsOpen(false)} // Close menu when opening sheet
                           >
                             <motion.div
                               animate={hoveredItem === link.id ? { rotate: 360 } : { rotate: 0 }}
@@ -201,7 +197,7 @@ export function QuickLinksSidebar() {
                             {/* Hover animation indicator */}
                             {hoveredItem === link.id && (
                               <motion.div
-                                className="absolute inset-0 bg-accent/20 rounded-lg"
+                                className="absolute inset-0 bg-primary/5 rounded-lg"
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
@@ -227,7 +223,7 @@ export function QuickLinksSidebar() {
                     >
                       <Button
                         variant="ghost"
-                        className="w-full justify-start gap-3 py-4 text-left relative text-foreground hover:bg-accent hover:text-accent-foreground"
+                        className="w-full justify-start gap-3 py-4 text-left relative"
                         onClick={() => handleLinkClick(link)}
                       >
                         <motion.div
@@ -241,7 +237,7 @@ export function QuickLinksSidebar() {
                         {/* Hover animation indicator */}
                         {hoveredItem === link.id && (
                           <motion.div
-                            className="absolute inset-0 bg-accent/20 rounded-lg"
+                            className="absolute inset-0 bg-primary/5 rounded-lg"
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
