@@ -107,7 +107,7 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
           </svg>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[300px] sm:w-[340px] h-full overflow-y-auto">
+      <SheetContent side="right" className="w-[300px] sm:w-[340px] h-full">
         <SheetHeader>
           <SheetTitle>Menu</SheetTitle>
         </SheetHeader>

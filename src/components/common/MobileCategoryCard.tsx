@@ -30,12 +30,11 @@ const MobileCategoryCard = ({ id, name, description, imageUrl, productCount, ani
   const navigate = useNavigate();
   const IconComponent = getCategoryIcon(name);
 
-  // Hide categories with 0 products
-  if (productCount === 0) return null;
+
 
   return (
     <motion.div
-      className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+      className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-gray-200 shadow-sm overflow-hidden"
       whileHover={{ y: -4, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
       whileTap={{ scale: 0.98 }}
     >
@@ -75,17 +74,19 @@ const MobileCategoryCard = ({ id, name, description, imageUrl, productCount, ani
             </span>
           </div>
 
-          {/* Coming Soon Badge for 0 products */}
-          {productCount === 0 && (
+          {/* Coming Soon Badge for 0 products - with consistent spacing */}
+          {productCount === 0 ? (
             <span className="mt-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
               Coming soon
             </span>
+          ) : (
+            <div className="h-8"></div> /* Spacer to maintain consistent height */
           )}
         </div>
 
         {/* Action Button */}
         <div className="px-4 pb-4">
-          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors">
+          <button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 shadow-sm hover:shadow-md">
             Explore
             <ArrowRight className="w-4 h-4" />
           </button>

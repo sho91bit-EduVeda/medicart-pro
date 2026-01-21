@@ -37,7 +37,7 @@ const RequestMedicineSheet: React.FC<RequestMedicineSheetProps> = ({ children, m
         {children}
       </DialogTrigger>
       <DialogContent 
-        className="sm:max-w-2xl h-full overflow-y-auto flex flex-col p-0 overflow-hidden rounded-2xl border-0 shadow-2xl"
+        className="sm:max-w-2xl h-full flex flex-col p-0 overflow-hidden rounded-2xl border-0 shadow-2xl"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => {
           // Prevent pointer events from propagating to underlying components

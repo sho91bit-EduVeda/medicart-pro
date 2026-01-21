@@ -9,7 +9,7 @@ import ProductCard from "@/components/product/ProductCard";
 import CategoryCard from "@/components/common/CategoryCard";
 import { ProductFilters, FilterOptions } from "@/components/product/ProductFilters";
 import { StockStatus } from "@/components/common/StockStatus";
-import { ShieldCheck, Search, Store, Package, Heart, User, LogOut, LogIn, Pill, Star } from "lucide-react";
+import { ShieldCheck, Search, Store, Package, Heart, User, LogOut, LogIn, Pill, Star, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { whatsappService } from "@/services/whatsappService";
 import { ShoppingCart } from "@/components/common/ShoppingCart";
@@ -177,6 +177,7 @@ const Index = () => {
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
   // Function to get category name by ID
   const getCategoryNameById = (categoryId: string) => {
@@ -705,22 +706,44 @@ const Index = () => {
           </div>
           {/* Mobile Categories Grid */}
           <div className="md:hidden grid grid-cols-2 gap-4">
-            {categories.map((category) => {
-              const productCount = products.filter(p => p.category_id === category.id).length;
-              // Hide categories with 0 products
-              if (productCount === 0) return null;
+            {(() => {
+              const displayedCategories = showAllCategories ? categories : categories.slice(0, 4);
+              
+              return displayedCategories.map((category) => {
+                const productCount = products.filter(p => p.category_id === category.id).length;
+                return (
+                  <MobileCategoryCard
+                    key={category.id}
+                    id={category.id}
+                    name={category.name}
+                    description={category.description}
+                    imageUrl={categoryImages[category.name]}
+                    animationData={getCategoryAnimation(category.name)}
+                    productCount={productCount}
+                  />
+                );
+              });
+            })()}
+          </div>
+          
+          {/* Mobile View All Button */}
+          <div className="md:hidden flex justify-end mt-4">
+            {(() => {
+              if (categories.length <= 4) return null;
               return (
-                <MobileCategoryCard
-                  key={category.id}
-                  id={category.id}
-                  name={category.name}
-                  description={category.description}
-                  imageUrl={categoryImages[category.name]}
-                  animationData={getCategoryAnimation(category.name)}
-                  productCount={productCount}
-                />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-primary hover:text-primary/90 text-sm font-medium"
+                  onClick={() => setShowAllCategories(!showAllCategories)}
+                >
+                  {showAllCategories ? 'View Less' : `View All (${categories.length})`}
+                  <ChevronDown 
+                    className={`w-4 h-4 ml-1 transition-transform duration-300 ${showAllCategories ? 'rotate-180' : ''}`} 
+                  />
+                </Button>
               );
-            })}
+            })()}
           </div>
           
           {/* Desktop Categories Grid */}

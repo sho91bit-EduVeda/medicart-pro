@@ -1081,7 +1081,7 @@ const Owner = () => {
                     <Menu className="w-6 h-6" />
                   </motion.button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] sm:w-[340px] overflow-y-auto max-h-screen">
+                <SheetContent side="right" className="w-[300px] sm:w-[340px] max-h-screen">
                   <SheetHeader>
                     <SheetTitle>Menu</SheetTitle>
                   </SheetHeader>

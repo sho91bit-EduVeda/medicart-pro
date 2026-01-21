@@ -100,7 +100,7 @@ const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[850px] h-full overflow-y-auto flex flex-col p-0 gap-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="sm:max-w-[850px] h-full max-h-[85vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl">
         {/* Header with Gradient */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
@@ -116,122 +116,124 @@ const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
             </DialogDescription>
           </DialogHeader>
         </div>
-
-        <div className="flex-1 p-8 bg-slate-50 relative">
+      
+        <div className="flex-1 overflow-y-auto bg-slate-50 relative flex flex-col">
           {/* Subtle Background Pattern */}
           <div className="absolute inset-0" style={{
             backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
             backgroundSize: '30px 30px',
             opacity: 0.3
           }}></div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
-            {/* Left Column: Request Details */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
-              <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Client Details</h4>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-xs text-slate-500 font-semibold mb-1.5 uppercase">Customer Profile</Label>
-                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-colors">
-                    <p className="font-bold text-slate-900 text-lg mb-1">{request.customer_name}</p>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                        <span className="truncate" title={request.email}>{request.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                        <span>{request.phone}</span>
+      
+          <div className="flex-1 p-8 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Left Column: Request Details */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                  <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Client Details</h4>
+                </div>
+      
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs text-slate-500 font-semibold mb-1.5 uppercase">Customer Profile</Label>
+                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-colors">
+                      <p className="font-bold text-slate-900 text-lg mb-1">{request.customer_name}</p>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          <span className="truncate" title={request.email}>{request.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                          <span>{request.phone}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-
-                <div>
-                  <Label className="text-xs text-slate-500 font-semibold mb-1.5 uppercase">Requested Item</Label>
-                  <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100 text-blue-900 font-medium">
-                    {request.medicine_name}
+      
+                  <div>
+                    <Label className="text-xs text-slate-500 font-semibold mb-1.5 uppercase">Requested Item</Label>
+                    <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100 text-blue-900 font-medium">
+                      {request.medicine_name}
+                    </div>
+                  </div>
+      
+                  <div>
+                    <Label className="text-xs text-slate-500 font-semibold mb-1.5 uppercase">Message</Label>
+                    <p className="text-sm p-4 bg-slate-50 rounded-lg border border-slate-100 min-h-[80px] text-slate-700 leading-relaxed italic">
+                      "{request.message || 'No additional message'}"
+                    </p>
                   </div>
                 </div>
-
-                <div>
-                  <Label className="text-xs text-slate-500 font-semibold mb-1.5 uppercase">Message</Label>
-                  <p className="text-sm p-4 bg-slate-50 rounded-lg border border-slate-100 min-h-[80px] text-slate-700 leading-relaxed italic">
-                    "{request.message || 'No additional message'}"
-                  </p>
-                </div>
               </div>
-            </div>
-
-            {/* Right Column: Actions */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
-              <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-                <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
-                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Admin Actions</h4>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-slate-600">Current Status</Label>
-                  <Select value={status} onValueChange={(value: any) => setStatus(value)}>
-                    <SelectTrigger className="h-11 border-slate-200 hover:border-indigo-300 focus:ring-indigo-500 transition-all font-medium">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending" className="text-yellow-600 focus:text-yellow-700">
-                        <span className="flex items-center gap-2">● Pending Review</span>
-                      </SelectItem>
-                      <SelectItem value="in_progress" className="text-blue-600 focus:text-blue-700">
-                        <span className="flex items-center gap-2">● Processing Request</span>
-                      </SelectItem>
-                      <SelectItem value="resolved" className="text-green-600 focus:text-green-700">
-                        <span className="flex items-center gap-2">● Resolved & Closed</span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+      
+              {/* Right Column: Actions */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                  <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
+                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Admin Actions</h4>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes" className="text-slate-600">Internal Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add administrative notes regarding this request..."
-                    rows={6}
-                    className="resize-none border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50/50"
-                  />
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  <Label htmlFor="reminder" className="text-slate-600">Follow-up Reminder</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="reminder"
-                      type="date"
-                      value={reminderDate}
-                      onChange={(e) => setReminderDate(e.target.value)}
-                      className="flex-1 h-10 border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+      
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-600">Current Status</Label>
+                    <Select value={status} onValueChange={(value: any) => setStatus(value)}>
+                      <SelectTrigger className="h-11 border-slate-200 hover:border-indigo-300 focus:ring-indigo-500 transition-all font-medium">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending" className="text-yellow-600 focus:text-yellow-700">
+                          <span className="flex items-center gap-2">● Pending Review</span>
+                        </SelectItem>
+                        <SelectItem value="in_progress" className="text-blue-600 focus:text-blue-700">
+                          <span className="flex items-center gap-2">● Processing Request</span>
+                        </SelectItem>
+                        <SelectItem value="resolved" className="text-green-600 focus:text-green-700">
+                          <span className="flex items-center gap-2">● Resolved & Closed</span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+      
+                  <div className="space-y-2">
+                    <Label htmlFor="notes" className="text-slate-600">Internal Notes</Label>
+                    <Textarea
+                      id="notes"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Add administrative notes regarding this request..."
+                      rows={6}
+                      className="resize-none border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50/50"
                     />
-                    <Button
-                      onClick={handleSetReminder}
-                      disabled={!reminderDate || updating}
-                      variant="outline"
-                      className="h-10 hover:bg-slate-100 hover:text-indigo-700 border-slate-200"
-                    >
-                      Set
-                    </Button>
+                  </div>
+      
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor="reminder" className="text-slate-600">Follow-up Reminder</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="reminder"
+                        type="date"
+                        value={reminderDate}
+                        onChange={(e) => setReminderDate(e.target.value)}
+                        className="flex-1 h-10 border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                      />
+                      <Button
+                        onClick={handleSetReminder}
+                        disabled={!reminderDate || updating}
+                        variant="outline"
+                        className="h-10 hover:bg-slate-100 hover:text-indigo-700 border-slate-200"
+                      >
+                        Set
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
+      
         <DialogFooter className="p-6 border-t border-slate-100 bg-white z-20">
           <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-slate-500 hover:text-slate-800 hover:bg-slate-100">
             Cancel

@@ -284,7 +284,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
                       Leave a Store Review
                     </motion.button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md max-h-[90vh] overflow-hidden p-0 gap-0 border-none shadow-2xl">
+                  <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl">
                     {/* Gradient Header */}
                     <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white relative overflow-hidden">
                       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>

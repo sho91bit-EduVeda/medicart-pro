@@ -609,7 +609,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
             setNewCategoryName(""); // Clear new category name
           }
         }}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             <DialogHeader>
               <DialogTitle>
                 {selectedLocalProduct 

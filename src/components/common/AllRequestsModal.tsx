@@ -98,7 +98,7 @@ const AllRequestsModal: React.FC<AllRequestsModalProps> = ({ open, onOpenChange 
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-[900px] h-full overflow-y-auto flex flex-col p-0 gap-0 overflow-hidden border-none shadow-2xl">
+                <DialogContent className="sm:max-w-[900px] h-full max-h-[85vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl">
                     {/* Header with Gradient */}
                     <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white relative overflow-hidden">
                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
