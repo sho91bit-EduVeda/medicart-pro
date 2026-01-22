@@ -1016,7 +1016,7 @@ const Index = () => {
             }
           }}
         >
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <div>
               <h2 className="text-2xl font-bold mb-1">
                 All Products
@@ -1025,7 +1025,7 @@ const Index = () => {
                 {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} available
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mt-4 md:mt-0">
               <Button 
                 variant="outline" 
                 size="sm"
