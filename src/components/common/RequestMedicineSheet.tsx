@@ -16,6 +16,7 @@ import {
 import RequestMedicineForm from './RequestMedicineForm';
 import { Button } from '@/components/ui/button';
 import { PackagePlus, Info } from 'lucide-react';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
 interface RequestMedicineSheetProps {
   children: React.ReactNode;
@@ -24,6 +25,7 @@ interface RequestMedicineSheetProps {
 }
 
 const RequestMedicineSheet: React.FC<RequestMedicineSheetProps> = ({ children, medicineName = '', isFromProductSection = false }) => {
+  const { prescriptionUpload } = useFeatureFlags();
   const [open, setOpen] = useState(false);
 
   const handleClose = () => {
@@ -31,6 +33,10 @@ const RequestMedicineSheet: React.FC<RequestMedicineSheetProps> = ({ children, m
     setOpen(false);
   };
 
+  if (!prescriptionUpload) {
+    return children; // Only render the trigger child, don't wrap in dialog if feature is disabled
+  }
+    
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -64,7 +70,7 @@ const RequestMedicineSheet: React.FC<RequestMedicineSheetProps> = ({ children, m
           }
         }}
       >
-
+  
         {/* Gradient Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
@@ -93,7 +99,7 @@ const RequestMedicineSheet: React.FC<RequestMedicineSheetProps> = ({ children, m
             </div>
           </DialogHeader>
         </div>
-        
+          
         {/* Form Content */}
         <div 
           className="flex-1 overflow-y-auto p-6 bg-slate-50 relative"
@@ -108,7 +114,7 @@ const RequestMedicineSheet: React.FC<RequestMedicineSheetProps> = ({ children, m
             backgroundSize: '20px 20px',
             opacity: 0.3
           }}></div>
-          
+            
           <div className="relative z-10">
             <RequestMedicineForm medicineName={medicineName} onClose={handleClose} isFromProductSection={isFromProductSection} />
           </div>

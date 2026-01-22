@@ -4,11 +4,15 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { db } from "@/integrations/firebase/config";
 import { doc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Heart } from "lucide-react";
+import { ArrowLeft, Heart, Menu } from "lucide-react";
 import ProductCard from "@/components/product/ProductCard";
 import { useAuth } from "@/hooks/useAuth";
 import { SearchPopup } from "@/components/common/SearchPopup";
 import { motion, useReducedMotion } from "framer-motion";
+import NotificationBell from "@/components/common/NotificationBell";
+import { MobileMenu } from "@/components/layout/MobileMenu";
+import logoImage from "@/assets/Logo.png";
+import AppFooter from "@/components/layout/AppFooter";
 
 interface Product {
   id: string;
@@ -103,24 +107,30 @@ export default function Wishlist() {
           mass: 1
         }}
       >
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <motion.button 
-            className="rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 w-10"
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div 
+            className="flex items-center gap-3 cursor-pointer" 
             onClick={() => navigate("/")}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-            <ArrowLeft className="w-5 h-5" />
-          </motion.button>
-          <motion.h1 
-            className="text-xl font-bold"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            My Wishlist
-          </motion.h1>
+            <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
+              <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-8 h-8 object-contain" />
+            </div>
+            <div>
+              {/* Desktop view - Full business name */}
+              <h1 className="hidden md:block text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
+              <p className="hidden md:block text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
+
+              {/* Mobile view - Shortened business name */}
+              <div className="md:hidden">
+                <h1 className="text-xl font-bold">Kalyanam</h1>
+                <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <MobileMenu />
+          </div>
         </div>
       </motion.header>
 
@@ -265,6 +275,7 @@ export default function Wishlist() {
           </motion.div>
         )}
       </motion.div>
-    </div>
+    <AppFooter />
+  </div>
   );
 }

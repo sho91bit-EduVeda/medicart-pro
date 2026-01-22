@@ -9,6 +9,7 @@ import { whatsappService } from '@/services/whatsappService';
 import { db } from '@/integrations/firebase/config';
 import { collection, addDoc } from 'firebase/firestore';
 import { auth } from '@/integrations/firebase/config';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
 interface RequestMedicineFormProps {
   medicineName?: string;
@@ -17,11 +18,14 @@ interface RequestMedicineFormProps {
 }
 
 const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName = '', onClose, isFromProductSection = false }) => {
+  const { prescriptionUpload } = useFeatureFlags(); // Use prescription upload flag
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [medicine, setMedicine] = useState(medicineName);
   const [message, setMessage] = useState('');
+  const [prescriptionFile, setPrescriptionFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Set default message when component mounts
@@ -42,6 +46,9 @@ const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName 
         phone,
         medicine_name: medicine,
         message,
+        prescription_file_name: prescriptionFile?.name || null,
+        prescription_file_size: prescriptionFile?.size || null,
+        prescription_file_type: prescriptionFile?.type || null,
         status: 'pending',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -216,6 +223,79 @@ const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName 
                 className="min-h-[100px]"
               />
             </div>
+            
+            {/* Prescription Upload Field - Only show if enabled */}
+            {prescriptionUpload && (
+              <div className="space-y-2">
+                <Label htmlFor="prescription-upload">Upload Prescription (Optional)</Label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="prescription-upload"
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.pdf"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          // Validate file size (max 5MB)
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error('File size must be less than 5MB');
+                            return;
+                          }
+                          
+                          // Validate file type
+                          const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+                          if (!validTypes.includes(file.type)) {
+                            toast.error('Please upload a JPG, PNG, or PDF file');
+                            return;
+                          }
+                          
+                          setPrescriptionFile(file);
+                          
+                          // Create preview for images
+                          if (file.type.startsWith('image/')) {
+                            const url = URL.createObjectURL(file);
+                            setPreviewUrl(url);
+                          }
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    {prescriptionFile && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setPrescriptionFile(null);
+                          setPreviewUrl(null);
+                          // Reset the input
+                          const input = document.getElementById('prescription-upload') as HTMLInputElement;
+                          if (input) input.value = '';
+                        }}
+                        className="h-9 px-3"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Accepts JPG, PNG, PDF formats (max 5MB). Prescription required for scheduled/controlled medicines.
+                  </p>
+                  
+                  {/* Preview for image files */}
+                  {previewUrl && (
+                    <div className="mt-2">
+                      <p className="text-sm text-muted-foreground mb-1">Preview:</p>
+                      <img 
+                        src={previewUrl} 
+                        alt="Prescription preview" 
+                        className="max-w-xs max-h-40 object-contain border rounded-md" 
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

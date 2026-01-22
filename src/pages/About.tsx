@@ -1,7 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Award, Users, Clock, Package, Store, Home } from "lucide-react";
+import { Heart, Award, Users, Clock, Package, Store, Home, Menu } from "lucide-react";
+import NotificationBell from "@/components/common/NotificationBell";
+import { MobileMenu } from "@/components/layout/MobileMenu";
+import logoImage from "@/assets/Logo.png";
+import AppFooter from "@/components/layout/AppFooter";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -29,25 +33,36 @@ const About = () => {
               className="flex items-center gap-3 cursor-pointer" 
               onClick={() => navigate("/")}
             >
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10 shadow-lg">
-                <KalyanamLogo className="w-8 h-8" />
+              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
+                <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-8 h-8 object-contain" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
-                <p className="text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
+                {/* Desktop view - Full business name */}
+                <h1 className="hidden md:block text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
+                <p className="hidden md:block text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
+
+                {/* Mobile view - Shortened business name */}
+                <div className="md:hidden">
+                  <h1 className="text-xl font-bold">Kalyanam</h1>
+                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
+                </div>
               </div>
             </div>
             
+            <div className="flex items-center gap-3">
             <motion.button 
-              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium flex items-center gap-2"
+              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium flex items-center gap-2 md:flex"
               onClick={() => navigate("/")}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
-              <Home className="w-4 h-4" />
-              <span>Home</span>
+              <Store className="w-4 h-4" />
+              <span className="hidden md:block">View Store</span>
             </motion.button>
+            <NotificationBell />
+            <MobileMenu />
+            </div>
           </div>
         </div>
       </motion.header>
@@ -356,7 +371,8 @@ const About = () => {
           </motion.button>
         </motion.div>
       </motion.div>
-    </div>
+    <AppFooter />
+  </div>
   );
 };
 

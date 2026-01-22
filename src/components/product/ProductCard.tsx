@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, PackagePlus, Pill, Stethoscope, Baby, Syringe, Package, Bandage, Thermometer, HeartPulse } from "lucide-react";
+import { Heart, PackagePlus, ShoppingCart, Pill, Stethoscope, Baby, Syringe, Package, Bandage, Thermometer, HeartPulse } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";
 import { StockStatus } from "@/components/common/StockStatus";
 import RequestMedicineSheet from "@/components/common/RequestMedicineSheet";
 import { motion, useAnimation, Variants } from "framer-motion";
 import LottieAnimation from "../common/LottieAnimation";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface ProductCardProps {
   id: string;
@@ -52,7 +55,9 @@ export default function ProductCard({
   category_animation_data,
   showRequestOption = true,
 }: ProductCardProps) {
+  const { deliveryEnabled } = useFeatureFlags();
   const { items: wishlistItems, addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlist();
+  const { addItem: addToCart } = useCart();
   
   const [isWishlisted, setIsWishlisted] = useState(false);
   const lowStockControls = useAnimation();
@@ -88,6 +93,18 @@ export default function ProductCard({
     setIsWishlisted(!isWishlisted);
   };
 
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    if (!in_stock) {
+      toast.error('Cannot add out of stock item to cart');
+      return;
+    }
+    
+    await addToCart(id);
+  };
+  
   const handleClick = (e: React.MouseEvent) => {
     // Prevent click when clicking on interactive elements
     if (e.target instanceof HTMLElement && e.target.closest('button')) {
@@ -140,9 +157,31 @@ export default function ProductCard({
             <StockStatus quantity={quantity} />
           </motion.div>
         </div>
+        
+        {deliveryEnabled && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 right-2 rounded-full bg-white/80 hover:bg-white shadow-sm p-1.5"
+            onClick={handleWishlistToggle}
+          >
+            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
+          </Button>
+        )}
 
-        {showRequestButton && (
-          <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+        <div className="absolute bottom-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300">
+          {in_stock && deliveryEnabled && (
+            <Button
+              size="sm"
+              className="rounded-full shadow-md bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 h-7 px-2"
+              onClick={handleAddToCart}
+              disabled={!in_stock}
+            >
+              <ShoppingCart className="w-3 h-3 mr-1" />
+              <span className="text-xs">Cart</span>
+            </Button>
+          )}
+          {showRequestButton && (
             <RequestMedicineSheet medicineName={name} isFromProductSection={true}>
               <Button
                 size="sm"
@@ -156,8 +195,8 @@ export default function ProductCard({
                 <span className="text-xs">Request</span>
               </Button>
             </RequestMedicineSheet>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       <div className="p-3">

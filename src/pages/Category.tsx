@@ -389,35 +389,69 @@ const CategoryPage = () => {
             </div>
                 
             <div className="flex items-center gap-2">
-              {/* Notification Bell */}
+              {/* Customer-facing icons - Only show when owner is NOT logged in */}
+              {!isAuthenticated && (
+                <>
+                  {/* Wishlist Icon - Standard e-commerce position */}
+                  {deliveryEnabled && (
+                    <div className="hidden md:flex items-center gap-1">
+                      <motion.button
+                        className="relative rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
+                        onClick={() => navigate("/wishlist")}
+                        title="Wishlist"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                      >
+                        <Heart className="w-5 h-5" />
+                        {wishlistItems.length > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                            {wishlistItems.length}
+                          </span>
+                        )}
+                      </motion.button>
+                    </div>
+                  )}
+
+                  {/* Shopping Cart - Standard e-commerce position */}
+                  <div className="hidden md:block" title="Shopping Cart">
+                    <ShoppingCart discountPercentage={discountPercentage} />
+                  </div>
+                </>
+              )}
+
+              {/* Notification Bell - Always visible */}
               <NotificationBell />
-              
-              {/* Owner Login/Logout buttons on the extreme right */}
-              <div className="hidden md:flex items-center gap-1">
-                {isAuthenticated ? (
-                  <>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
-                      onClick={() => navigate("/owner")}
-                    >
-                      Dashboard
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      className="rounded-full px-4 py-2 transition-colors font-medium flex items-center gap-2"
-                      onClick={async () => {
-                        await signOut();
-                        toast.success("Logged out successfully");
-                      }}
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
-                    </Button>
-                  </>
-                ) : (
+
+              {/* Owner controls - Only show when owner is logged in */}
+              {isAuthenticated && (
+                <div className="hidden md:flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+                    onClick={() => navigate("/owner")}
+                  >
+                    Dashboard
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="rounded-full px-4 py-2 transition-colors font-medium flex items-center gap-2"
+                    onClick={async () => {
+                      await signOut();
+                      toast.success("Logged out successfully");
+                    }}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </Button>
+                </div>
+              )}
+
+              {/* Owner Login - Only show when owner is NOT logged in */}
+              {!isAuthenticated && (
+                <div className="hidden md:flex items-center gap-1">
                   <LoginPopup
                     trigger={
                       <Button 
@@ -429,31 +463,8 @@ const CategoryPage = () => {
                       </Button>
                     }
                   />
-                )}
-              </div>
-              
-              <div className="hidden md:flex items-center gap-1">
-                {deliveryEnabled && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
-                    onClick={() => navigate("/wishlist")}
-                    title="Wishlist"
-                  >
-                    <Heart className="w-5 h-5" />
-                    {wishlistItems.length > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-5 h-5 text-xs flex items-center justify-center">
-                        {wishlistItems.length}
-                      </span>
-                    )}
-                  </Button>
-                )}
-              </div>
-        
-              <div title="Shopping Cart">
-                <ShoppingCart discountPercentage={discountPercentage} />
-              </div>
+                </div>
+              )}
               
               {/* Mobile menu button - Pass onOwnerLoginClick prop */}
               <MobileMenu 

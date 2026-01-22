@@ -192,6 +192,7 @@ const Owner = () => {
   // Category form state
   const [categoryName, setCategoryName] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
   // Announcements form state
   const [announcementText, setAnnouncementText] = useState("");
@@ -1082,16 +1083,16 @@ const Owner = () => {
                     <Menu className="w-6 h-6" />
                   </motion.button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] sm:w-[340px] max-h-screen">
+                <SheetContent side="right" className="w-[300px] sm:w-[340px] max-h-screen bg-gradient-to-br from-blue-500/10 via-indigo-600/10 to-purple-600/10">
                   <SheetHeader>
-                    <SheetTitle>Menu</SheetTitle>
+                    <SheetTitle className="text-gray-800 dark:text-white font-bold">Menu</SheetTitle>
                   </SheetHeader>
                   <div className="flex flex-col h-[calc(100vh-100px)]">
                     <div className="flex-1 overflow-y-auto space-y-6">
                       {/* Group navigation items by category */}
                       {Array.from(new Set(navigationItems.map(item => item.category))).map((category) => (
                         <div key={category}>
-                          <h3 className="text-sm font-semibold text-sidebar-accent-foreground/70 px-1 pb-2">{category}</h3>
+                          <h3 className="text-sm font-semibold text-gray-700 dark:text-white/80 px-1 pb-2">{category}</h3>
                           <div className="space-y-1">
                             {navigationItems
                               .filter(item => item.category === category)
@@ -1101,7 +1102,7 @@ const Owner = () => {
                                   <Button
                                     key={item.id}
                                     variant={activeSection === item.id ? "default" : "ghost"}
-                                    className="justify-start gap-3 w-full"
+                                    className="justify-start gap-3 w-full text-gray-800 dark:text-white hover:bg-white/20"
                                     onClick={() => {
                                       setActiveSection(item.id);
                                       // Close the sheet using the proper Radix UI API
@@ -1126,7 +1127,7 @@ const Owner = () => {
                           // Close the sheet
                           document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
                         }} 
-                        className="justify-start gap-3 w-full"
+                        className="justify-start gap-3 w-full text-gray-800 dark:text-white hover:bg-white/20"
                       >
                         <Settings className="w-5 h-5" />
                         <span className="font-medium">Feature Flags</span>
@@ -1138,7 +1139,7 @@ const Owner = () => {
                           // Close the sheet
                           document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
                         }} 
-                        className="justify-start gap-3 w-full"
+                        className="justify-start gap-3 w-full text-gray-800 dark:text-white hover:bg-white/20"
                       >
                         <Database className="w-5 h-5" />
                         <span className="font-medium">Seed Database</span>
@@ -1146,7 +1147,7 @@ const Owner = () => {
                       <Button 
                         variant="destructive" 
                         onClick={handleLogout}
-                        className="justify-start gap-3 w-full mt-4"
+                        className="justify-start gap-3 w-full mt-4 text-gray-800 dark:text-white hover:bg-white/20"
                       >
                         <LogOut className="w-5 h-5" />
                         <span className="font-medium">Logout</span>
@@ -1162,17 +1163,16 @@ const Owner = () => {
       <div className="flex flex-1">
         {/* Sidebar Navigation with animation - Hidden on mobile */}
         <motion.nav 
-          className="w-64 bg-sidebar-background border-r p-4 hidden md:block relative overflow-hidden"
+          className="w-64 bg-gradient-to-b from-blue-900/20 via-indigo-900/20 to-purple-900/20 border-r p-4 hidden md:block relative overflow-hidden"
           initial={{ x: -50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <SidebarBackground />
           <div className="relative z-10 space-y-3">
             {/* Group navigation items by category */}
             {Array.from(new Set(navigationItems.map(item => item.category))).map((category, categoryIndex) => (
               <div key={category}>
-                <h3 className="text-sm font-semibold text-sidebar-accent-foreground/70 px-4 py-2">{category}</h3>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-white/80 px-4 py-2">{category}</h3>
                 {navigationItems
                   .filter(item => item.category === category)
                   .map((item, itemIndex) => {
@@ -1188,7 +1188,7 @@ const Owner = () => {
                       >
                         <Button
                           variant={activeSection === item.id ? "default" : "ghost"}
-                          className="w-full justify-start gap-3 py-6 text-left hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200 pl-8"
+                          className="w-full justify-start gap-3 py-6 text-left text-gray-800 dark:text-white hover:bg-white/20 transition-all duration-200 pl-8"
                           onClick={() => setActiveSection(item.id)}
                         >
                           <Icon className="w-5 h-5" />
@@ -1573,31 +1573,44 @@ const Owner = () => {
                             </p>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {categories.map((category) => (
-                              <Card key={category.id} className="flex items-center justify-between p-4">
-                                <div>
-                                  <h4 className="font-medium">{category.name}</h4>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleEditCategory(category)}
-                                  >
-                                    <Pencil className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleDeleteCategory(category.id, category.name)}
-                                  >
-                                    <Trash className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </Card>
-                            ))}
-                          </div>
+                          <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {(showAllCategories ? categories : categories.slice(0, 4)).map((category) => (
+                                <Card key={category.id} className="flex items-center justify-between p-4">
+                                  <div>
+                                    <h4 className="font-medium">{category.name}</h4>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEditCategory(category)}
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => handleDeleteCategory(category.id, category.name)}
+                                    >
+                                      <Trash className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </Card>
+                              ))}
+                            </div>
+                            {categories.length > 4 && (
+                              <div className="flex justify-center mt-6">
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => setShowAllCategories(!showAllCategories)}
+                                  className="text-sm"
+                                >
+                                  {showAllCategories ? 'View Less' : `View All (${categories.length})`}
+                                </Button>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>

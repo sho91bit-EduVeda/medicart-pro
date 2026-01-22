@@ -1,8 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, ShoppingBag, User, CreditCard, Shield, Phone } from "lucide-react";
+import { FileText, ShoppingBag, User, CreditCard, Shield, Phone, Store, Menu } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import NotificationBell from "@/components/common/NotificationBell";
+import { MobileMenu } from "@/components/layout/MobileMenu";
+import logoImage from "@/assets/Logo.png";
+import AppFooter from "@/components/layout/AppFooter";
 
 const TermsOfService = () => {
   const navigate = useNavigate();
@@ -28,38 +32,36 @@ const TermsOfService = () => {
               className="flex items-center gap-3 cursor-pointer" 
               onClick={() => navigate("/")}
             >
-              <div className="p-2 bg-white/10 rounded-lg">
-                <FileText className="w-6 h-6" />
+              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
+                <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-8 h-8 object-contain" />
               </div>
               <div>
-                <motion.h1 
-                  className="text-2xl font-bold"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  Kalyanam Pharmaceuticals
-                </motion.h1>
-                <motion.p 
-                  className="text-sm text-primary-foreground/90"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  Terms of Service
-                </motion.p>
+                {/* Desktop view - Full business name */}
+                <h1 className="hidden md:block text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
+                <p className="hidden md:block text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
+
+                {/* Mobile view - Shortened business name */}
+                <div className="md:hidden">
+                  <h1 className="text-xl font-bold">Kalyanam</h1>
+                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
+                </div>
               </div>
             </div>
             
+            <div className="flex items-center gap-3">
             <motion.button 
-              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
+              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium flex items-center gap-2 md:flex"
               onClick={() => navigate("/")}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
-              Back to Home
+              <Store className="w-4 h-4" />
+              <span className="hidden md:block">View Store</span>
             </motion.button>
+            <NotificationBell />
+            <MobileMenu />
+            </div>
           </div>
         </div>
       </motion.header>
@@ -241,7 +243,8 @@ const TermsOfService = () => {
         </Card>
       </motion.div>
     </motion.div>
-    </div>
+    <AppFooter />
+  </div>
   );
 };
 

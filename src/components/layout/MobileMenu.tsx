@@ -23,6 +23,7 @@ import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
+import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 
 interface MobileMenuProps {
   onSearchClick?: () => void;
@@ -37,6 +38,7 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
   const { isAuthenticated, signOut } = useAuth();
   const { deliveryEnabled } = useFeatureFlags();
   const { items: wishlistItems } = useWishlist();
+  const { user: customerUser, isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading } = useCustomerAuth();
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -45,7 +47,14 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      // Check which user type is authenticated and sign out accordingly
+      if (isCustomerAuthenticated) {
+        // Sign out customer
+        await signOut();
+      } else {
+        // Sign out owner
+        await signOut();
+      }
       setOpen(false);
       navigate('/');
       toast.success("Logged out successfully");
@@ -55,35 +64,58 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
   };
 
 
-  const menuItems = [
-    {
-      id: "home",
-      label: "Home",
-      icon: Home,
-      action: () => handleNavigation("/"),
-      active: location.pathname === "/"
-    },
-    {
-      id: "reviews",
-      label: "Reviews",
-      icon: Star,
-      action: onReviewsClick ? () => {
-        onReviewsClick();
-        setOpen(false);
-      } : () => handleNavigation("/reviews"),
-      active: location.pathname === "/reviews"
-    },
-    ...(deliveryEnabled ? [{
-      id: "wishlist",
-      label: "Wishlist",
-      icon: Heart,
-      action: () => handleNavigation("/wishlist"),
-      active: location.pathname === "/wishlist",
-      badge: wishlistItems.length > 0 ? wishlistItems.length.toString() : undefined
-    }] : []),
-    {
-      id: "dashboard",
-      label: isAuthenticated ? "Dashboard" : "Owner Login",
+  // Build menu items dynamically based on authentication state
+  const getMenuItems = () => {
+    let items = [
+      {
+        id: "home",
+        label: "Home",
+        icon: Home,
+        action: () => handleNavigation("/"),
+        active: location.pathname === "/"
+      },
+      {
+        id: "products",
+        label: "Products",
+        icon: Package,
+        action: () => handleNavigation("/products"),
+        active: location.pathname === "/products"
+      },
+      {
+        id: "about",
+        label: "About",
+        icon: Store,
+        action: () => handleNavigation("/about"),
+        active: location.pathname === "/about"
+      },
+      {
+        id: "contact",
+        label: "Contact Us",
+        icon: User,
+        action: () => handleNavigation("/contact"),
+        active: location.pathname === "/contact"
+      }
+    ];
+    
+    // Add customer login only if owner is not authenticated
+    if (!isAuthenticated) {
+      items.push({
+        id: "customer-login",
+        label: isCustomerAuthenticated ? "My Account" : "Customer Login",
+        icon: User,
+        action: isCustomerAuthenticated ? 
+          () => handleNavigation("/wishlist") : // Navigate to wishlist for customer account
+          () => {
+            // For unauthenticated customers, close the menu
+            setOpen(false);
+          },
+        active: location.pathname === "/wishlist" // Using wishlist as customer account page
+      });
+    }
+    
+    items.push({
+      id: "owner",
+      label: isAuthenticated ? "Owner Dashboard" : "Owner Login",
       icon: User,
       action: isAuthenticated ? 
         () => handleNavigation("/owner") : 
@@ -95,8 +127,12 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
           }
         },
       active: location.pathname === "/owner"
-    }
-  ];
+    });
+    
+    return items;
+  };
+  
+  const menuItems = getMenuItems();
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -109,9 +145,9 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
           </svg>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[300px] sm:w-[340px] h-full">
+      <SheetContent side="right" className="w-[300px] sm:w-[340px] h-full bg-gradient-to-br from-blue-500/10 via-indigo-600/10 to-purple-600/10">
         <SheetHeader>
-          <SheetTitle>Menu</SheetTitle>
+          <SheetTitle className="text-gray-800 dark:text-white font-bold">Menu</SheetTitle>
         </SheetHeader>
         
         <div className="flex flex-col h-[calc(100vh-100px)]">
@@ -122,22 +158,18 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
                 <Button
                   key={item.id}
                   variant={item.active ? "default" : "ghost"}
-                  className="justify-start gap-3 py-6 text-left"
+                  className="justify-start gap-3 py-6 text-left text-gray-800 dark:text-white"
                   onClick={item.action}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
-                  {item.badge && (
-                    <span className="ml-auto bg-white text-primary rounded-full w-6 h-6 text-xs flex items-center justify-center">
-                      {item.badge}
-                    </span>
-                  )}
                 </Button>
               );
             })}
           </div>
           
-          {isAuthenticated ? (
+          {/* Conditional rendering for logout based on user type */}
+          {(isCustomerAuthenticated || isAuthenticated) ? (
             <div className="pt-4 pb-4">
               <Button 
                 variant="destructive" 

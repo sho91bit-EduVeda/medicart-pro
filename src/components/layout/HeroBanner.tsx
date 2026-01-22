@@ -319,7 +319,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
 
             {/* Stats Grid - Moved to Left for Balance */}
             <motion.div
-              className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4"
+              className="grid grid-cols-1 md:grid-cols-3 gap-4"
               variants={{
                 hidden: { opacity: 0 },
                 visible: { opacity: 1 }

@@ -5,6 +5,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import RequestMedicineSheet from "@/components/common/RequestMedicineSheet";
 import { motion, useAnimation, Variants } from "framer-motion";
 import LottieAnimation from "../common/LottieAnimation";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface MobileProductCardProps {
   id: string;
@@ -51,6 +52,7 @@ export default function MobileProductCard({
   category_animation_data,
   showRequestOption = true,
 }: MobileProductCardProps) {
+  const { deliveryEnabled } = useFeatureFlags();
   const { items: wishlistItems, addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlist();
   
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -161,7 +163,18 @@ export default function MobileProductCard({
         <div className="absolute top-2 left-2">
           {getStockBadge()}
         </div>
-
+        
+        {deliveryEnabled && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 right-2 rounded-full bg-white/80 hover:bg-white shadow-sm p-1.5"
+            onClick={handleWishlistToggle}
+          >
+            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
+          </Button>
+        )}
+        
         {showRequestButton && (
           <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
             <RequestMedicineSheet medicineName={name} isFromProductSection={true}>

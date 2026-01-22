@@ -16,6 +16,6 @@ export const defaultFeatureFlags: FeatureFlags = {
   notifications: true,
   prescriptionUpload: true,
   liveChat: false,
-  deliveryEnabled: false, // Delivery is disabled by default
+  deliveryEnabled: true, // Delivery is enabled by default
   storeClosed: false, // Store is open by default
 };

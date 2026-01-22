@@ -4,8 +4,12 @@ import StoreReviews from "@/components/user/StoreReviews";
 import StoreReviewForm from "@/components/user/StoreReviewForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Store, Menu } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import NotificationBell from "@/components/common/NotificationBell";
+import { MobileMenu } from "@/components/layout/MobileMenu";
+import logoImage from "@/assets/Logo.png";
+import AppFooter from "@/components/layout/AppFooter";
 
 const Reviews = () => {
   const navigate = useNavigate();
@@ -28,34 +32,38 @@ const Reviews = () => {
       >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <motion.button 
-                className="rounded-full border border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 w-10 text-primary-foreground hover:bg-white/20"
-                onClick={() => navigate(-1)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </motion.button>
-              <div>
-                <motion.h1 
-                  className="text-2xl font-bold"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  Store Reviews
-                </motion.h1>
-                <motion.p 
-                  className="text-sm text-primary-foreground/90"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  Share your experience with us
-                </motion.p>
+            <div 
+              className="flex items-center gap-3 cursor-pointer" 
+              onClick={() => navigate("/")}
+            >
+              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
+                <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-8 h-8 object-contain" />
               </div>
+              <div>
+                {/* Desktop view - Full business name */}
+                <h1 className="hidden md:block text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
+                <p className="hidden md:block text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
+
+                {/* Mobile view - Shortened business name */}
+                <div className="md:hidden">
+                  <h1 className="text-xl font-bold">Kalyanam</h1>
+                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+            <motion.button 
+              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium flex items-center gap-2 md:flex"
+              onClick={() => navigate("/")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <Store className="w-4 h-4" />
+              <span className="hidden md:block">View Store</span>
+            </motion.button>
+            <NotificationBell />
+            <MobileMenu />
             </div>
           </div>
         </div>
@@ -110,7 +118,8 @@ const Reviews = () => {
           </motion.div>
         </div>
       </motion.main>
-    </div>
+    <AppFooter />
+  </div>
   );
 };
 

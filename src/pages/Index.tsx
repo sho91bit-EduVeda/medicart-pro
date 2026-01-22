@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ProductCard from "@/components/product/ProductCard";
 import CategoryCard from "@/components/common/CategoryCard";
-import { ProductFilters, FilterOptions } from "@/components/product/ProductFilters";
+import { ProductFilters } from "@/components/product/ProductFilters";
 import { StockStatus } from "@/components/common/StockStatus";
+import { ProductFilterSidebar } from "@/components/product/ProductFilterSidebar";
+import { SortDropdown } from "@/components/product/SortDropdown";
 import { ShieldCheck, Search, Store, Package, Heart, User, LogOut, LogIn, Pill, Star, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { whatsappService } from "@/services/whatsappService";
@@ -48,6 +50,9 @@ import logoImage from "@/assets/Logo.png";
 import NotificationBell from "@/components/common/NotificationBell";
 import { LoginPopup } from "@/components/user/LoginPopup";
 import { QuickLinksSidebar } from "@/components/layout/QuickLinksSidebar";
+import { useCustomerAuth } from "@/hooks/useCustomerAuth";
+import { CustomerAccountDropdown } from "@/components/common/CustomerAccountDropdown";
+import CustomerLoginModal from "@/components/common/CustomerLoginModal";
 import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
 import coldFluImage from "@/assets/category-cold-flu.jpg";
@@ -76,7 +81,41 @@ interface Category {
 interface Product {
   id: string;
   name: string;
-  category_id?: string;
+  original_price: number;
+  image_url?: string;
+  in_stock: boolean;
+  stock_quantity?: number;
+  requires_prescription?: boolean;
+  category_id: string;
+  average_rating?: number;
+  review_count?: number;
+  categories?: {
+    name: string;
+  };
+  discount_percentage?: number;
+}
+
+
+
+export interface FilterOptions {
+  priceRange: [number, number];
+  categories: string[];
+  stockStatus: 'all' | 'in-stock' | 'out-of-stock';
+  onSale: boolean;
+}
+
+type SortOption = 
+  | 'price-low-high'
+  | 'price-high-low'
+  | 'name-a-z'
+  | 'name-z-a'
+  | 'newest-first'
+  | 'discount-high';
+
+interface Product {
+  id: string;
+  name: string;
+  category_id: string;
   original_price: number;
   image_url?: string;
   in_stock: boolean;
@@ -90,6 +129,7 @@ interface Product {
   categories?: {
     name: string;
   };
+  discount_percentage?: number;
 }
 
 const categoryImages: Record<string, string> = {
@@ -114,6 +154,7 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, signOut, checkAuth, user } = useAuth();
+  const { user: customerUser, isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading, initializeAuth: initializeCustomerAuth, signIn, signUp, signOut: customerSignOut, forgotPassword, updateProfile } = useCustomerAuth();
   const prefersReducedMotion = useReducedMotion();
   const { scrollY } = useScroll();
 
@@ -178,6 +219,35 @@ const Index = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [showAllProducts, setShowAllProducts] = useState(false);
+  
+  // Filter and sort state
+  const [showFilterSidebar, setShowFilterSidebar] = useState(false);
+  const [currentFilters, setCurrentFilters] = useState<FilterOptions>({
+    priceRange: [0, 1000],
+    categories: [],
+    stockStatus: 'all',
+    onSale: false
+  });
+  const [currentSort, setCurrentSort] = useState<SortOption>('price-low-high');
+  
+  const handleSortChange = (sortValue: string) => {
+    setCurrentSort(sortValue as SortOption);
+  };
+  
+  // Calculate min/max prices from products
+  const minPrice = Math.min(...products.map(p => p.original_price || 0));
+  const maxPrice = Math.max(...products.map(p => p.original_price || 0));
+  
+  // Initialize default filter values
+  useEffect(() => {
+    if (products.length > 0) {
+      setCurrentFilters(prev => ({
+        ...prev,
+        priceRange: [Math.floor(minPrice), Math.ceil(maxPrice)]
+      }));
+    }
+  }, [products, minPrice, maxPrice]);
 
   // Function to get category name by ID
   const getCategoryNameById = (categoryId: string) => {
@@ -239,9 +309,79 @@ const Index = () => {
     }
   };
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // Apply search filter
+  let searchFiltered = products;
+  if (searchQuery.trim() || productsSearchQuery.trim()) {
+    const query = searchQuery || productsSearchQuery;
+    searchFiltered = products.filter(product =>
+      product.name.toLowerCase().includes(query.toLowerCase()) ||
+      (product.brand && product.brand.toLowerCase().includes(query.toLowerCase())) ||
+      (product.categories && product.categories.name.toLowerCase().includes(query.toLowerCase()))
+    );
+  }
+  
+  // Apply filters
+  let filtered = searchFiltered;
+  
+  // Price range filter
+  filtered = filtered.filter(product => 
+    product.original_price >= currentFilters.priceRange[0] && 
+    product.original_price <= currentFilters.priceRange[1]
   );
+  
+  // Category filter
+  if (currentFilters.categories.length > 0) {
+    filtered = filtered.filter(product => 
+      currentFilters.categories.includes(product.category_id || '')
+    );
+  }
+  
+  // Stock status filter
+  if (currentFilters.stockStatus !== 'all') {
+    if (currentFilters.stockStatus === 'in-stock') {
+      filtered = filtered.filter(product => product.in_stock);
+    } else if (currentFilters.stockStatus === 'out-of-stock') {
+      filtered = filtered.filter(product => !product.in_stock);
+    }
+  }
+  
+  // On sale filter
+  if (currentFilters.onSale) {
+    filtered = filtered.filter(product => 
+      (product.discount_percentage && product.discount_percentage > 0)
+    );
+  }
+  
+  // Apply sorting
+  const sortedProducts = [...filtered];
+  
+  switch (currentSort) {
+    case 'price-low-high':
+      sortedProducts.sort((a, b) => (a.original_price || 0) - (b.original_price || 0));
+      break;
+    case 'price-high-low':
+      sortedProducts.sort((a, b) => (b.original_price || 0) - (a.original_price || 0));
+      break;
+    case 'name-a-z':
+      sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case 'name-z-a':
+      sortedProducts.sort((a, b) => b.name.localeCompare(a.name));
+      break;
+    case 'newest-first':
+      // Since we don't have date field, we'll sort by ID as proxy
+      sortedProducts.sort((a, b) => b.id.localeCompare(a.id));
+      break;
+    case 'discount-high':
+      sortedProducts.sort((a, b) => 
+        (b.discount_percentage || 0) - (a.discount_percentage || 0)
+      );
+      break;
+    default:
+      break;
+  }
+  
+  const filteredProducts = sortedProducts;
 
   // Debounced search tracking function
   const trackSearch = useCallback(async (query: string) => {
@@ -508,25 +648,76 @@ const Index = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Notification Bell */}
+              {/* Customer-facing icons - Only show when owner is NOT logged in */}
+              {!isAuthenticated && (
+                <>
+                  {/* Wishlist Icon - Standard e-commerce position */}
+                  {deliveryEnabled && (
+                    <div className="hidden md:flex items-center gap-1">
+                      <motion.button
+                        className="relative rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
+                        onClick={() => navigate("/wishlist")}
+                        title="Wishlist"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                      >
+                        <Heart className="w-5 h-5" />
+                        {wishlistItems.length > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                            {wishlistItems.length}
+                          </span>
+                        )}
+                      </motion.button>
+                    </div>
+                  )}
+
+                  {/* Shopping Cart - Standard e-commerce position */}
+                  <div className="hidden md:block" title="Shopping Cart">
+                    <ShoppingCart discountPercentage={discountPercentage} />
+                  </div>
+
+                  {/* Customer Account/Login - Standard e-commerce position */}
+                  <div className="hidden md:flex items-center gap-1">
+                    <CustomerAccountDropdown />
+                    <CustomerLoginModal
+                      trigger={
+                        <motion.button
+                          className="rounded-full px-4 h-10 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                        >
+                          Customer Login
+                        </motion.button>
+                      }
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Notification Bell - Always visible */}
               <NotificationBell />
 
-              {/* Owner Login/Logout buttons on the extreme right */}
-              <div className="hidden md:flex items-center gap-1">
-                {isAuthenticated ? (
-                  <>
-                    <motion.button
-                      className="rounded-full px-5 h-10 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm"
-                      onClick={() => navigate("/owner")}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                    >
-                      Dashboard
-                    </motion.button>
-                    <LogoutButton />
-                  </>
-                ) : (
+              {/* Owner controls - Only show when owner is logged in */}
+              {isAuthenticated && (
+                <div className="hidden md:flex items-center gap-1">
+                  <motion.button
+                    className="rounded-full px-5 h-10 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm"
+                    onClick={() => navigate("/owner")}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  >
+                    Dashboard
+                  </motion.button>
+                  <LogoutButton />
+                </div>
+              )}
+
+              {/* Owner Login - Only show when owner is NOT logged in */}
+              {!isAuthenticated && (
+                <div className="hidden md:flex items-center gap-1">
                   <LoginPopup
                     trigger={
                       <motion.button
@@ -539,32 +730,8 @@ const Index = () => {
                       </motion.button>
                     }
                   />
-                )}
-              </div>
-
-              <div className="hidden md:flex items-center gap-1">
-                {deliveryEnabled && (
-                  <motion.button
-                    className="rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
-                    onClick={() => navigate("/wishlist")}
-                    title="Wishlist"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  >
-                    <Heart className="w-5 h-5" />
-                    {wishlistItems.length > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-5 h-5 text-xs flex items-center justify-center">
-                        {wishlistItems.length}
-                      </span>
-                    )}
-                  </motion.button>
-                )}
-              </div>
-
-              <div title="Shopping Cart">
-                <ShoppingCart discountPercentage={discountPercentage} />
-              </div>
+                </div>
+              )}
 
               {/* Mobile menu button - Pass onReviewsClick and onOwnerLoginClick props */}
               <MobileMenu
@@ -727,19 +894,19 @@ const Index = () => {
           </div>
           
           {/* Mobile View All Button */}
-          <div className="md:hidden flex justify-end mt-4">
+          <div className="md:hidden flex justify-center mt-6">
             {(() => {
               if (categories.length <= 4) return null;
               return (
                 <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-primary hover:text-primary/90 text-sm font-medium"
+                  variant="outline" 
+                  size="sm"
+                  className="text-sm"
                   onClick={() => setShowAllCategories(!showAllCategories)}
                 >
                   {showAllCategories ? 'View Less' : `View All (${categories.length})`}
                   <ChevronDown 
-                    className={`w-4 h-4 ml-1 transition-transform duration-300 ${showAllCategories ? 'rotate-180' : ''}`} 
+                    className={`w-4 h-4 transition-transform duration-300 ${showAllCategories ? 'rotate-180' : ''}`} 
                   />
                 </Button>
               );
@@ -835,7 +1002,7 @@ const Index = () => {
         {/* Products Grid with scroll-triggered animation */}
         <motion.section
           ref={productsRef}
-          className="mb-16"
+          className="mb-8"
           initial="hidden"
           animate={isProductsInView ? "visible" : "hidden"}
           variants={{
@@ -859,10 +1026,11 @@ const Index = () => {
               </p>
             </div>
             <div className="flex gap-2">
-              <motion.button className="rounded-full hidden sm:flex border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300 h-8 px-3 text-xs"
-                whileHover={{ y: -2 }}
-                whileTap={{ y: 1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={() => setShowFilterSidebar(true)}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
                   <line x1="4" y1="21" x2="4" y2="14"></line>
@@ -875,38 +1043,22 @@ const Index = () => {
                   <line x1="9" y1="8" x2="15" y2="8"></line>
                   <line x1="17" y1="16" x2="23" y2="16"></line>
                 </svg>
-                Filter
-              </motion.button>
-              <motion.button className="rounded-full hidden sm:flex border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300 h-8 px-3 text-xs"
-                whileHover={{ y: -2 }}
-                whileTap={{ y: 1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                  <path d="m3 16 4 4 4-4"></path>
-                  <path d="M7 20V4"></path>
-                  <path d="m21 8-4-4-4 4"></path>
-                  <path d="M17 4v16"></path>
-                </svg>
-                Sort
-              </motion.button>
-              <motion.button className="rounded-full sm:hidden border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300 h-8 w-8"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="4" y1="21" x2="4" y2="14"></line>
-                  <line x1="4" y1="10" x2="4" y2="3"></line>
-                  <line x1="12" y1="21" x2="12" y2="12"></line>
-                  <line x1="12" y1="8" x2="12" y2="3"></line>
-                  <line x1="20" y1="21" x2="20" y2="16"></line>
-                  <line x1="20" y1="12" x2="20" y2="3"></line>
-                  <line x1="1" y1="14" x2="7" y2="14"></line>
-                  <line x1="9" y1="8" x2="15" y2="8"></line>
-                  <line x1="17" y1="16" x2="23" y2="16"></line>
-                </svg>
-              </motion.button>
+                Filter {currentFilters.categories.length > 0 || 
+                       currentFilters.stockStatus !== 'all' || 
+                       currentFilters.onSale || 
+                       currentFilters.priceRange[0] !== minPrice || 
+                       currentFilters.priceRange[1] !== maxPrice ? 
+                       `(${[
+                         currentFilters.categories.length > 0 ? 1 : 0,
+                         currentFilters.stockStatus !== 'all' ? 1 : 0,
+                         currentFilters.onSale ? 1 : 0,
+                         currentFilters.priceRange[0] !== minPrice || currentFilters.priceRange[1] !== maxPrice ? 1 : 0
+                       ].filter(Boolean).length})` : ''}
+              </Button>
+              <SortDropdown 
+                onSortChange={handleSortChange}
+                currentSort={currentSort}
+              />
             </div>
           </div>
 
@@ -942,7 +1094,7 @@ const Index = () => {
             <>
               {/* Mobile Products Grid */}
               <div className="md:hidden grid grid-cols-2 gap-4">
-                {filteredProducts.map((product) => (
+                {(showAllProducts ? filteredProducts : filteredProducts.slice(0, 4)).map((product) => (
                   <MobileProductCard
                     key={product.id}
                     id={product.id}
@@ -963,6 +1115,18 @@ const Index = () => {
                   />
                 ))}
               </div>
+              {filteredProducts.length > 4 && (
+                <div className="md:hidden flex justify-center mt-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowAllProducts(!showAllProducts)}
+                    className="text-sm"
+                  >
+                    {showAllProducts ? 'View Less' : `View All (${filteredProducts.length})`}
+                  </Button>
+                </div>
+              )}
+                        
               
               {/* Desktop Products Grid */}
               <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -994,17 +1158,29 @@ const Index = () => {
             </>
           )}
         </motion.section>
-
+        
+        {/* Filter Sidebar */}
+        <ProductFilterSidebar
+          isOpen={showFilterSidebar}
+          onClose={() => setShowFilterSidebar(false)}
+          onFilterChange={setCurrentFilters}
+          products={products}
+          categories={categories}
+          currentFilters={currentFilters}
+        />
+        
         {/* Product Recommendations */}
-        <section className="mb-16">
-          <ProductRecommendations
-            onProductClick={(productName) => {
-              setSearchQuery(productName);
-              setIsSearchResult(false); // Not a search result, direct product view
-              setShowSearchPopup(true);
-            }}
-          />
-        </section>
+        {deliveryEnabled && (
+          <section className="mb-8">
+            <ProductRecommendations
+              onProductClick={(productName) => {
+                setSearchQuery(productName);
+                setIsSearchResult(false); // Not a search result, direct product view
+                setShowSearchPopup(true);
+              }}
+            />
+          </section>
+        )}
       </div>
 
       {/* Reviews Dialog */}
@@ -1038,7 +1214,7 @@ const Index = () => {
       {/* Footer with scroll-triggered animation */}
       <motion.footer
         ref={footerRef}
-        className="bg-gradient-to-r from-blue-700 via-indigo-800 to-purple-700 text-white py-12 mt-16 border-t shadow-2xl"
+        className="bg-gradient-to-r from-blue-700 via-indigo-800 to-purple-700 text-white py-12 mt-8 border-t shadow-2xl"
         initial="hidden"
         animate={isFooterInView ? "visible" : "hidden"}
         variants={{
@@ -1047,7 +1223,7 @@ const Index = () => {
         }}
         transition={{ duration: 0.5 }}
       >
-        <div className="container mx-auto px-4 py-16">
+        <div className="container mx-auto px-4 py-8">
           <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12"
             initial="hidden"
@@ -1201,7 +1377,7 @@ const Index = () => {
           </motion.div>
 
           <motion.div
-            className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4"
+            className="border-t mt-6 pt-4 flex flex-col md:flex-row justify-between items-center gap-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}

@@ -7,6 +7,9 @@ import { ShoppingCart as CartIcon, Trash2, Plus, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import CartIconWithAnimation from "./CartIconWithAnimation";
+import LottieAnimation from "./LottieAnimation";
+import shopCartAnimation from "@/assets/animations/shop-cart.json";
 
 interface ShoppingCartProps {
   discountPercentage: number;
@@ -30,20 +33,30 @@ export function ShoppingCart({ discountPercentage }: ShoppingCartProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="relative hidden sm:flex rounded-full" title="Shopping Cart">
-          <CartIcon className="w-4 h-4" />
-          {itemCount > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full">
-              {itemCount}
-            </Badge>
-          )}
-        </Button>
+        <CartIconWithAnimation
+          itemCount={itemCount}
+          className=""
+        />
       </SheetTrigger>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="relative sm:hidden rounded-full" title="Shopping Cart">
-          <CartIcon className="w-4 h-4" />
+        <Button 
+          variant="outline" 
+          size="icon"
+          className="relative sm:hidden flex items-center justify-center border-white/20 rounded-full"
+          title="Shopping Cart"
+        >
+          <div className="w-8 h-8">
+            <LottieAnimation 
+              animationData={shopCartAnimation} 
+              width={32}
+              height={32}
+              loop={true}
+              autoplay={true}
+              className="w-full h-full"
+            />
+          </div>
           {itemCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px] rounded-full">
+            <Badge className="absolute -top-1 -right-0 h-4 w-4 flex items-center justify-center p-0 text-[10px] rounded-full">
               {itemCount}
             </Badge>
           )}
@@ -58,7 +71,15 @@ export function ShoppingCart({ discountPercentage }: ShoppingCartProps) {
           {items.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-center">
               <div>
-                <CartIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <div className="w-24 h-24 mx-auto mb-4">
+                  <LottieAnimation 
+                    animationData={shopCartAnimation} 
+                    width={96}
+                    height={96}
+                    loop={true}
+                    autoplay={true}
+                  />
+                </div>
                 <p className="text-muted-foreground">Your in-store pickup cart is empty</p>
               </div>
             </div>
