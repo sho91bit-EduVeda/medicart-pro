@@ -705,14 +705,12 @@ const Index = () => {
                 </>
               )}
 
-              {/* Notification Bell - Only visible when owner is logged in */}
-              {isAuthenticated && <NotificationBell />}
-
-              {/* Owner controls - Only show when owner is logged in */}
+              {/* Notification Bell and User Account Dropdown - Only visible when owner is logged in */}
               {isAuthenticated && (
-                <div className="hidden md:flex items-center gap-1">
+                <>
+                  <NotificationBell />
                   <UserAccountDropdown />
-                </div>
+                </>
               )}
 
               {/* Mobile menu button - Pass onReviewsClick and onUnifiedLoginClick props */}

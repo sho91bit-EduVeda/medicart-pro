@@ -428,22 +428,17 @@ const CategoryPage = () => {
                 </>
               )}
 
-              {/* Notification Bell - Only visible when owner is logged in */}
-              {isAuthenticated && <NotificationBell />}
-
-              {/* Owner controls - Only show when owner is logged in */}
+              {/* Notification Bell and Owner controls - Only visible when owner is logged in */}
               {isAuthenticated && (
-                <div className="hidden md:flex items-center gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium"
-                    onClick={() => navigate("/owner")}
-                  >
-                    Dashboard
-                  </Button>
-                  <UserAccountDropdown />
-                </div>
+                <>
+                  <NotificationBell />
+                  <div className="hidden md:flex items-center gap-1">
+                    <UserAccountDropdown />
+                  </div>
+                  <div className="md:hidden">
+                    <UserAccountDropdown />
+                  </div>
+                </>
               )}
 
               {/* Owner Login - Only show when owner is NOT logged in */}

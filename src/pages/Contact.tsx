@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Phone, Mail, MapPin, Clock, Send, Home, Store, Menu } from "lucide-react";
 import NotificationBell from "@/components/common/NotificationBell";
 import { MobileMenu } from "@/components/layout/MobileMenu";
+import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
+import { useAuth } from "@/hooks/useAuth";
 import logoImage from "@/assets/Logo.png";
 import { toast } from "sonner";
 import {
@@ -21,6 +23,7 @@ import { motion, useReducedMotion } from "framer-motion";
 const Contact = () => {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
+  const { isAuthenticated } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -127,7 +130,7 @@ const Contact = () => {
             
             <div className="flex items-center gap-3">
             <motion.button 
-              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium flex items-center gap-2 md:flex"
+              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium flex items-center gap-2 hidden md:flex"
               onClick={() => navigate("/")}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -137,6 +140,7 @@ const Contact = () => {
               <span className="hidden md:block">View Store</span>
             </motion.button>
             <NotificationBell />
+            {isAuthenticated && <UserAccountDropdown />}
             <MobileMenu />
             </div>
           </div>

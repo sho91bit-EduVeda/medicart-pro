@@ -115,16 +115,7 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick 
       });
     }
     
-    // Add owner dashboard link for authenticated owners
-    if (isAuthenticated) {
-      items.push({
-        id: "owner-dashboard",
-        label: "Owner Dashboard",
-        icon: User,
-        action: () => handleNavigation("/owner"),
-        active: location.pathname === "/owner"
-      });
-    }
+
     
     return items;
   };

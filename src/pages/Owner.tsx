@@ -18,7 +18,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt, Info, AlertCircle, X } from "lucide-react";
+import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt, Info, AlertCircle, X, ArrowLeft } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ExcelUpload } from "@/components/common/ExcelUpload";
 import { IndianMedicineDatasetImport } from "@/components/admin/IndianMedicineDatasetImport";
@@ -984,6 +984,7 @@ const Owner = () => {
     // Store Configuration Group
     { id: "settings", label: "Settings", icon: Settings, category: "Configuration" },
     { id: "features", label: "Features", icon: Package, category: "Configuration" },
+    { id: "seed-database", label: "Seed Database", icon: Database, category: "Configuration" },
   ];
   // Effect to handle hash changes for navigation
   useEffect(() => {
@@ -1068,15 +1069,6 @@ const Owner = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {/* View Store button - Visible on all views */}
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => navigate("/")}
-                className=""
-              >
-                <Store className="w-5 h-5 text-white" />
-              </Button>
               
               {/* Notification Bell - Only show if there are notifications */}
               <NotificationBell />
@@ -1102,6 +1094,22 @@ const Owner = () => {
                   </SheetHeader>
                   <div className="flex flex-col h-[calc(100vh-100px)]">
                     <div className="flex-1 overflow-y-auto space-y-6">
+                      {/* Home button as first option */}
+                      <div className="space-y-1">
+                        <Button
+                          variant="ghost"
+                          className="justify-start gap-3 w-full text-gray-800 dark:text-white"
+                          onClick={() => {
+                            navigate("/");
+                            // Close the sheet using the proper Radix UI API
+                            document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
+                          }}
+                        >
+                          <Store className="w-5 h-5" />
+                          <span className="font-medium">Home</span>
+                        </Button>
+                      </div>
+                      
                       {/* Group navigation items by category */}
                       {Array.from(new Set(navigationItems.map(item => item.category))).map((category) => (
                         <div key={category}>
@@ -1115,9 +1123,13 @@ const Owner = () => {
                                   <Button
                                     key={item.id}
                                     variant={activeSection === item.id ? "default" : "ghost"}
-                                    className="justify-start gap-3 w-full text-gray-800 dark:text-white hover:bg-white/20"
+                                    className="justify-start gap-3 w-full text-gray-800 dark:text-white"
                                     onClick={() => {
-                                      setActiveSection(item.id);
+                                      if (item.id === "seed-database") {
+                                        seedDatabase();
+                                      } else {
+                                        setActiveSection(item.id);
+                                      }
                                       // Close the sheet using the proper Radix UI API
                                       document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
                                     }}
@@ -1132,32 +1144,14 @@ const Owner = () => {
                       ))}
                     </div>
                     
-                    <div className="space-y-1 pt-4 border-t pb-4">
-                      <Button 
-                        variant="secondary" 
-                        onClick={() => {
-                          setActiveSection("features");
-                          // Close the sheet
-                          document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
-                        }} 
-                        className="justify-start gap-3 w-full text-gray-800 dark:text-white hover:bg-white/20"
-                      >
-                        <Settings className="w-5 h-5" />
-                        <span className="font-medium">Feature Flags</span>
-                      </Button>
-                      <Button 
-                        variant="secondary" 
-                        onClick={() => {
-                          seedDatabase();
-                          // Close the sheet
-                          document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
-                        }} 
-                        className="justify-start gap-3 w-full text-gray-800 dark:text-white hover:bg-white/20"
-                      >
-                        <Database className="w-5 h-5" />
-                        <span className="font-medium">Seed Database</span>
-                      </Button>
+                    <div className="space-y-1 pt-4 border-t pb-2">
                       <UserAccountDropdown />
+                    </div>
+                  </div>
+                  
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <div className="text-center text-xs text-muted-foreground">
+                      © 2025 Kalyanam Pharmaceuticals
                     </div>
                   </div>
                 </SheetContent>
@@ -1194,7 +1188,7 @@ const Owner = () => {
                       >
                         <Button
                           variant={activeSection === item.id ? "default" : "ghost"}
-                          className="w-full justify-start gap-3 py-6 text-left text-gray-800 dark:text-white hover:bg-white/20 transition-all duration-200 pl-8"
+                          className="w-full justify-start gap-3 py-6 text-left text-gray-800 dark:text-white transition-all duration-200 pl-8"
                           onClick={() => setActiveSection(item.id)}
                         >
                           <Icon className="w-5 h-5" />
@@ -1335,7 +1329,169 @@ const Owner = () => {
 
             {activeSection === "manage-inventory" && (
               <div className="space-y-8 w-full max-w-6xl text-left">
-                {/* Product Listing Section - Only shown in Manage Inventory section */}
+                {/* Product Editing Form - Shown when editing a product */}
+                {editingProductId && (
+                  <div className="bg-white rounded-lg border p-6 mb-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-bold">Edit Product</h2>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleCancelEdit}
+                        className="flex items-center gap-2"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Products
+                      </Button>
+                    </div>
+                    
+                    <form onSubmit={handleUpdateProduct} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="product-name">Product Name <span className="text-destructive">*</span></Label>
+                          <Input
+                            id="product-name"
+                            value={productName}
+                            onChange={(e) => setProductName(e.target.value)}
+                            placeholder="Enter product name"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="category">Category <span className="text-destructive">*</span></Label>
+                          <Select value={categoryId} onValueChange={setCategoryId}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="price">Price <span className="text-destructive">*</span></Label>
+                          <Input
+                            id="price"
+                            type="number"
+                            step="0.01"
+                            value={originalPrice}
+                            onChange={(e) => setOriginalPrice(e.target.value)}
+                            placeholder="0.00"
+                            min="0"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="stock-quantity">Stock Quantity</Label>
+                          <Input
+                            id="stock-quantity"
+                            type="number"
+                            value={stockQuantity}
+                            onChange={(e) => setStockQuantity(parseInt(e.target.value) || 0)}
+                            placeholder="0"
+                            min="0"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="image-url">Image URL</Label>
+                          <Input
+                            id="image-url"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            placeholder="https://example.com/image.jpg"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Status</Label>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              id="in-stock"
+                              checked={inStock}
+                              onCheckedChange={setInStock}
+                            />
+                            <Label htmlFor="in-stock" className="text-sm font-normal">
+                              {inStock ? "In Stock" : "Out of Stock"}
+                            </Label>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          placeholder="Enter product description"
+                          rows={3}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="uses">Uses</Label>
+                        <Textarea
+                          id="uses"
+                          value={uses}
+                          onChange={(e) => setUses(e.target.value)}
+                          placeholder="Enter product uses"
+                          rows={2}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="side-effects">Side Effects</Label>
+                        <Textarea
+                          id="side-effects"
+                          value={sideEffects}
+                          onChange={(e) => setSideEffects(e.target.value)}
+                          placeholder="Enter possible side effects"
+                          rows={2}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="composition">Composition</Label>
+                        <Textarea
+                          id="composition"
+                          value={composition}
+                          onChange={(e) => setComposition(e.target.value)}
+                          placeholder="Enter product composition"
+                          rows={2}
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2 pt-4">
+                        <Button type="submit" disabled={loading}>
+                          {loading ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                              <span>Updating...</span>
+                            </div>
+                          ) : (
+                            "Update Product"
+                          )}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={handleCancelEdit}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+                
+                {/* Product Listing Section - Only shown when NOT editing a product */}
                 {!editingProductId && (
                   <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="manage-products" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
