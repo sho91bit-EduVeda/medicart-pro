@@ -40,7 +40,7 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
   const [expandedFeature, setExpandedFeature] = useState<number | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const { deliveryEnabled, storeClosed } = useFeatureFlags(); // Use the new feature flags
-  const { isAuthenticated, userName } = useAuth(); // Get authentication state and user name
+  const { isAuthenticated, userName, isAdmin } = useAuth(); // Get authentication state and user name
 
   // Animation refs and controls
   const ref = useRef(null);

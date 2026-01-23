@@ -17,7 +17,7 @@ const NotificationBell = () => {
   const [isActive, setIsActive] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   // Modal state
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
@@ -28,7 +28,7 @@ const NotificationBell = () => {
 
   // Fetch only pending medicine requests
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isAdmin) return;
 
     setLoading(true);
 
@@ -78,7 +78,7 @@ const NotificationBell = () => {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, isAdmin]);
 
   const handleNotificationClick = async (notification: any) => {
     if (notification.type === 'medicine_request_item' && notification.original_data) {
@@ -101,6 +101,11 @@ const NotificationBell = () => {
       }
     }
   };
+
+  // Only render the component if the user is authenticated and is an admin
+  if (!user || !isAdmin) {
+    return null;
+  }
 
   return (
     <>

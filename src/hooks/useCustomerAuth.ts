@@ -28,6 +28,7 @@ interface CustomerAuthState {
   user: CustomerUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isAdmin: boolean; // For customers, this will always be false
   initializeAuth: () => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (
@@ -45,6 +46,7 @@ export const useCustomerAuth = create<CustomerAuthState>((set) => ({
   user: null,
   isLoading: true,
   isAuthenticated: false,
+  isAdmin: false,
   
   initializeAuth: () => {
     set({ isLoading: true });
@@ -52,34 +54,65 @@ export const useCustomerAuth = create<CustomerAuthState>((set) => ({
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // Fetch customer profile from Firestore
-          const customerDoc = await getDoc(doc(db, "customers", user.uid));
-          if (customerDoc.exists()) {
-            const customerData = customerDoc.data();
-            set({
-              user: {
-                uid: user.uid,
-                email: user.email,
-                displayName: customerData.name || user.displayName,
-                phoneNumber: customerData.phone || user.phoneNumber,
-                emailVerified: user.emailVerified
-              },
-              isAuthenticated: true,
-              isLoading: false
-            });
+          // Check unified users collection first
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            // Only set as authenticated if user is a customer
+            if (userData.role === 'CUSTOMER' || userData.role === 'customer' || !userData.role) {
+              set({
+                user: {
+                  uid: user.uid,
+                  email: user.email,
+                  displayName: userData.name || user.displayName,
+                  phoneNumber: userData.phone || user.phoneNumber,
+                  emailVerified: user.emailVerified
+                },
+                isAuthenticated: true,
+                isLoading: false,
+                isAdmin: false
+              });
+            } else {
+              // User is not a customer (probably owner), set as unauthenticated
+              set({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+                isAdmin: false
+              });
+            }
           } else {
-            // User exists but no customer profile yet
-            set({
-              user: {
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName,
-                phoneNumber: user.phoneNumber,
-                emailVerified: user.emailVerified
-              },
-              isAuthenticated: true,
-              isLoading: false
-            });
+            // Check customers collection for backward compatibility
+            const customerDoc = await getDoc(doc(db, "customers", user.uid));
+            if (customerDoc.exists()) {
+              const customerData = customerDoc.data();
+              set({
+                user: {
+                  uid: user.uid,
+                  email: user.email,
+                  displayName: customerData.name || user.displayName,
+                  phoneNumber: customerData.phone || user.phoneNumber,
+                  emailVerified: user.emailVerified
+                },
+                isAuthenticated: true,
+                isLoading: false,
+                isAdmin: false
+              });
+            } else {
+              // User exists but no customer profile yet
+              set({
+                user: {
+                  uid: user.uid,
+                  email: user.email,
+                  displayName: user.displayName,
+                  phoneNumber: user.phoneNumber,
+                  emailVerified: user.emailVerified
+                },
+                isAuthenticated: true,
+                isLoading: false,
+                isAdmin: false
+              });
+            }
           }
         } catch (error) {
           console.error("Error fetching customer data:", error);
@@ -92,14 +125,16 @@ export const useCustomerAuth = create<CustomerAuthState>((set) => ({
               emailVerified: user.emailVerified
             },
             isAuthenticated: true,
-            isLoading: false
+            isLoading: false,
+            isAdmin: false
           });
         }
       } else {
         set({
           user: null,
           isAuthenticated: false,
-          isLoading: false
+          isLoading: false,
+          isAdmin: false
         });
       }
       unsubscribe();
@@ -111,34 +146,60 @@ export const useCustomerAuth = create<CustomerAuthState>((set) => ({
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      // Fetch customer profile from Firestore
-      const customerDoc = await getDoc(doc(db, "customers", user.uid));
-      if (customerDoc.exists()) {
-        const customerData = customerDoc.data();
+      // Check user role from Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        // Only allow customers to sign in through customer auth
+        if (userData.role !== 'CUSTOMER' && userData.role !== 'customer' && userData.role) {
+          throw new Error("Unauthorized: This account is not a customer account");
+        }
+        
         set({
           user: {
             uid: user.uid,
             email: user.email,
-            displayName: customerData.name || user.displayName,
-            phoneNumber: customerData.phone || user.phoneNumber,
+            displayName: userData.name || user.displayName,
+            phoneNumber: userData.phone || user.phoneNumber,
             emailVerified: user.emailVerified
           },
           isAuthenticated: true,
-          isLoading: false
+          isLoading: false,
+          isAdmin: false
         });
       } else {
-        // User exists but no customer profile yet
-        set({
-          user: {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            phoneNumber: user.phoneNumber,
-            emailVerified: user.emailVerified
-          },
-          isAuthenticated: true,
-          isLoading: false
-        });
+        // Check customers collection for backward compatibility
+        const customerDoc = await getDoc(doc(db, "customers", user.uid));
+        if (customerDoc.exists()) {
+          const customerData = customerDoc.data();
+          set({
+            user: {
+              uid: user.uid,
+              email: user.email,
+              displayName: customerData.name || user.displayName,
+              phoneNumber: customerData.phone || user.phoneNumber,
+              emailVerified: user.emailVerified
+            },
+            isAuthenticated: true,
+            isLoading: false,
+            isAdmin: false
+          });
+        } else {
+          // User exists but no customer profile yet
+          set({
+            user: {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName,
+              phoneNumber: user.phoneNumber,
+              emailVerified: user.emailVerified
+            },
+            isAuthenticated: true,
+            isLoading: false,
+            isAdmin: false
+          });
+        }
       }
       
       toast.success("Successfully signed in!");
@@ -154,6 +215,8 @@ export const useCustomerAuth = create<CustomerAuthState>((set) => ({
         errorMessage = "Invalid email address format.";
       } else if (error.code === "auth/user-disabled") {
         errorMessage = "This account has been disabled.";
+      } else if (error.message.includes("Unauthorized")) {
+        errorMessage = "This account cannot be accessed through customer login. Please use owner login.";
       }
       
       toast.error(errorMessage);
@@ -203,7 +266,8 @@ export const useCustomerAuth = create<CustomerAuthState>((set) => ({
           emailVerified: user.emailVerified
         },
         isAuthenticated: true,
-        isLoading: false
+        isLoading: false,
+        isAdmin: false
       });
 
       toast.success("Account created successfully!");
@@ -230,7 +294,8 @@ export const useCustomerAuth = create<CustomerAuthState>((set) => ({
       set({
         user: null,
         isAuthenticated: false,
-        isLoading: false
+        isLoading: false,
+        isAdmin: false
       });
       toast.success("Signed out successfully!");
     } catch (error) {
@@ -273,7 +338,8 @@ export const useCustomerAuth = create<CustomerAuthState>((set) => ({
           ...state.user,
           displayName: data.displayName || state.user.displayName,
           phoneNumber: data.phoneNumber || state.user.phoneNumber
-        } : null
+        } : null,
+        isAdmin: false
       }));
 
       toast.success("Profile updated successfully!");

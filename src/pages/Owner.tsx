@@ -31,6 +31,7 @@ import RequestMedicineSheet from "@/components/common/RequestMedicineSheet";
 import RequestDetailsModal from "@/components/common/RequestDetailsModal";
 import NotificationBell from "@/components/common/NotificationBell";
 import LogoutButton from "@/components/common/LogoutButton";
+import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 import logoImage from "@/assets/Logo.png";
 import SalesReporting from "@/components/admin/SalesReporting"; // Import SalesReporting component
@@ -292,7 +293,7 @@ const Owner = () => {
     }
   }, [activeSection]);
 
-  const { isAuthenticated, isLoading, checkAuth, user, userName } = useAuth();
+  const { isAuthenticated, isLoading, checkAuth, user, userName, isAdmin } = useAuth();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -370,15 +371,18 @@ const Owner = () => {
       }));
       
       setAnnouncements(announcementsData);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch announcements:", error);
-      toast.error("Failed to load announcements");
+      // Only show error if it's not a permission issue
+      if (!error.message?.includes("permission") && !error.message?.includes("insufficient")) {
+        toast.error("Failed to load announcements");
+      }
     } finally {
       setAnnouncementsLoading(false);
     }
   };
 
-  // Offer management functions
+// Offer management functions
   const fetchOffers = async () => {
     setOffersLoading(true);
     try {
@@ -394,9 +398,12 @@ const Owner = () => {
       })) as Offer[];
       
       setOffers(offersData);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch offers:", error);
-      toast.error("Failed to load offers");
+      // Only show error if it's not a permission issue
+      if (!error.message?.includes("permission") && !error.message?.includes("insufficient")) {
+        toast.error("Failed to load offers");
+      }
     } finally {
       setOffersLoading(false);
     }
@@ -900,9 +907,12 @@ const Owner = () => {
       }));
       
       setOrders(ordersData);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch orders:", error);
-      toast.error("Failed to load orders");
+      // Only show error if it's not a permission issue
+      if (!error.message?.includes("permission") && !error.message?.includes("insufficient")) {
+        toast.error("Failed to load orders");
+      }
     } finally {
       setOrdersLoading(false);
     }
@@ -1071,6 +1081,9 @@ const Owner = () => {
               {/* Notification Bell - Only show if there are notifications */}
               <NotificationBell />
               
+              {/* User Account Dropdown - Only show when logged in */}
+              <UserAccountDropdown />
+              
               {/* Mobile menu trigger - Moved to the extreme right */}
               <Sheet>
                 <SheetTrigger asChild className="md:hidden">
@@ -1144,14 +1157,7 @@ const Owner = () => {
                         <Database className="w-5 h-5" />
                         <span className="font-medium">Seed Database</span>
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        onClick={handleLogout}
-                        className="justify-start gap-3 w-full mt-4 text-gray-800 dark:text-white hover:bg-white/20"
-                      >
-                        <LogOut className="w-5 h-5" />
-                        <span className="font-medium">Logout</span>
-                      </Button>
+                      <UserAccountDropdown />
                     </div>
                   </div>
                 </SheetContent>
@@ -1332,24 +1338,15 @@ const Owner = () => {
                 {/* Product Listing Section - Only shown in Manage Inventory section */}
                 {!editingProductId && (
                   <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="manage-products" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
-                      <AccordionTrigger className="p-0">
-                        <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors">
-                          <div className="flex items-center justify-between gap-3 pb-2">
-                            <div className="flex items-center gap-3">
-                              <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                                <Package className="w-5 h-5 text-blue-600" />
-                                Manage Products
-                              </h3>
-                            </div>
-                            <div className="text-sm text-blue-600 font-medium">({products.length} products)</div>
-                          </div>
-                          <div className="pt-2">
-                            <p className="text-sm text-slate-600">View and manage your product inventory</p>
-                          </div>
+                    <AccordionItem value="manage-products" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+                      <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-200">
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4" />
+                          <span>Manage Products</span>
+                          <span className="text-sm text-blue-600 font-medium ml-auto">({products.length} products)</span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                      <AccordionContent className="p-4 bg-white/50">
                         <div className="text-left">
                           {/* Search and Filter Controls */}
                       <div className="mb-6 space-y-4">
@@ -1495,24 +1492,15 @@ const Owner = () => {
                   </AccordionContent>
                 </AccordionItem>
                 {/* Category Management Section - Part of same Accordion */}
-                <AccordionItem value="manage-categories" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
-                  <AccordionTrigger className="p-0">
-                    <div className="p-6 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors">
-                      <div className="flex items-center justify-between gap-3 pb-2">
-                        <div className="flex items-center gap-3">
-                          <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                            <Database className="w-5 h-5 text-purple-600" />
-                            Manage Categories
-                          </h3>
-                        </div>
-                        <div className="text-sm text-purple-600 font-medium">({categories.length} categories)</div>
-                      </div>
-                      <div className="pt-2">
-                        <p className="text-sm text-slate-600">Add, edit, or delete product categories</p>
-                      </div>
+                <AccordionItem value="manage-categories" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+                  <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <Database className="w-4 h-4" />
+                      <span>Manage Categories</span>
+                      <span className="text-sm text-purple-600 font-medium ml-auto">({categories.length} categories)</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                  <AccordionContent className="p-4 bg-white/50">
                     <div className="text-left space-y-6">
                       {/* Category Form */}
                       <Card className="border border-dashed bg-muted/30">
@@ -1623,22 +1611,15 @@ const Owner = () => {
     
             {/* Orders Management Section */}
             {activeSection === "orders" && (
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="orders-management" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
-                  <AccordionTrigger className="p-0">
-                    <div className="p-6 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 transition-colors">
-                      <div className="flex items-center gap-3 pb-2">
-                        <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                          <Package className="w-5 h-5 text-emerald-600" />
-                          Order Management
-                        </h3>
-                      </div>
-                      <div className="pt-2">
-                        <p className="text-sm text-slate-600">Manage customer orders and pickup requests</p>
-                      </div>
+              <Accordion type="single" collapsible className="w-full" defaultValue="orders-management">
+                <AccordionItem value="orders-management" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+                  <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <Package className="w-4 h-4" />
+                      <span>Order Management</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                  <AccordionContent className="p-4 bg-white/50">
                     <div className="space-y-6">
                       {/* Delivery Status Banner */}
                       <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -1737,22 +1718,15 @@ const Owner = () => {
             )}
 
             {activeSection === "requests" && (
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="medicine-requests" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
-                  <AccordionTrigger className="p-0">
-                    <div className="p-6 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 transition-colors">
-                      <div className="flex items-center gap-3 pb-2">
-                        <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                          <Mail className="w-5 h-5 text-amber-600" />
-                          Customer Medicine Requests
-                        </h3>
-                      </div>
-                      <div className="pt-2">
-                        <p className="text-sm text-slate-600">Manage customer requests for unavailable medicines</p>
-                      </div>
+              <Accordion type="single" collapsible className="w-full" defaultValue="medicine-requests">
+                <AccordionItem value="medicine-requests" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+                  <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      <span>Customer Medicine Requests</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                  <AccordionContent className="p-4 bg-white/50">
                     <div className="space-y-6">
                       <div className="flex justify-between items-center">
                         <div>
@@ -1917,22 +1891,15 @@ const Owner = () => {
             )}
 
             {activeSection === "settings" && (
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="store-settings" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
-                  <AccordionTrigger className="p-0">
-                    <div className="p-6 bg-gradient-to-r from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 transition-colors">
-                      <div className="flex items-center gap-3 pb-2">
-                        <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                          <Settings className="w-5 h-5 text-violet-600" />
-                          Store Settings
-                        </h3>
-                      </div>
-                      <div className="pt-2">
-                        <p className="text-sm text-slate-600">Configure your store's global settings</p>
-                      </div>
+              <Accordion type="single" collapsible className="w-full" defaultValue="store-settings">
+                <AccordionItem value="store-settings" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+                  <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <Settings className="w-4 h-4" />
+                      <span>Store Settings</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                  <AccordionContent className="p-4 bg-white/50">
                     <div className="space-y-6">
                       <div className="space-y-4">
                         <div className="flex items-center gap-4">
@@ -1980,22 +1947,15 @@ const Owner = () => {
 
             {/* Offers Management Section */}
             {activeSection === "offers" && (
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="manage-offers" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
-                  <AccordionTrigger className="p-0">
-                    <div className="p-6 bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 transition-colors">
-                      <div className="flex items-center gap-3 pb-2">
-                        <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                          <Percent className="w-5 h-5 text-rose-600" />
-                          Manage Offers
-                        </h3>
-                      </div>
-                      <div className="pt-2">
-                        <p className="text-sm text-slate-600">Create and manage promotional offers</p>
-                      </div>
+              <Accordion type="single" collapsible className="w-full" defaultValue="manage-offers">
+                <AccordionItem value="manage-offers" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+                  <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <Percent className="w-4 h-4" />
+                      <span>Manage Offers</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                  <AccordionContent className="p-4 bg-white/50">
                     <div className="space-y-6">
                       {/* Offer Form */}
                       <Card className="border border-dashed bg-muted/30">
@@ -2194,22 +2154,15 @@ const Owner = () => {
             )}
             
             {activeSection === "announcements" && (
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="manage-announcements" className="border border-gray-200 rounded-xl overflow-hidden mb-4 transition-all hover:shadow-md hover:border-primary/30">
-                  <AccordionTrigger className="p-0">
-                    <div className="p-6 bg-gradient-to-r from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 transition-colors">
-                      <div className="flex items-center gap-3 pb-2">
-                        <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                          <Bell className="w-5 h-5 text-cyan-600" />
-                          Manage Announcements
-                        </h3>
-                      </div>
-                      <div className="pt-2">
-                        <p className="text-sm text-slate-600">Create and manage store announcements</p>
-                      </div>
+              <Accordion type="single" collapsible className="w-full" defaultValue="manage-announcements">
+                <AccordionItem value="manage-announcements" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+                  <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-4 h-4" />
+                      <span>Manage Announcements</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="p-6 bg-white border-t border-gray-200">
+                  <AccordionContent className="p-4 bg-white/50">
                     <div className="space-y-6">
                       {/* Announcement Form */}
                       <Card className="border border-dashed bg-muted/30">

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LazyMotion, domAnimation, useReducedMotion } from "framer-motion";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Owner from "./pages/Owner";
 import ProductDetail from "./pages/ProductDetail";
 import Wishlist from "./pages/Wishlist";
@@ -21,6 +22,7 @@ import ShippingPolicy from "./pages/ShippingPolicy";
 import NotFound from "./pages/NotFound";
 import ProductSelectorDemo from "./pages/ProductSelectorDemo";
 import AccordionDemo from "./components/ui-custom/AccordionDemo";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +49,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="/owner" element={<Owner />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/wishlist" element={<Wishlist />} />
@@ -62,6 +65,7 @@ const App = () => (
             <Route path="/shipping-policy" element={<ShippingPolicy />} />
             <Route path="/product-selector-demo" element={<ProductSelectorDemo />} />
             <Route path="/accordion-demo" element={<AccordionDemo />} />
+            <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -24,7 +24,7 @@ interface StoreReviewFormProps {
 }
 
 const StoreReviewForm: React.FC<StoreReviewFormProps> = ({ onClose, onSubmit, showOnlyForm = false }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isAdmin } = useAuth();
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');

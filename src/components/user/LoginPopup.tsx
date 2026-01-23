@@ -125,7 +125,7 @@ export const LoginPopup = ({ trigger }: LoginPopupProps) => {
         {trigger}
       </DialogTrigger>
       <DialogContent
-        className="sm:max-w-md h-full flex flex-col p-0 overflow-hidden rounded-2xl border-0 shadow-2xl"
+        className="sm:max-w-lg max-h-[90vh] h-auto flex flex-col p-0 overflow-hidden rounded-2xl border-0 shadow-2xl"
         onKeyDown={handleKeyDown}
         tabIndex={0}
       >
@@ -160,13 +160,15 @@ export const LoginPopup = ({ trigger }: LoginPopupProps) => {
         </div>
 
         {/* Form Content */}
-        <div className="p-6 bg-slate-50 relative">
+        <div className="flex-1 bg-slate-50 relative p-6">
           {/* Subtle Background Pattern */}
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
-            backgroundSize: '20px 20px',
-            opacity: 0.3
-          }}></div>
+          <div className="absolute inset-0" style={
+            {
+              backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
+              opacity: 0.3
+            }
+          }></div>
 
           <div className="relative z-10">
             <form onSubmit={handleAuth} className="space-y-4">
@@ -179,6 +181,7 @@ export const LoginPopup = ({ trigger }: LoginPopupProps) => {
                     placeholder="Enter your full name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    required
                     className="rounded-lg border-slate-200 bg-white focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>

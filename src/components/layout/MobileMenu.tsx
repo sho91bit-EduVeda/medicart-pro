@@ -24,18 +24,19 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 import { useCustomerAuth } from "@/hooks/useCustomerAuth";
+import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
 
 interface MobileMenuProps {
   onSearchClick?: () => void;
   onReviewsClick?: () => void;
-  onOwnerLoginClick?: () => void; // Add this prop
+  onUnifiedLoginClick?: () => void; // Updated prop name
 }
 
-export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }: MobileMenuProps) {
+export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, signOut } = useAuth();
+  const { isAuthenticated, signOut, isAdmin } = useAuth();
   const { deliveryEnabled } = useFeatureFlags();
   const { items: wishlistItems } = useWishlist();
   const { user: customerUser, isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading } = useCustomerAuth();
@@ -97,37 +98,33 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
       }
     ];
     
-    // Add customer login only if owner is not authenticated
-    if (!isAuthenticated) {
+    // Add unified login only if neither customer nor owner is authenticated
+    if (!isAuthenticated && !isCustomerAuthenticated) {
       items.push({
-        id: "customer-login",
-        label: isCustomerAuthenticated ? "My Account" : "Customer Login",
+        id: "login",
+        label: "Login / Sign Up",
         icon: User,
-        action: isCustomerAuthenticated ? 
-          () => handleNavigation("/wishlist") : // Navigate to wishlist for customer account
-          () => {
-            // For unauthenticated customers, close the menu
-            setOpen(false);
-          },
-        active: location.pathname === "/wishlist" // Using wishlist as customer account page
+        action: () => {
+          // For unauthenticated users, close the menu and trigger the unified login
+          setOpen(false);
+          if (onUnifiedLoginClick) {
+            onUnifiedLoginClick();
+          }
+        },
+        active: false
       });
     }
     
-    items.push({
-      id: "owner",
-      label: isAuthenticated ? "Owner Dashboard" : "Owner Login",
-      icon: User,
-      action: isAuthenticated ? 
-        () => handleNavigation("/owner") : 
-        () => {
-          // For unauthenticated users, close the menu and trigger the login popup
-          setOpen(false);
-          if (onOwnerLoginClick) {
-            onOwnerLoginClick();
-          }
-        },
-      active: location.pathname === "/owner"
-    });
+    // Add owner dashboard link for authenticated owners
+    if (isAuthenticated) {
+      items.push({
+        id: "owner-dashboard",
+        label: "Owner Dashboard",
+        icon: User,
+        action: () => handleNavigation("/owner"),
+        active: location.pathname === "/owner"
+      });
+    }
     
     return items;
   };
@@ -168,33 +165,10 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onOwnerLoginClick }:
             })}
           </div>
           
-          {/* Conditional rendering for logout based on user type */}
-          {(isCustomerAuthenticated || isAuthenticated) ? (
+          {/* User Account Dropdown - Only show when logged in */}
+          {(isCustomerAuthenticated || isAuthenticated) && (
             <div className="pt-4 pb-4">
-              <Button 
-                variant="destructive" 
-                onClick={handleLogout}
-                className="justify-start gap-3 w-full"
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="font-medium">Logout</span>
-              </Button>
-            </div>
-          ) : (
-            <div className="pt-4 pb-4">
-              <Button 
-                variant="default" 
-                onClick={() => {
-                  setOpen(false);
-                  if (onOwnerLoginClick) {
-                    onOwnerLoginClick();
-                  }
-                }}
-                className="justify-start gap-3 w-full bg-green-600 hover:bg-green-700 text-white"
-              >
-                <User className="w-5 h-5" />
-                <span className="font-medium">Owner Login</span>
-              </Button>
+              <UserAccountDropdown />
             </div>
           )}
         </div>

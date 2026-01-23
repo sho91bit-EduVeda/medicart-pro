@@ -19,7 +19,7 @@ import { motion, useReducedMotion } from "framer-motion";
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isAdmin } = useAuth();
   const { items, getTotal, clearCart } = useCart();
   const { createOrder, isLoading } = useOrder();
   const { deliveryEnabled } = useFeatureFlags();

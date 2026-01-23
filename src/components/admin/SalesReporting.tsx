@@ -1396,18 +1396,18 @@ const SalesReporting = () => {
       </div>
 
       {/* Accordion for Other Sections */}
-      <Accordion type="single" collapsible className="w-full space-y-4">
+      <Accordion type="single" collapsible className="w-full">
         {/* Today's Sales Summary */}
-        <AccordionItem value="todays-sales">
-          <AccordionTrigger>
+        <AccordionItem value="todays-sales" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+          <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-200">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-lg font-semibold">Today's Sales Summary</span>
+              <TrendingUp className="w-4 h-4" />
+              <span>Today's Sales Summary</span>
             </div>
           </AccordionTrigger>
-          <AccordionContent>
-            <Card className="border-t-0 rounded-t-none">
-              <CardContent className="pt-6">
+          <AccordionContent className="p-4 bg-white/50">
+            <Card className="border-0 shadow-none">
+              <CardContent className="pt-2">
                 {dailySales.length === 0 ? (
                   <div className="text-center py-8">
                     <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -1576,16 +1576,16 @@ const SalesReporting = () => {
         </AccordionItem>
 
         {/* Monthly Reports */}
-        <AccordionItem value="monthly-reports">
-          <AccordionTrigger>
+        <AccordionItem value="monthly-reports" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+          <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 transition-all duration-200">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-lg font-semibold">Monthly Reports</span>
+              <TrendingUp className="w-4 h-4" />
+              <span>Monthly Reports</span>
             </div>
           </AccordionTrigger>
-          <AccordionContent>
-            <Card className="border-t-0 rounded-t-none">
-              <CardContent className="pt-6">
+          <AccordionContent className="p-4 bg-white/50">
+            <Card className="border-0 shadow-none">
+              <CardContent className="pt-2">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-semibold">Previous Reports</h3>

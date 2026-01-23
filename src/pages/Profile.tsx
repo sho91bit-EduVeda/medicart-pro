@@ -1,0 +1,644 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useCustomerAuth } from '@/hooks/useCustomerAuth';
+import { db } from '@/integrations/firebase/config';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { auth } from '@/integrations/firebase/config';
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, createUserWithEmailAndPassword } from 'firebase/auth';
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  Calendar, 
+  Building2, 
+  UserRound, 
+  LogOut,
+  Search,
+  Package,
+  Heart,
+  ArrowRight,
+  ShieldCheck,
+  Store,
+  ChevronDown,
+  Settings
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { MobileMenu } from '@/components/layout/MobileMenu';
+import { QuickLinksSidebar } from '@/components/layout/QuickLinksSidebar';
+import { UserAccountDropdown } from '@/components/common/UserAccountDropdown';
+import NotificationBell from '@/components/common/NotificationBell';
+import { UnifiedAuth } from '@/components/common/UnifiedAuth';
+import logoImage from '@/assets/Logo.png';
+import RequestMedicineSheet from '@/components/common/RequestMedicineSheet';
+
+export default function Profile() {
+  const navigate = useNavigate();
+  const { isAuthenticated, user: ownerUser, checkAuth, signOut: ownerSignOut, isAdmin } = useAuth();
+  const { 
+    isAuthenticated: isCustomerAuthenticated, 
+    user: customerUser,
+    signOut: customerSignOut
+  } = useCustomerAuth();
+  
+  // Check authentication status
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // Determine which user is logged in
+  const isAnyUserLoggedIn = isAuthenticated || isCustomerAuthenticated;
+  const currentUser = isAuthenticated ? ownerUser : customerUser;
+  const isCurrentUserOwner = isAuthenticated && isAdmin;
+
+  // Handle logout based on user type
+  const handleLogout = async () => {
+    try {
+      if (isAuthenticated) {
+        // Logout owner
+        await ownerSignOut();
+      } else if (isCustomerAuthenticated) {
+        // Logout customer
+        await customerSignOut();
+      }
+      toast.success("Logged out successfully");
+      navigate('/');
+    } catch (error) {
+      toast.error("Failed to logout");
+    }
+  };
+
+  // State for owner login management
+  const [ownerEmail, setOwnerEmail] = useState('');
+  const [ownerPassword, setOwnerPassword] = useState('');
+  const [ownerConfirmPassword, setOwnerConfirmPassword] = useState('');
+  const [loadingOwnerUpdate, setLoadingOwnerUpdate] = useState(false);
+  
+  // State for creating new owners
+  const [newOwnerEmail, setNewOwnerEmail] = useState('');
+  const [newOwnerPassword, setNewOwnerPassword] = useState('');
+  const [newOwnerConfirmPassword, setNewOwnerConfirmPassword] = useState('');
+  const [loadingNewOwner, setLoadingNewOwner] = useState(false);
+  
+  // Load owner login details if user is owner
+  useEffect(() => {
+    const loadOwnerDetails = async () => {
+      if (isAuthenticated && isCurrentUserOwner) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", ownerUser?.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setOwnerEmail(userData.email || '');
+          }
+        } catch (error) {
+          console.error('Error loading owner details:', error);
+        }
+      }
+    };
+    
+    loadOwnerDetails();
+  }, [isAuthenticated, isCurrentUserOwner, ownerUser?.uid]);
+  
+  // Handle owner login update
+  const handleOwnerLoginUpdate = async () => {
+    if (!ownerPassword) {
+      toast.error('Please enter a password');
+      return;
+    }
+    
+    if (ownerPassword !== ownerConfirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
+    if (ownerPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+    
+    setLoadingOwnerUpdate(true);
+    try {
+      // Get the current user
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('No authenticated user found');
+      }
+      
+      // Update the user's password
+      await updatePassword(currentUser, ownerPassword);
+      
+      // Update the email if it has changed
+      if (currentUser.email !== ownerEmail) {
+        // Note: Changing email requires re-authentication
+        // For simplicity in this implementation, we'll skip email change
+        // In a real app, you'd need to re-authenticate the user first
+        toast.info('Email change requires re-authentication (skipped in this demo)');
+      }
+      
+      toast.success('Owner login details updated successfully!');
+      setOwnerPassword('');
+      setOwnerConfirmPassword('');
+    } catch (error) {
+      console.error('Error updating owner login:', error);
+      let errorMessage = 'Failed to update owner login details';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('auth/requires-recent-login')) {
+          errorMessage = 'Please sign out and sign in again to update your password.';
+        } else if (error.message.includes('auth/weak-password')) {
+          errorMessage = 'Password is too weak. Please use a stronger password.';
+        } else if (error.message.includes('auth/email-already-in-use')) {
+          errorMessage = 'This email is already in use by another account.';
+        }
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setLoadingOwnerUpdate(false);
+    }
+  };
+  
+  // Handle creating a new owner
+  const handleCreateNewOwner = async () => {
+    if (!newOwnerEmail || !newOwnerPassword) {
+      toast.error('Please enter both email and password');
+      return;
+    }
+    
+    if (newOwnerPassword !== newOwnerConfirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
+    if (newOwnerPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newOwnerEmail)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    
+    setLoadingNewOwner(true);
+    try {
+      // Create a new user in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, newOwnerEmail, newOwnerPassword);
+      const newUser = userCredential.user;
+      
+      // Create a user document in Firestore with owner role
+      await setDoc(doc(db, "users", newUser.uid), {
+        uid: newUser.uid,
+        email: newOwnerEmail,
+        role: 'OWNER',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      
+      toast.success('New owner account created successfully!');
+      
+      // Clear the form
+      setNewOwnerEmail('');
+      setNewOwnerPassword('');
+      setNewOwnerConfirmPassword('');
+    } catch (error) {
+      console.error('Error creating new owner:', error);
+      let errorMessage = 'Failed to create new owner account';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('auth/email-already-in-use')) {
+          errorMessage = 'An account with this email already exists.';
+        } else if (error.message.includes('auth/weak-password')) {
+          errorMessage = 'Password is too weak. Please use a stronger password.';
+        } else if (error.message.includes('auth/invalid-email')) {
+          errorMessage = 'Please enter a valid email address.';
+        }
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setLoadingNewOwner(false);
+    }
+  };
+  
+  useEffect(() => {
+    if (!isAnyUserLoggedIn) {
+      navigate('/auth');
+    }
+  }, [isAnyUserLoggedIn, navigate]);
+
+  // Redirect if not authenticated
+  if (!isAnyUserLoggedIn) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Quick Links Sidebar - Only show when authenticated */}
+      {isAuthenticated && <QuickLinksSidebar />}
+
+      {/* Header with scroll-aware animation */}
+      <motion.header
+        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-xl"
+        initial={{ y: 0 }}
+        animate={{ y: 0 }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+          mass: 1
+        }}
+      >
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}> 
+              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
+                <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-8 h-8 object-contain" />
+              </div>
+              <div>
+                {/* Desktop view - Full business name */}
+                <h1 className="hidden md:block text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
+                <p className="hidden md:block text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
+
+                {/* Mobile view - Shortened business name */}
+                <div className="md:hidden">
+                  <h1 className="text-xl font-bold">Kalyanam</h1>
+                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
+                </div>
+              </div>
+            </div>
+
+            <nav className="hidden md:flex items-center gap-1">
+              <Button
+                variant="ghost"
+                className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
+                onClick={() => navigate('/')}
+              >
+                Home
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
+                onClick={() => navigate('/reviews')}
+              >
+                Reviews
+              </Button>
+              {isAuthenticated && (
+                <Button
+                  variant="ghost"
+                  className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
+                  onClick={() => navigate('/owner#manage-products')}
+                >
+                  Inventory
+                </Button>
+              )}
+              {!isAuthenticated && (
+                <RequestMedicineSheet>
+                  <Button 
+                    variant="ghost" 
+                    className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
+                    onClick={(e) => {
+                      // Prevent event from bubbling up to nav
+                      e.stopPropagation();
+                    }}
+                  >
+                    Request Medicine
+                  </Button>
+                </RequestMedicineSheet>
+              )}
+            </nav>
+
+            <div className="flex items-center gap-2">
+              {/* Notification Bell - Only visible when owner is logged in */}
+              {isAuthenticated && <NotificationBell />}
+
+              {/* Owner controls - Only show when owner is logged in */}
+              {isAuthenticated && (
+                <div className="hidden md:flex items-center gap-1">
+                  <UserAccountDropdown />
+                </div>
+              )}
+
+              {/* Mobile menu button - Pass onReviewsClick and onUnifiedLoginClick props */}
+              <MobileMenu />
+            </div>
+          </div>
+        </div>
+      </motion.header>
+
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-primary/10 rounded-full">
+              <UserRound className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">My Profile</h1>
+              <p className="text-muted-foreground">
+                Manage your {isCurrentUserOwner ? 'owner' : 'customer'} account
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Profile Info Card */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    Personal Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-secondary rounded-full">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Display Name</p>
+                      <p className="font-medium">
+                        {currentUser?.displayName || 
+                         currentUser?.email?.split('@')[0] || 
+                         'N/A'}
+                      </p>
+                    </div>
+                  </div>
+          
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-secondary rounded-full">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium">
+                        {currentUser?.email || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+          
+                  {currentUser?.phoneNumber && (
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-secondary rounded-full">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Phone</p>
+                        <p className="font-medium">
+                          {currentUser.phoneNumber}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+          
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-secondary rounded-full">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Account Type</p>
+                      <Badge variant={isCurrentUserOwner ? "default" : "secondary"}>
+                        {isCurrentUserOwner ? 'Owner' : 'Customer'}
+                      </Badge>
+                    </div>
+                  </div>
+          
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-secondary rounded-full">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Member Since</p>
+                      <p className="font-medium">
+                        N/A
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          
+            {/* Account Actions Card */}
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UserRound className="w-5 h-5" />
+                    Account Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => {
+                      // Placeholder for profile editing functionality
+                      toast.info("Profile editing coming soon!");
+                    }}
+                  >
+                    Edit Profile
+                  </Button>
+                            
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => {
+                      // Placeholder for password change functionality
+                      toast.info("Password change coming soon!");
+                    }}
+                  >
+                    Change Password
+                  </Button>
+                            
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => {
+                      // Placeholder for notification settings functionality
+                      toast.info("Notification settings coming soon!");
+                    }}
+                  >
+                    Notification Settings
+                  </Button>
+                            
+                  <Button 
+                    variant="destructive" 
+                    className="w-full justify-start"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+          
+          {/* Owner Management Section - Only show for owners */}
+          {isCurrentUserOwner && (
+            <div className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5" />
+                    Owner Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="update-details" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+                      <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-200">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4" />
+                          Update My Login Details
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="p-4 bg-white/50">
+                        <div className="space-y-4 pt-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="owner-email">Owner Email</Label>
+                            <Input 
+                              id="owner-email"
+                              type="email"
+                              placeholder="owner@example.com"
+                              value={ownerEmail}
+                              onChange={(e) => setOwnerEmail(e.target.value)}
+                              disabled={!isCurrentUserOwner}
+                            />
+                          </div>
+                                            
+                          <div className="space-y-2">
+                            <Label htmlFor="owner-password">New Password</Label>
+                            <Input 
+                              id="owner-password"
+                              type="password"
+                              placeholder="Enter new password"
+                              value={ownerPassword}
+                              onChange={(e) => setOwnerPassword(e.target.value)}
+                              disabled={!isCurrentUserOwner}
+                            />
+                          </div>
+                                            
+                          <div className="space-y-2">
+                            <Label htmlFor="owner-confirm-password">Confirm New Password</Label>
+                            <Input 
+                              id="owner-confirm-password"
+                              type="password"
+                              placeholder="Confirm new password"
+                              value={ownerConfirmPassword}
+                              onChange={(e) => setOwnerConfirmPassword(e.target.value)}
+                              disabled={!isCurrentUserOwner}
+                            />
+                          </div>
+                                            
+                          <Button 
+                            className="w-full"
+                            onClick={handleOwnerLoginUpdate}
+                            disabled={loadingOwnerUpdate || !isCurrentUserOwner}
+                          >
+                            {loadingOwnerUpdate ? 'Updating...' : 'Update My Login Details'}
+                          </Button>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                                      
+                    <AccordionItem value="create-owner" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+                      <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 transition-all duration-200">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          Create New Owner Account
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="p-4 bg-white/50">
+                        <div className="space-y-4 pt-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="new-owner-email">New Owner Email</Label>
+                            <Input 
+                              id="new-owner-email"
+                              type="email"
+                              placeholder="newowner@example.com"
+                              value={newOwnerEmail}
+                              onChange={(e) => setNewOwnerEmail(e.target.value)}
+                              disabled={!isCurrentUserOwner}
+                            />
+                          </div>
+                                            
+                          <div className="space-y-2">
+                            <Label htmlFor="new-owner-password">Password</Label>
+                            <Input 
+                              id="new-owner-password"
+                              type="password"
+                              placeholder="Enter password"
+                              value={newOwnerPassword}
+                              onChange={(e) => setNewOwnerPassword(e.target.value)}
+                              disabled={!isCurrentUserOwner}
+                            />
+                          </div>
+                                            
+                          <div className="space-y-2">
+                            <Label htmlFor="new-owner-confirm-password">Confirm Password</Label>
+                            <Input 
+                              id="new-owner-confirm-password"
+                              type="password"
+                              placeholder="Confirm password"
+                              value={newOwnerConfirmPassword}
+                              onChange={(e) => setNewOwnerConfirmPassword(e.target.value)}
+                              disabled={!isCurrentUserOwner}
+                            />
+                          </div>
+                                            
+                          <Button 
+                            className="w-full"
+                            onClick={handleCreateNewOwner}
+                            disabled={loadingNewOwner || !isCurrentUserOwner}
+                          >
+                            {loadingNewOwner ? 'Creating...' : 'Create New Owner'}
+                          </Button>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Order History Section (Placeholder) */}
+          <div className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-center py-8">
+                  Recent orders and activity will appear here.
+                  <br />
+                  {isCurrentUserOwner 
+                    ? "As an owner, you can manage store operations from the dashboard." 
+                    : "Place orders and track your purchases here."}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

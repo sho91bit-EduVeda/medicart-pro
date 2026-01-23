@@ -13,6 +13,7 @@ import NotificationBell from "@/components/common/NotificationBell";
 import { MobileMenu } from "@/components/layout/MobileMenu";
 import logoImage from "@/assets/Logo.png";
 import AppFooter from "@/components/layout/AppFooter";
+import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
 
 interface Product {
   id: string;
@@ -31,7 +32,7 @@ interface Product {
 export default function Wishlist() {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isAdmin } = useAuth();
   const { items: wishlistIds, loadWishlist } = useWishlist();
   const [products, setProducts] = useState<Product[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
@@ -128,7 +129,8 @@ export default function Wishlist() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <NotificationBell />
+            {isAuthenticated && <NotificationBell />}
+            <UserAccountDropdown />
             <MobileMenu />
           </div>
         </div>

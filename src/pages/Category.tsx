@@ -19,7 +19,9 @@ import { SearchPopup } from "@/components/common/SearchPopup";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 import { LoginPopup } from "@/components/user/LoginPopup";
 import { motion, useReducedMotion } from "framer-motion";
+import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { useSearchParams } from "react-router-dom";
+import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
 
 // Import animations
 import allergyAnim from "@/assets/animations/category-allergy.json";
@@ -74,7 +76,8 @@ const CategoryPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
-  const { isAuthenticated, signOut, checkAuth, user } = useAuth();
+  const { isAuthenticated, signOut, checkAuth, user, isAdmin } = useAuth();
+  const { user: customerUser, isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading, initializeAuth: initializeCustomerAuth } = useCustomerAuth();
   const { deliveryEnabled } = useFeatureFlags();
   const { loadWishlist, items: wishlistItems, toggleItem } = useWishlist();
   const [products, setProducts] = useState<Product[]>([]);
@@ -90,7 +93,8 @@ const CategoryPage = () => {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+    initializeCustomerAuth();
+  }, [initializeCustomerAuth]);
 
   useEffect(() => {
     if (deliveryEnabled) {
@@ -392,36 +396,40 @@ const CategoryPage = () => {
               {/* Customer-facing icons - Only show when owner is NOT logged in */}
               {!isAuthenticated && (
                 <>
-                  {/* Wishlist Icon - Standard e-commerce position */}
+                  {/* Wishlist Icon - Standard e-commerce position - only show when customer is authenticated */}
                   {deliveryEnabled && (
                     <div className="hidden md:flex items-center gap-1">
-                      <motion.button
-                        className="relative rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
-                        onClick={() => navigate("/wishlist")}
-                        title="Wishlist"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      >
-                        <Heart className="w-5 h-5" />
-                        {wishlistItems.length > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-5 h-5 text-xs flex items-center justify-center">
-                            {wishlistItems.length}
-                          </span>
-                        )}
-                      </motion.button>
+                      {isCustomerAuthenticated && (
+                        <motion.button
+                          className="relative rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
+                          onClick={() => navigate("/wishlist")}
+                          title="Wishlist"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                        >
+                          <Heart className="w-5 h-5" />
+                          {wishlistItems.length > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                              {wishlistItems.length}
+                            </span>
+                          )}
+                        </motion.button>
+                      )}
                     </div>
                   )}
 
-                  {/* Shopping Cart - Standard e-commerce position */}
-                  <div className="hidden md:block" title="Shopping Cart">
-                    <ShoppingCart discountPercentage={discountPercentage} />
-                  </div>
+                  {/* Shopping Cart - Standard e-commerce position - only show when customer is authenticated */}
+                  {isCustomerAuthenticated && (
+                    <div className="hidden md:block" title="Shopping Cart">
+                      <ShoppingCart discountPercentage={discountPercentage} />
+                    </div>
+                  )}
                 </>
               )}
 
-              {/* Notification Bell - Always visible */}
-              <NotificationBell />
+              {/* Notification Bell - Only visible when owner is logged in */}
+              {isAuthenticated && <NotificationBell />}
 
               {/* Owner controls - Only show when owner is logged in */}
               {isAuthenticated && (
@@ -434,18 +442,7 @@ const CategoryPage = () => {
                   >
                     Dashboard
                   </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    className="rounded-full px-4 py-2 transition-colors font-medium flex items-center gap-2"
-                    onClick={async () => {
-                      await signOut();
-                      toast.success("Logged out successfully");
-                    }}
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
-                  </Button>
+                  <UserAccountDropdown />
                 </div>
               )}
 

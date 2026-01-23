@@ -28,7 +28,7 @@ interface ProductReviewsSectionProps {
 }
 
 export function ProductReviewsSection({ productId }: ProductReviewsSectionProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const { productReviews } = useFeatureFlags();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);

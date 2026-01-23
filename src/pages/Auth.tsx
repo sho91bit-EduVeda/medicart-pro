@@ -1,81 +1,31 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { auth, db } from "@/integrations/firebase/config";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useCustomerAuth } from "@/hooks/useCustomerAuth";
+import { UnifiedAuth } from "@/components/common/UnifiedAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { Loader2, ShieldCheck } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { ShieldCheck } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState(""); // New state for owner's name
-  const [loading, setLoading] = useState(false);
-  const [isLogin, setIsLogin] = useState(true);
-
-  const { isAuthenticated, checkAuth, user } = useAuth();
+  const { isAuthenticated, checkAuth } = useAuth();
+  const { isAuthenticated: isCustomerAuthenticated, initializeAuth: initializeCustomerAuth } = useCustomerAuth();
 
   useEffect(() => {
     checkAuth();
+    initializeCustomerAuth();
   }, []);
 
   useEffect(() => {
+    // If either customer or owner is authenticated, redirect appropriately
     if (isAuthenticated) {
+      navigate("/owner");
+    } else if (isCustomerAuthenticated) {
       navigate("/");
     }
-  }, [isAuthenticated, navigate]);
-
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
-        toast.success("Welcome back!");
-        navigate("/");
-      } else {
-        // For signup, we need to collect the owner's name
-        if (!name.trim()) {
-          toast.error("Please enter your name");
-          setLoading(false);
-          return;
-        }
-
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        
-        // Update user profile with display name
-        await updateProfile(user, {
-          displayName: name
-        });
-        
-        // Save additional user info to Firestore
-        await setDoc(doc(db, "users", user.uid), {
-          uid: user.uid,
-          email: user.email,
-          name: name,
-          createdAt: new Date().toISOString(),
-          role: "owner"
-        });
-
-        toast.success("Account created! You are now signed in.");
-        navigate("/");
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Authentication failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isAuthenticated, isCustomerAuthenticated, navigate]);
 
   return (
     <motion.div 
@@ -120,7 +70,7 @@ const Auth = () => {
               transition={{ delay: 0.3 }}
             >
               <CardTitle className="text-2xl font-bold">
-                {isLogin ? "Owner Login" : "Create Owner Account"}
+                Welcome to Kalyanam Pharmaceuticals
               </CardTitle>
             </motion.div>
             <motion.div
@@ -129,99 +79,23 @@ const Auth = () => {
               transition={{ delay: 0.4 }}
             >
               <CardDescription>
-                {isLogin
-                  ? "Sign in to manage your medical store"
-                  : "Create an account to start managing products"}
+                Sign in or create an account to access our services
               </CardDescription>
             </motion.div>
           </CardHeader>
           <CardContent>
-            <motion.form 
-              onSubmit={handleAuth} 
-              className="space-y-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              {!isLogin && (
-                <motion.div 
-                  className="space-y-2"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </motion.div>
-              )}
-              <motion.div 
-                className="space-y-2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: isLogin ? 0.6 : 0.7 }}
-              >
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="owner@kalyanampharmacy.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </motion.div>
-              <motion.div 
-                className="space-y-2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: isLogin ? 0.7 : 0.8 }}
-              >
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </motion.div>
-              <motion.button 
-                className="w-full rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2"
-                type="submit" 
-                disabled={loading}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLogin ? "Sign In" : "Sign Up"}
-              </motion.button>
-            </motion.form>
-            <motion.div 
-              className="mt-4 text-center text-sm"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-            >
-              <motion.button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary hover:underline"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
-              </motion.button>
-            </motion.div>
+            <div className="py-4">
+              <UnifiedAuth 
+                trigger={
+                  <div className="w-full text-center text-muted-foreground">
+                    Click the button below to open the authentication dialog
+                  </div>
+                }
+                onSuccess={() => {
+                  // The unified auth component handles redirects internally
+                }}
+              />
+            </div>
           </CardContent>
         </Card>
       </motion.div>

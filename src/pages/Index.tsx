@@ -11,7 +11,7 @@ import { ProductFilters } from "@/components/product/ProductFilters";
 import { StockStatus } from "@/components/common/StockStatus";
 import { ProductFilterSidebar } from "@/components/product/ProductFilterSidebar";
 import { SortDropdown } from "@/components/product/SortDropdown";
-import { ShieldCheck, Search, Store, Package, Heart, User, LogOut, LogIn, Pill, Star, ChevronDown } from "lucide-react";
+import { ShieldCheck, Search, Store, Package, Heart, User, LogOut, LogIn, Pill, Star, ChevronDown, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { whatsappService } from "@/services/whatsappService";
 import { ShoppingCart } from "@/components/common/ShoppingCart";
@@ -49,10 +49,12 @@ import AnnouncementMarquee from "@/components/layout/AnnouncementMarquee";
 import logoImage from "@/assets/Logo.png";
 import NotificationBell from "@/components/common/NotificationBell";
 import { LoginPopup } from "@/components/user/LoginPopup";
+import { UnifiedAuth } from "@/components/common/UnifiedAuth";
 import { QuickLinksSidebar } from "@/components/layout/QuickLinksSidebar";
 import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { CustomerAccountDropdown } from "@/components/common/CustomerAccountDropdown";
 import CustomerLoginModal from "@/components/common/CustomerLoginModal";
+import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
 import babyImage from "@/assets/category-baby.jpg";
 import allergyImage from "@/assets/category-allergy.jpg";
 import coldFluImage from "@/assets/category-cold-flu.jpg";
@@ -153,7 +155,7 @@ const Index = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, signOut, checkAuth, user } = useAuth();
+  const { isAuthenticated, signOut, checkAuth, user, isAdmin } = useAuth();
   const { user: customerUser, isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading, initializeAuth: initializeCustomerAuth, signIn, signUp, signOut: customerSignOut, forgotPassword, updateProfile } = useCustomerAuth();
   const prefersReducedMotion = useReducedMotion();
   const { scrollY } = useScroll();
@@ -203,6 +205,7 @@ const Index = () => {
 
   useEffect(() => {
     checkAuth();
+    initializeCustomerAuth();
   }, []);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -648,95 +651,74 @@ const Index = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Customer-facing icons - Only show when owner is NOT logged in */}
+              {/* Customer-facing icons - Only show when owner is NOT logged in and customer is authenticated */}
               {!isAuthenticated && (
                 <>
-                  {/* Wishlist Icon - Standard e-commerce position */}
+                  {/* Wishlist Icon - Standard e-commerce position - only show when customer is authenticated */}
                   {deliveryEnabled && (
                     <div className="hidden md:flex items-center gap-1">
-                      <motion.button
-                        className="relative rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
-                        onClick={() => navigate("/wishlist")}
-                        title="Wishlist"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      >
-                        <Heart className="w-5 h-5" />
-                        {wishlistItems.length > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-5 h-5 text-xs flex items-center justify-center">
-                            {wishlistItems.length}
-                          </span>
-                        )}
-                      </motion.button>
+                      {isCustomerAuthenticated && (
+                        <motion.button
+                          className="relative rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
+                          onClick={() => navigate("/wishlist")}
+                          title="Wishlist"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                        >
+                          <Heart className="w-5 h-5" />
+                          {wishlistItems.length > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                              {wishlistItems.length}
+                            </span>
+                          )}
+                        </motion.button>
+                      )}
                     </div>
                   )}
 
-                  {/* Shopping Cart - Standard e-commerce position */}
-                  <div className="hidden md:block" title="Shopping Cart">
-                    <ShoppingCart discountPercentage={discountPercentage} />
-                  </div>
+                  {/* Shopping Cart - Standard e-commerce position - only show when customer is authenticated */}
+                  {isCustomerAuthenticated && (
+                    <div className="hidden md:block" title="Shopping Cart">
+                      <ShoppingCart discountPercentage={discountPercentage} />
+                    </div>
+                  )}
 
-                  {/* Customer Account/Login - Standard e-commerce position */}
-                  <div className="hidden md:flex items-center gap-1">
-                    <CustomerAccountDropdown />
-                    <CustomerLoginModal
-                      trigger={
-                        <motion.button
-                          className="rounded-full px-4 h-10 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                        >
-                          Customer Login
-                        </motion.button>
-                      }
-                    />
-                  </div>
+                  {/* Unified Login - Only show when neither customer nor owner is logged in */}
+                  {!isAuthenticated && !isCustomerAuthenticated && (
+                    <div className="hidden md:flex items-center gap-1">
+                      <UnifiedAuth
+                        trigger={
+                          <motion.button
+                            className="rounded-full px-5 h-10 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                          >
+                            Get Started
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </motion.button>
+                        }
+                      />
+                    </div>
+                  )}
                 </>
               )}
 
-              {/* Notification Bell - Always visible */}
-              <NotificationBell />
+              {/* Notification Bell - Only visible when owner is logged in */}
+              {isAuthenticated && <NotificationBell />}
 
               {/* Owner controls - Only show when owner is logged in */}
               {isAuthenticated && (
                 <div className="hidden md:flex items-center gap-1">
-                  <motion.button
-                    className="rounded-full px-5 h-10 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm"
-                    onClick={() => navigate("/owner")}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  >
-                    Dashboard
-                  </motion.button>
-                  <LogoutButton />
+                  <UserAccountDropdown />
                 </div>
               )}
 
-              {/* Owner Login - Only show when owner is NOT logged in */}
-              {!isAuthenticated && (
-                <div className="hidden md:flex items-center gap-1">
-                  <LoginPopup
-                    trigger={
-                      <motion.button
-                        className="rounded-full px-5 h-10 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      >
-                        Owner Login
-                      </motion.button>
-                    }
-                  />
-                </div>
-              )}
-
-              {/* Mobile menu button - Pass onReviewsClick and onOwnerLoginClick props */}
+              {/* Mobile menu button - Pass onReviewsClick and onUnifiedLoginClick props */}
               <MobileMenu
                 onReviewsClick={() => setShowReviews(true)}
-                onOwnerLoginClick={() => document.getElementById('mobile-owner-login-trigger')?.click()}
+                onUnifiedLoginClick={() => document.getElementById('mobile-unified-login-trigger')?.click()}
               />
             </div>
           </div>
@@ -821,11 +803,11 @@ const Index = () => {
         <AnnouncementMarquee />
       </div>
 
-      {/* Hidden LoginPopup trigger for mobile */}
+      {/* Hidden UnifiedAuth trigger for mobile */}
       <div className="hidden">
-        <LoginPopup
+        <UnifiedAuth
           trigger={
-            <button id="mobile-owner-login-trigger" />
+            <button id="mobile-unified-login-trigger" />
           }
         />
       </div>
