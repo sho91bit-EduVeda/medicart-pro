@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { db } from "@/integrations/firebase/config";
-import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { addDoc, collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
 import { Search, Download, Database, Loader2, Plus, X } from "lucide-react";
 
 interface IndianMedicine {
@@ -181,28 +181,25 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
     setCurrentPage(1);
     
     try {
-      // First, search local database
-      const localResults = await searchLocalProducts(searchTerm);
+      // Search both local database and dataset simultaneously
+      const [localResults, datasetResults] = await Promise.all([
+        searchLocalProducts(searchTerm),
+        searchMedicinesInDataset(searchTerm)
+      ]);
       
-      if (localResults.length > 0) {
-        // Found in local database, show these results
-        setLocalProducts(localResults);
-        setMedicines([]); // Clear dataset results
+      // Set both sets of results
+      setLocalProducts(localResults);
+      setMedicines(datasetResults);
+      
+      // Show appropriate toast messages
+      if (localResults.length > 0 && datasetResults.length > 0) {
+        toast.success(`Found ${localResults.length} existing product(s) in your inventory and ${datasetResults.length} medicine(s) in the dataset`);
+      } else if (localResults.length > 0) {
         toast.success(`Found ${localResults.length} existing product(s) in your inventory`);
+      } else if (datasetResults.length > 0) {
+        toast.success(`Found ${datasetResults.length} medicine(s) in the dataset`);
       } else {
-        // Not found locally, search the Indian medicine dataset
-        const datasetResults = await searchMedicinesInDataset(searchTerm);
-        
-        if (datasetResults.length > 0) {
-          setMedicines(datasetResults);
-          setLocalProducts([]); // Clear local results
-          toast.success(`Found ${datasetResults.length} medicine(s) in the dataset`);
-        } else {
-          // No results found anywhere
-          setLocalProducts([]);
-          setMedicines([]);
-          toast.info("No medicines found in either your inventory or the dataset");
-        }
+        toast.info("No medicines found in either your inventory or the dataset");
       }
     } catch (error) {
       // Log error for debugging
@@ -306,20 +303,37 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
     }
     
     try {
-      await addDoc(collection(db, "products"), {
-        name: formData.name,
-        category_id: formData.category_id,
-        description: formData.description,
-        uses: formData.uses,
-        composition: formData.composition,
-        original_price: parseFloat(formData.original_price),
-        image_url: formData.image_url || null,
-        in_stock: formData.in_stock,
-        stock_quantity: formData.stock_quantity,
-        created_at: new Date().toISOString()
-      });
-
-      toast.success("Medicine added successfully!");
+      if (selectedLocalProduct) {
+        // Update existing product
+        await updateDoc(doc(db, "products", selectedLocalProduct.id), {
+          name: formData.name,
+          category_id: formData.category_id,
+          description: formData.description,
+          uses: formData.uses,
+          composition: formData.composition,
+          original_price: parseFloat(formData.original_price),
+          image_url: formData.image_url || null,
+          in_stock: formData.in_stock,
+          stock_quantity: formData.stock_quantity,
+          updated_at: new Date().toISOString()
+        });
+        toast.success("Medicine updated successfully!");
+      } else {
+        // Add new product
+        await addDoc(collection(db, "products"), {
+          name: formData.name,
+          category_id: formData.category_id,
+          description: formData.description,
+          uses: formData.uses,
+          composition: formData.composition,
+          original_price: parseFloat(formData.original_price),
+          image_url: formData.image_url || null,
+          in_stock: formData.in_stock,
+          stock_quantity: formData.stock_quantity,
+          created_at: new Date().toISOString()
+        });
+        toast.success("Medicine added successfully!");
+      }
       // Close the dialog
       setIsDialogOpen(false);
       // Reset to first page
@@ -424,55 +438,59 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
         {localProducts.length > 0 && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Existing Products in Your Inventory</h3>
-            <div className="border rounded-md">
-              <table className="w-full">
-                <thead className="bg-muted sticky top-0">
-                  <tr>
-                    <th className="text-left p-3 text-sm font-medium">Product</th>
-                    <th className="text-left p-3 text-sm font-medium">Category</th>
-                    <th className="text-left p-3 text-sm font-medium">Price</th>
-                    <th className="text-left p-3 text-sm font-medium">Stock</th>
-                    <th className="text-left p-3 text-sm font-medium">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {localProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((product) => (
-                    <tr 
-                      key={product.id} 
-                      className="border-b hover:bg-muted/50 cursor-pointer"
-                      onClick={() => selectLocalProduct(product)}
-                    >
-                      <td className="p-3 text-sm font-medium">{product.name}</td>
-                      <td className="p-3 text-sm">
-                        {categories.find(cat => cat.id === product.category_id)?.name || "Uncategorized"}
-                      </td>
-                      <td className="p-3 text-sm">₹{product.original_price.toFixed(2)}</td>
-                      <td className="p-3 text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          product.in_stock 
-                            ? "bg-green-100 text-green-800" 
-                            : "bg-red-100 text-red-800"
-                        }`}>
-                          {product.in_stock ? "In Stock" : "Out of Stock"}
-                          {product.in_stock && ` (${product.stock_quantity})`}
-                        </span>
-                      </td>
-                      <td className="p-3 text-sm">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            selectLocalProduct(product);
-                          }}
+            <div className="overflow-x-auto">
+              <div className="min-w-full inline-block align-middle">
+                <div className="border rounded-md">
+                  <table className="min-w-full">
+                    <thead className="bg-muted sticky top-0">
+                      <tr>
+                        <th className="text-left p-3 text-sm font-medium">Product</th>
+                        <th className="text-left p-3 text-sm font-medium">Category</th>
+                        <th className="text-left p-3 text-sm font-medium">Price</th>
+                        <th className="text-left p-3 text-sm font-medium">Stock</th>
+                        <th className="text-left p-3 text-sm font-medium">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {localProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((product) => (
+                        <tr 
+                          key={product.id} 
+                          className="border-b hover:bg-muted/50 cursor-pointer"
+                          onClick={() => selectLocalProduct(product)}
                         >
-                          {product.in_stock ? "Update Stock" : "Restock"}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          <td className="p-3 text-sm font-medium">{product.name}</td>
+                          <td className="p-3 text-sm">
+                            {categories.find(cat => cat.id === product.category_id)?.name || "Uncategorized"}
+                          </td>
+                          <td className="p-3 text-sm">₹{product.original_price.toFixed(2)}</td>
+                          <td className="p-3 text-sm">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              product.in_stock 
+                                ? "bg-green-100 text-green-800" 
+                                : "bg-red-100 text-red-800"
+                            }`}>
+                              {product.stock_quantity || 0}
+                            </span>
+                          </td>
+                          <td className="p-3 text-sm">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                selectLocalProduct(product);
+                              }}
+                            >
+                              <span className="hidden sm:inline">{product.in_stock ? "Update Stock" : "Restock"}</span>
+                              <span className="sm:hidden">Update</span>
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
             
             {/* Pagination Controls */}
@@ -521,42 +539,47 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
         {medicines.length > 0 && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Search Results from Indian Medicine Dataset</h3>
-            <div className="border rounded-md">
-              <table className="w-full">
-                <thead className="bg-muted sticky top-0">
-                  <tr>
-                    <th className="text-left p-3 text-sm font-medium">Medicine</th>
-                    <th className="text-left p-3 text-sm font-medium">Manufacturer</th>
-                    <th className="text-left p-3 text-sm font-medium">Price</th>
-                    <th className="text-left p-3 text-sm font-medium">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {medicines.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((medicine) => (
-                    <tr 
-                      key={medicine.id} 
-                      className="border-b hover:bg-muted/50 cursor-pointer"
-                      onClick={() => selectMedicine(medicine)}
-                    >
-                      <td className="p-3 text-sm">{medicine.name}</td>
-                      <td className="p-3 text-sm">{medicine.manufacturer_name}</td>
-                      <td className="p-3 text-sm">₹{medicine["price(₹)"]}</td>
-                      <td className="p-3 text-sm">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            selectMedicine(medicine);
-                          }}
+            <div className="overflow-x-auto">
+              <div className="min-w-full inline-block align-middle">
+                <div className="border rounded-md">
+                  <table className="min-w-full">
+                    <thead className="bg-muted sticky top-0">
+                      <tr>
+                        <th className="text-left p-3 text-sm font-medium">Medicine</th>
+                        <th className="text-left p-3 text-sm font-medium">Manufacturer</th>
+                        <th className="text-left p-3 text-sm font-medium">Price</th>
+                        <th className="text-left p-3 text-sm font-medium">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {medicines.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((medicine) => (
+                        <tr 
+                          key={medicine.id} 
+                          className="border-b hover:bg-muted/50 cursor-pointer"
+                          onClick={() => selectMedicine(medicine)}
                         >
-                          Add to Inventory
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          <td className="p-3 text-sm">{medicine.name}</td>
+                          <td className="p-3 text-sm">{medicine.manufacturer_name}</td>
+                          <td className="p-3 text-sm">₹{medicine["price(₹)"]}</td>
+                          <td className="p-3 text-sm">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                selectMedicine(medicine);
+                              }}
+                            >
+                              <span className="hidden sm:inline">Add to Inventory</span>
+                              <span className="sm:hidden">Add</span>
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
             
             {/* Pagination Controls */}
@@ -609,106 +632,117 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
             setNewCategoryName(""); // Clear new category name
           }
         }}>
-          <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>
-                {selectedLocalProduct 
-                  ? "Update Existing Product" 
-                  : "Add Medicine to Store"}
-              </DialogTitle>
-              <DialogDesc>
-                {selectedMedicine 
-                  ? `Prepopulated from ${selectedMedicine.name}`
-                  : selectedLocalProduct
-                  ? `Updating ${selectedLocalProduct.name}`
-                  : 'Add new medicine manually'}
-              </DialogDesc>
-            </DialogHeader>
-            <div className="mb-4 p-3 bg-muted rounded-md">
-              <p className="text-sm">
-                <span className="font-medium">Note:</span> Fields marked with <span className="text-destructive">*</span> are required. 
-                Please ensure all required fields are filled before submitting.
-              </p>
+          <DialogContent className="sm:max-w-3xl h-full flex flex-col p-0 overflow-hidden rounded-2xl border-0 shadow-2xl">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-white relative overflow-hidden">
+              <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+              <DialogHeader className="relative z-10">
+                <DialogTitle className="text-lg font-bold tracking-tight text-white">
+                  {selectedLocalProduct 
+                    ? "Update Existing Product" 
+                    : "Add Medicine to Store"}
+                </DialogTitle>
+                <DialogDesc className="text-blue-100">
+                  {selectedMedicine 
+                    ? `Prepopulated from ${selectedMedicine.name}`
+                    : selectedLocalProduct
+                    ? `Updating ${selectedLocalProduct.name}`
+                    : 'Add new medicine manually'}
+                </DialogDesc>
+              </DialogHeader>
             </div>
-            <form onSubmit={addMedicineToStore} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Product Name <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    required
-                  />
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative">
+              <div className="absolute inset-0" style={{
+                backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
+                backgroundSize: '20px 20px',
+                opacity: 0.3
+              }}></div>
+              
+              <div className="relative z-10">
+                <div className="mb-4 p-3 bg-muted rounded-md">
+                  <p className="text-sm">
+                    <span className="font-medium">Note:</span> Fields marked with <span className="text-destructive">*</span> are required. 
+                    Please ensure all required fields are filled before submitting.
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category <span className="text-destructive">*</span></Label>
-                  
-                  {/* Show category selector or add category form */}
-                  {isAddingCategory ? (
-                    <div className="flex gap-2">
-                      <Input
-                        value={newCategoryName}
-                        onChange={(e) => setNewCategoryName(e.target.value)}
-                        placeholder="Enter category name"
-                        className="flex-1"
-                      />
-                      <Button 
-                        type="button" 
-                        onClick={handleAddCategory}
-                        disabled={addingCategoryLoading}
-                      >
-                        {addingCategoryLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          "Add"
-                        )}
-                      </Button>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => setIsAddingCategory(false)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  ) : (
+                <form onSubmit={addMedicineToStore} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <Select 
-                          value={formData.category_id} 
-                          onValueChange={(value) => handleInputChange("category_id", value)}
-                          required
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id}>
-                                {cat.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          onClick={() => setIsAddingCategory(true)}
-                          className="shrink-0"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      {categories.length === 0 && (
-                        <p className="text-sm text-muted-foreground">
-                          No categories available. Add a category to continue.
-                        </p>
+                      <Label htmlFor="name">Product Name <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange("name", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Category <span className="text-destructive">*</span></Label>
+                      
+                      {/* Show category selector or add category form */}
+                      {isAddingCategory ? (
+                        <div className="flex gap-2">
+                          <Input
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            placeholder="Enter category name"
+                            className="flex-1"
+                          />
+                          <Button 
+                            type="button" 
+                            onClick={handleAddCategory}
+                            disabled={addingCategoryLoading}
+                          >
+                            {addingCategoryLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              "Add"
+                            )}
+                          </Button>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => setIsAddingCategory(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <Select 
+                              value={formData.category_id} 
+                              onValueChange={(value) => handleInputChange("category_id", value)}
+                              required
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {categories.map((cat) => (
+                                  <SelectItem key={cat.id} value={cat.id}>
+                                    {cat.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => setIsAddingCategory(true)}
+                              className="shrink-0"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          {categories.length === 0 && (
+                            <p className="text-sm text-muted-foreground">
+                              No categories available. Add a category to continue.
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
 
               {/* Hidden fields - kept for internal use but not shown in UI */}
               <input 
@@ -811,8 +845,10 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
                 </Button>
               </div>
             </form>
-          </DialogContent>
-        </Dialog>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
         {searchPerformed && localProducts.length === 0 && medicines.length === 0 && !loading && (
           <div className="text-center py-8">

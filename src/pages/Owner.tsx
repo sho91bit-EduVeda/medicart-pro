@@ -18,7 +18,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt, Info, AlertCircle, X, ArrowLeft } from "lucide-react";
+import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt, Info, AlertCircle, X, ArrowLeft, Home } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ExcelUpload } from "@/components/common/ExcelUpload";
 import { IndianMedicineDatasetImport } from "@/components/admin/IndianMedicineDatasetImport";
@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Menu } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { DashboardHome } from "@/components/dashboard/DashboardHome";
 
 
 interface Category {
@@ -101,7 +102,7 @@ const Owner = () => {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   // Navigation state
-  const [activeSection, setActiveSection] = useState<string>("manage-inventory");
+  const [activeSection, setActiveSection] = useState<string>("dashboard-home");
   const [activeCategory, setActiveCategory] = useState("Inventory");
 
   // Search and filter state
@@ -241,6 +242,20 @@ const Owner = () => {
       fetchOrders();
     }
   }, [activeSection]);
+
+  // Fetch products and orders for dashboard when dashboard-home is active
+  useEffect(() => {
+    if (activeSection === "dashboard-home") {
+      fetchProducts();
+      fetchOrders();
+    }
+  }, [activeSection]);
+
+  // Fetch products and orders on initial load to populate dashboard stats
+  useEffect(() => {
+    fetchProducts();
+    fetchOrders();
+  }, []);
 
   // Fetch products when component mounts or when active section changes to manage-inventory
   useEffect(() => {
@@ -1094,18 +1109,18 @@ const Owner = () => {
                   </SheetHeader>
                   <div className="flex flex-col h-[calc(100vh-100px)]">
                     <div className="flex-1 overflow-y-auto space-y-6">
-                      {/* Home button as first option */}
+                      {/* Dashboard Home button as first option */}
                       <div className="space-y-1">
                         <Button
                           variant="ghost"
                           className="justify-start gap-3 w-full text-gray-800 dark:text-white"
                           onClick={() => {
-                            navigate("/");
+                            window.location.href = '/';
                             // Close the sheet using the proper Radix UI API
                             document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
                           }}
                         >
-                          <Store className="w-5 h-5" />
+                          <Home className="w-5 h-5" />
                           <span className="font-medium">Home</span>
                         </Button>
                       </div>
@@ -1127,6 +1142,20 @@ const Owner = () => {
                                     onClick={() => {
                                       if (item.id === "seed-database") {
                                         seedDatabase();
+                                      } else if (item.id === "add-product") {
+                                        setActiveSection("data-import");
+                                      } else if (item.id === "categories") {
+                                        setActiveSection("manage-inventory");
+                                        // Close the sheet using the proper Radix UI API
+                                        document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
+                                        // Scroll to the categories section
+                                        setTimeout(() => {
+                                          const categorySection = document.querySelector('[data-section="manage-categories"]');
+                                          if (categorySection) {
+                                            categorySection.scrollIntoView({ behavior: 'smooth' });
+                                          }
+                                        }, 100);
+                                        return; // Exit early to prevent closing the sheet again
                                       } else {
                                         setActiveSection(item.id);
                                       }
@@ -1189,7 +1218,23 @@ const Owner = () => {
                         <Button
                           variant={activeSection === item.id ? "default" : "ghost"}
                           className="w-full justify-start gap-3 py-6 text-left text-gray-800 dark:text-white transition-all duration-200 pl-8"
-                          onClick={() => setActiveSection(item.id)}
+                          onClick={() => {
+                            // Handle special navigation cases for DashboardHome component
+                            if (item.id === "add-product") {
+                              setActiveSection("data-import");
+                            } else if (item.id === "categories") {
+                              setActiveSection("manage-inventory");
+                              // Scroll to the categories section
+                              setTimeout(() => {
+                                const categorySection = document.querySelector('[data-section="manage-categories"]');
+                                if (categorySection) {
+                                  categorySection.scrollIntoView({ behavior: 'smooth' });
+                                }
+                              }, 100);
+                            } else {
+                              setActiveSection(item.id);
+                            }
+                          }}
                         >
                           <Icon className="w-5 h-5" />
                           <span className="font-medium">{item.label}</span>
@@ -1258,48 +1303,41 @@ const Owner = () => {
               </motion.div>
             )}
             
-            {/* Quick Stats Section - Mobile Only */}
-            <motion.div 
-              className="md:hidden grid grid-cols-2 gap-3 mb-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-                <Package className="w-6 h-6 text-blue-600 mx-auto mb-1" />
-                <div className="text-lg font-bold text-blue-600">{orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString()).length}</div>
-                <div className="text-xs text-gray-600 mt-1">Today's Orders</div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-                <TrendingUp className="w-6 h-6 text-green-600 mx-auto mb-1" />
-                <div className="text-lg font-bold text-green-600">₹{orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString()).reduce((sum, o) => sum + (o.total_amount || 0), 0).toFixed(0)}</div>
-                <div className="text-xs text-gray-600 mt-1">Revenue Today</div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-                <AlertTriangle className="w-6 h-6 text-orange-600 mx-auto mb-1" />
-                <div className="text-lg font-bold text-orange-600">{products.filter(p => (p.stock_quantity || 0) < 10).length}</div>
-                <div className="text-xs text-gray-600 mt-1">Low Stock</div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-                <Mail className="w-6 h-6 text-purple-600 mx-auto mb-1" />
-                <div className="text-lg font-bold text-purple-600">{requests.filter(r => r.status === 'pending').length}</div>
-                <div className="text-xs text-gray-600 mt-1">Pending Requests</div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-                <Database className="w-6 h-6 text-teal-600 mx-auto mb-1" />
-                <div className="text-lg font-bold text-teal-600">{products.length}</div>
-                <div className="text-xs text-gray-600 mt-1">Total Products</div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-                <Database className="w-6 h-6 text-indigo-600 mx-auto mb-1" />
-                <div className="text-lg font-bold text-indigo-600">{categories.length}</div>
-                <div className="text-xs text-gray-600 mt-1">Categories</div>
-              </div>
-            </motion.div>
+
 
 
 
             {/* Content Sections */}
+            {activeSection === "dashboard-home" && (
+              <DashboardHome 
+                onNavigate={(section) => {
+                  // Handle special navigation cases for DashboardHome component
+                  if (section === 'add-product') {
+                    setActiveSection('data-import');
+                  } else if (section === 'categories') {
+                    setActiveSection('manage-inventory');
+                    // Scroll to the categories section
+                    setTimeout(() => {
+                      const categorySection = document.querySelector('[data-section="manage-categories"]');
+                      if (categorySection) {
+                        categorySection.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }, 100);
+                  } else if (section === 'features') {
+                    setActiveSection('features');
+                  } else {
+                    setActiveSection(section);
+                  }
+                }}
+                stats={{
+                  totalProducts: products.length,
+                  lowStock: products.filter(p => (p.stock_quantity || 0) < 10).length,
+                  outOfStock: products.filter(p => !(p.in_stock)).length,
+                  todaySales: orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString()).reduce((sum, o) => sum + (o.total_amount || 0), 0)
+                }}
+              />
+            )}
+            
             {activeSection === "data-import" && (
               <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
                 <CardContent className="p-6">
@@ -1575,14 +1613,14 @@ const Owner = () => {
                               <p className="text-sm text-muted-foreground">
                                 Showing {filteredProducts.length} of {products.length} products
                               </p>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {filteredProducts.map((product) => (
                                   <div key={product.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                                    <div className="flex justify-between items-start">
+                                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                                       <div className="flex-1 min-w-0">
                                         <h3 className="font-medium text-lg truncate">{product.name}</h3>
                                         <p className="text-sm text-muted-foreground">₹{product.original_price?.toFixed(2)}</p>
-                                        <div className="flex items-center gap-2 mt-2">
+                                        <div className="flex flex-wrap gap-2 mt-2">
                                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                             product.in_stock 
                                               ? "bg-green-100 text-green-800" 
@@ -1620,7 +1658,7 @@ const Owner = () => {
                                           </Button>
                                         </div>
                                       </div>
-                                      <div className="flex gap-2 ml-2">
+                                      <div className="flex gap-2 self-start">
                                         <Button
                                           variant="outline"
                                           size="sm"
@@ -1648,7 +1686,7 @@ const Owner = () => {
                   </AccordionContent>
                 </AccordionItem>
                 {/* Category Management Section - Part of same Accordion */}
-                <AccordionItem value="manage-categories" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+                <AccordionItem value="manage-categories" className="border border-gray-200 rounded-lg mb-3 overflow-hidden" data-section="manage-categories">
                   <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-all duration-200">
                     <div className="flex items-center gap-2">
                       <Database className="w-4 h-4" />
@@ -1977,9 +2015,9 @@ const Owner = () => {
                           {filteredAndSortedRequests.map((request) => (
                             <div key={request.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h4 className="font-semibold">{request.medicine_name}</h4>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                    <h4 className="font-semibold truncate max-w-[70%]">{request.medicine_name}</h4>
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                       request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                       request.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
@@ -1999,7 +2037,7 @@ const Owner = () => {
                                     )}
                                   </div>
                                 </div>
-                                <div className="flex flex-col sm:flex-row gap-2">
+                                <div className="flex flex-col sm:flex-row gap-2 min-w-fit">
                                   <Button 
                                     variant="outline" 
                                     size="sm"
@@ -2007,6 +2045,7 @@ const Owner = () => {
                                       setSelectedRequest(request);
                                       setIsModalOpen(true);
                                     }}
+                                    className="min-w-[100px]"
                                   >
                                     View Details
                                   </Button>
@@ -2027,6 +2066,7 @@ const Owner = () => {
                                     variant="destructive" 
                                     size="sm"
                                     onClick={() => handleDeleteRequest(request.id, request.medicine_name)}
+                                    className="min-w-[100px]"
                                   >
                                     <Trash className="w-4 h-4 mr-2" />
                                     Delete

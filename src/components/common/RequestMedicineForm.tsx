@@ -156,9 +156,10 @@ const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName 
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your full name"
                 required
+                autoComplete="name"
               />
             </div>
-            
+                        
             <div className="space-y-2">
               <Label htmlFor="email">Email *</Label>
               <Input
@@ -168,9 +169,10 @@ const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName 
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 required
+                autoComplete="email"
               />
             </div>
-            
+                        
             <div className="space-y-2">
               <Label htmlFor="phone">Phone *</Label>
               <Input
@@ -180,6 +182,7 @@ const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName 
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+91 98765 43210"
                 required
+                autoComplete="tel"
               />
             </div>
           </div>

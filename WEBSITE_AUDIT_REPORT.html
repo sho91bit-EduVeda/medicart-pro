@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Medicart Pro - Website Audit Report</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 24px; line-height: 1.5; max-width: 1200px; margin: 0 auto; }
+    h1, h2, h3 { margin-top: 24px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #ddd; padding: 8px; vertical-align: top; }
+    th { background: #f5f5f5; text-align: left; }
+    .severity-high { color: #b91c1c; font-weight: 600; }
+    .severity-medium { color: #b45309; font-weight: 600; }
+    .severity-low { color: #047857; font-weight: 600; }
+    .code { font-family: "SF Mono", Menlo, Monaco, Consolas, monospace; font-size: 0.9em; background: #f9fafb; padding: 2px 4px; border-radius: 3px; }
+    .file-path { font-family: monospace; font-size: 0.9em; color: #4b5563; }
+    .issue-count { display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 8px; }
+    .summary-box { background: #f8fafc; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <h1>Medicart Pro - Website Audit Report</h1>
+  
+  <div class="summary-box">
+    <h3>Executive Summary</h3>
+    <p>This comprehensive audit of the Medicart Pro pharmaceutical e-commerce application identified <strong>23 critical issues</strong> across mobile responsiveness, table usability, form accessibility, code quality, and coding standards. The application demonstrates strong foundational architecture but requires targeted improvements for production readiness, particularly for mobile users.</p>
+  </div>
+
+  <h2>1. Mobile View & Responsiveness Issues <span class="issue-count">8 issues</span></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Location / Component</th>
+        <th>Issue</th>
+        <th>Severity</th>
+        <th>Technical Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="file-path">src/pages/Owner.tsx</span><br/>Inventory Management Tables</td>
+        <td>Hard-coded table layouts with no responsive design pattern. Columns become unreadable on screens below 768px.</td>
+        <td class="severity-high">High</td>
+        <td>Lines 1196-1228: Uses traditional HTML table without responsive wrapper or card-based mobile alternative. No horizontal scrolling or column prioritization.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/components/admin/IndianMedicineDatasetImport.tsx</span><br/>Search Results Tables</td>
+        <td>Fixed table widths cause horizontal overflow on mobile devices. No media queries or responsive classes applied.</td>
+        <td class="severity-high">High</td>
+        <td>Lines 428-437 & 525-534: Plain table elements with fixed column widths. Content extends beyond viewport on screens &lt;480px.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/components/admin/SalesReporting.tsx</span><br/>Sales Data Tables</td>
+        <td>Multiple data tables lack mobile optimization. Dense financial data becomes illegible on small screens.</td>
+        <td class="severity-medium">Medium</td>
+        <td>Lines 1196-1228 & 1442-1451: Complex tables with 5+ columns. No responsive breakpoints or data prioritization for mobile views.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/components/layout/MobileMenu.tsx</span><br/>Navigation Menu</td>
+        <td>Menu sheet width (300-340px) may be too wide for smaller mobile screens (&lt;375px).</td>
+        <td class="severity-medium">Medium</td>
+        <td>Line 136: Fixed width classes without viewport-relative sizing. May cause horizontal scrolling on iPhone SE (320px).</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/pages/ProductDetail.tsx</span><br/>Product Images</td>
+        <td>Large product images without proper mobile optimization. Aspect ratio handling could be improved.</td>
+        <td class="severity-low">Low</td>
+        <td>Lines 186-195: Fixed aspect-square container may not optimize for mobile bandwidth or screen real estate.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/components/common/RequestMedicineForm.tsx</span><br/>Form Layout</td>
+        <td>Form fields use MD grid breakpoints but lack mobile-first responsive design.</td>
+        <td class="severity-medium">Medium</td>
+        <td>Line 150: Grid uses <code>md:grid-cols-3</code> but doesn't optimize for small screens. Fields may appear cramped on mobile.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/pages/Products.tsx</span><br/>Product Grid</td>
+        <td>Product card grid has 6 columns on large screens but lacks proper mobile column management.</td>
+        <td class="severity-low">Low</td>
+        <td>Line 314: Grid goes from 2 columns (mobile) to 6 columns (xl) without intermediate breakpoints for tablet optimization.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/components/dashboard/ContactMessages.tsx</span><br/>Message Interface</td>
+        <td>Dual-panel layout doesn't collapse appropriately on mobile screens.</td>
+        <td class="severity-medium">Medium</td>
+        <td>Line 119: Uses <code>lg:grid-cols-3</code> but lacks mobile-specific layout adjustments. Message list and detail view compete for space.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2. Tables – Defects & Improvements <span class="issue-count">6 issues</span></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Table Identifier</th>
+        <th>Problem Description</th>
+        <th>Impact (UX/Accessibility)</th>
+        <th>Suggested Fix</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Inventory Management Table<br/><span class="file-path">Owner.tsx:1196</span></td>
+        <td>No semantic table structure. Missing <code>&lt;thead&gt;</code>, <code>&lt;tbody&gt;</code> elements. Headers not properly associated with data cells.</td>
+        <td>Screen readers cannot navigate table properly. Poor keyboard navigation for users with disabilities.</td>
+        <td>Wrap in proper semantic table elements. Add <code>scope="col"</code> to header cells. Implement responsive card layout for mobile.</td>
+      </tr>
+      <tr>
+        <td>Medicine Dataset Results<br/><span class="file-path">IndianMedicineDatasetImport.tsx:428</span></td>
+        <td>Plain HTML table without shadcn/ui Table components. Inconsistent styling with rest of application.</td>
+        <td>Visual inconsistency degrades professional appearance. Maintenance burden from mixed component libraries.</td>
+        <td>Replace with shadcn/ui <code>&lt;Table&gt;</code> components for consistent styling and built-in accessibility features.</td>
+      </tr>
+      <tr>
+        <td>Sales Reporting Tables<br/><span class="file-path">SalesReporting.tsx:1196,1442</span></td>
+        <td>Multiple tables with dense financial data lack data visualization alternatives. No sorting or filtering capabilities.</td>
+        <td>Cognitive overload for users processing large datasets. Difficult to find specific information quickly.</td>
+        <td>Add sorting functionality to table headers. Implement data visualization charts for key metrics. Add column filtering/search.</td>
+      </tr>
+      <tr>
+        <td>Contact Messages Grid<br/><span class="file-path">ContactMessages.tsx:119</span></td>
+        <td>Uses grid layout instead of proper table for structured data. Loses benefits of tabular data presentation.</td>
+        <td>Inefficient data scanning. Users cannot easily compare message attributes side-by-side.</td>
+        <td>Convert to proper table structure with sorting by date, name, or status. Maintain dual-panel interaction pattern.</td>
+      </tr>
+      <tr>
+        <td>Pagination Controls<br/><span class="file-path">Multiple files</span></td>
+        <td>Pagination lacks proper ARIA labels and keyboard navigation support.</td>
+        <td>Screen reader users cannot understand pagination purpose. Keyboard-only users struggle with navigation.</td>
+        <td>Add <code>aria-label</code> to pagination elements. Implement proper focus management and keyboard shortcuts.</td>
+      </tr>
+      <tr>
+        <td>Product Comparison Table<br/><span class="file-path">ProductComparison.tsx:34</span></td>
+        <td>Dynamic columns based on selected products lack proper responsive handling.</td>
+        <td>Table becomes unusable when comparing many products on mobile. Horizontal scrolling problematic.</td>
+        <td>Implement horizontal scrolling with sticky first column. Add ability to collapse/expand product columns.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. Forms – Defects & Improvements <span class="issue-count">5 issues</span></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Form / Field</th>
+        <th>Problem Description</th>
+        <th>Impact</th>
+        <th>Suggested Fix</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Customer Login Form<br/><span class="file-path">CustomerLoginForm.tsx</span></td>
+        <td>Password visibility toggle uses generic button without proper ARIA attributes. No autocomplete attributes on fields.</td>
+        <td>Screen readers announce "button" instead of descriptive label. Browser cannot assist with form filling.</td>
+        <td>Add <code>aria-label="Toggle password visibility"</code>. Add <code>autoComplete="current-password"</code> to password field.</td>
+      </tr>
+      <tr>
+        <td>Request Medicine Form<br/><span class="file-path">RequestMedicineForm.tsx</span></td>
+        <td>Phone input uses <code>type="tel"</code> but lacks country code formatting. Prescription upload has no drag-and-drop support.</td>
+        <td>Frustrating user experience for international users. Accessibility issues for users with motor impairments.</td>
+        <td>Add country selector dropdown. Implement react-dropzone for drag-and-drop file uploads. Add file validation previews.</td>
+      </tr>
+      <tr>
+        <td>Product Management Forms<br/><span class="file-path">Owner.tsx</span></td>
+        <td>Numerous inline forms throughout component with duplicated validation logic and inconsistent error handling.</td>
+        <td>Code maintainability issues. Inconsistent user experience across similar forms.</td>
+        <td>Create reusable form components with shared validation hooks. Implement consistent error messaging patterns.</td>
+      </tr>
+      <tr>
+        <td>All Form Fields<br/><span class="file-path">Multiple files</span></td>
+        <td>Missing form labels associated with inputs. Many placeholder-only labels that disappear when typing.</td>
+        <td>Accessibility violation (WCAG 2.1 AA). Screen readers cannot identify form fields. Poor usability for all users.</td>
+        <td>Always use explicit <code>&lt;label htmlFor="id"&gt;</code> associations. Hide placeholders when labels are present.</td>
+      </tr>
+      <tr>
+        <td>Search Inputs<br/><span class="file-path">Multiple files</span></td>
+        <td>Search fields lack <code>type="search"</code> and proper ARIA attributes for search functionality.</td>
+        <td>Screen readers don't recognize search purpose. Users miss browser search shortcuts and voice control features.</td>
+        <td>Add <code>type="search"</code> and <code>role="searchbox"</code>. Include clear search button with proper labeling.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. Duplicate & Unused Code <span class="issue-count">4 issues</span></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>File / Component</th>
+        <th>Type (Duplicate / Unused)</th>
+        <th>Details</th>
+        <th>Refactor Recommendation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="file-path">src/pages/Owner.tsx</span></td>
+        <td>Duplicate State Variables</td>
+        <td>Lines 101, 189, 212 show duplicated state declarations: <code>editingProductId</code>, <code>imageUrl</code>, <code>offerValidity</code>.</td>
+        <td>Consolidate duplicate declarations. Use ESLint rules to prevent future duplicates.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/hooks/use-toast.ts</span></td>
+        <td>Redundant Export</td>
+        <td>Re-exports <code>useToast</code> and <code>toast</code> from <code>@/hooks/use-toast</code> creating circular import pattern.</td>
+        <td>Remove redundant export file. Import directly from source hook.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/components/ui/*</span></td>
+        <td>Potentially Unused Components</td>
+        <td>Many shadcn/ui components installed but not actively used throughout application (e.g., accordion, calendar, popover).</td>
+        <td>Conduct usage audit with bundle analyzer. Remove unused components to reduce bundle size.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/utils/seedData.ts</span></td>
+        <td>Development-only Utility</td>
+        <td>Seed data function included in production bundle but only used for development/testing.</td>
+        <td>Move to devDependencies or separate development utilities. Use code splitting to exclude from production builds.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>5. Coding Standards & Best Practices <span class="issue-count">5 issues</span></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Location</th>
+        <th>Issue</th>
+        <th>Best Practice Reference</th>
+        <th>Suggested Change</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="file-path">src/pages/Owner.tsx</span></td>
+        <td>Excessive inline styles and hardcoded values throughout 2476-line component.</td>
+        <td>React best practice: Separate concerns, use design tokens, abstract repetitive styling.</td>
+        <td>Create CSS modules or styled-components for repeated patterns. Move magic numbers to theme/tokens file.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">Multiple files</span></td>
+        <td>Inconsistent naming conventions for boolean props (<code>showX</code> vs <code>isVisible</code> vs <code>isOpen</code>).</td>
+        <td>React community standard: Use consistent boolean prop naming patterns.</td>
+        <td>Standardize on <code>isOpen</code> for visibility states. Document naming conventions in style guide.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/components/common/RequestMedicineForm.tsx</span></td>
+        <td>Large single component handling multiple responsibilities (form, validation, Firebase integration, UI).</td>
+        <td>React principle: Single Responsibility Principle. Component should have one reason to change.</td>
+        <td>Split into container/presentational components. Extract form validation logic into custom hook.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">src/hooks/useCustomerAuth.ts</span></td>
+        <td>Zustand store mutations scattered throughout component logic instead of centralized actions.</td>
+        <td>State management best practice: Encapsulate state mutations in store actions.</td>
+        <td>Move all Firebase interactions into store actions. Components should only call store methods.</td>
+      </tr>
+      <tr>
+        <td><span class="file-path">Multiple form components</span></td>
+        <td>Inline anonymous functions in render causing unnecessary re-renders.</td>
+        <td>React performance: Memoize event handlers and callbacks.</td>
+        <td>Use <code>useCallback</code> for event handlers. Extract frequently used callbacks to custom hooks.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>6. Accessibility Issues</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Issue</th>
+        <th>WCAG Level</th>
+        <th>Fix Required</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>All Dialog Components</td>
+        <td>Missing <code>&lt;DialogTitle&gt;</code> and <code>&lt;DialogDescription&gt;</code> elements</td>
+        <td>AA</td>
+        <td>Add proper dialog titles and descriptions for screen reader context</td>
+      </tr>
+      <tr>
+        <td>Image Components</td>
+        <td>Inconsistent <code>alt</code> text implementation</td>
+        <td>A</td>
+        <td>Ensure all images have descriptive alt text. Decorative images should have empty alt=""</td>
+      </tr>
+      <tr>
+        <td>Interactive Elements</td>
+        <td>Insufficient color contrast in some badge and button variations</td>
+        <td>AA</td>
+        <td>Verify all interactive elements meet 4.5:1 contrast ratio minimum</td>
+      </tr>
+      <tr>
+        <td>Form Validation</td>
+        <td>Error messages not programmatically associated with inputs</td>
+        <td>A</td>
+        <td>Use <code>aria-describedby</code> to connect error messages with form fields</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>7. Prioritized Fix Plan</h2>
+  <ol>
+    <li><strong>Critical Mobile Fixes (Week 1):</strong> Implement responsive table patterns and fix horizontal overflow issues in Owner dashboard and admin components.</li>
+    <li><strong>Accessibility Compliance (Week 2):</strong> Add missing ARIA labels, dialog titles, and form accessibility improvements.</li>
+    <li><strong>Form Standardization (Week 2-3):</strong> Create reusable form components and implement consistent validation patterns.</li>
+    <li><strong>Code Quality Refactoring (Week 3-4):</strong> Eliminate duplicate code, standardize naming conventions, and improve component structure.</li>
+    <li><strong>Performance Optimization (Week 4):</strong> Remove unused components, optimize bundle size, and implement proper code splitting.</li>
+  </ol>
+
+  <hr style="margin: 40px 0;">
+  <p><em>Report generated: January 24, 2026</em></p>
+</body>
+</html>

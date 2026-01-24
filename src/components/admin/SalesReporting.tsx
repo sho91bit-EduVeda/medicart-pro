@@ -1192,52 +1192,56 @@ const SalesReporting = () => {
                     
                     {/* Product Details Table (only shown when product is selected) */}
                     {product.productName && (
-                      <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Product</TableHead>
-                              <TableHead>Unit Price (₹)</TableHead>
-                              <TableHead>Quantity</TableHead>
-                              <TableHead>Total (₹)</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            <TableRow>
-                              <TableCell className="font-medium">{product.productName}</TableCell>
-                              <TableCell>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={product.price.toFixed(2)}
-                                  onChange={(e) => handleProductChange(index, "price", parseFloat(e.target.value) || 0)}
-                                  className="w-24"
-                                />
-                              </TableCell>
-                              <TableCell>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  value={product.quantity}
-                                  onChange={(e) => handleProductChange(index, "quantity", parseInt(e.target.value) || 1)}
-                                  className="w-20"
-                                />
-                              </TableCell>
-                              <TableCell>₹{product.totalPrice.toFixed(2)}</TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => handleRemoveProductSale(index)}
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
+                      <div className="overflow-x-auto">
+                        <div className="min-w-full inline-block align-middle">
+                          <div className="border rounded-lg overflow-hidden">
+                            <Table className="min-w-full">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Product</TableHead>
+                                  <TableHead>Unit Price (₹)</TableHead>
+                                  <TableHead>Quantity</TableHead>
+                                  <TableHead>Total (₹)</TableHead>
+                                  <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                <TableRow>
+                                  <TableCell className="font-medium">{product.productName}</TableCell>
+                                  <TableCell>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={product.price.toFixed(2)}
+                                      onChange={(e) => handleProductChange(index, "price", parseFloat(e.target.value) || 0)}
+                                      className="w-24"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      value={product.quantity}
+                                      onChange={(e) => handleProductChange(index, "quantity", parseInt(e.target.value) || 1)}
+                                      className="w-20"
+                                    />
+                                  </TableCell>
+                                  <TableCell>₹{product.totalPrice.toFixed(2)}</TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => handleRemoveProductSale(index)}
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1439,135 +1443,139 @@ const SalesReporting = () => {
                       </div>
                     </div>
                     
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Time</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Products</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {dailySales.map((sale) => (
-                          <TableRow key={sale.id}>
-                            {editingSaleId === sale.id ? (
-                              // Editing mode
-                              <>
-                                <TableCell colSpan={3}>
-                                  <div className="space-y-4">
-                                    <h4 className="font-medium">Editing Sale</h4>
-                                    {editingSaleProducts.map((product, index) => (
-                                      <div key={index} className="flex flex-wrap gap-2 items-end">
-                                        <div className="flex-1 min-w-[200px]">
-                                          <Label>Product</Label>
-                                          <Input
-                                            value={product.productName}
-                                            readOnly
-                                            className="bg-muted"
-                                          />
-                                        </div>
-                                        <div className="w-24">
-                                          <Label>Price</Label>
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={product.price.toFixed(2)}
-                                            onChange={(e) => updateEditingProduct(index, "price", parseFloat(e.target.value) || 0)}
-                                          />
-                                        </div>
-                                        <div className="w-20">
-                                          <Label>Qty</Label>
-                                          <Input
-                                            type="number"
-                                            min="1"
-                                            value={product.quantity}
-                                            onChange={(e) => updateEditingProduct(index, "quantity", parseInt(e.target.value) || 1)}
-                                          />
-                                        </div>
-                                        <div className="w-24">
-                                          <Label>Total</Label>
-                                          <Input
-                                            value={product.totalPrice.toFixed(2)}
-                                            readOnly
-                                            className="bg-muted"
-                                          />
-                                        </div>
+                    <div className="overflow-x-auto">
+                      <div className="min-w-full inline-block align-middle">
+                        <Table className="min-w-full">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Time</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead>Products</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {dailySales.map((sale) => (
+                              <TableRow key={sale.id}>
+                                {editingSaleId === sale.id ? (
+                                  // Editing mode
+                                  <>
+                                    <TableCell colSpan={3}>
+                                      <div className="space-y-4">
+                                        <h4 className="font-medium">Editing Sale</h4>
+                                        {editingSaleProducts.map((product, index) => (
+                                          <div key={index} className="flex flex-wrap gap-2 items-end">
+                                            <div className="flex-1 min-w-[200px]">
+                                              <Label>Product</Label>
+                                              <Input
+                                                value={product.productName}
+                                                readOnly
+                                                className="bg-muted"
+                                              />
+                                            </div>
+                                            <div className="w-24">
+                                              <Label>Price</Label>
+                                              <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={product.price.toFixed(2)}
+                                                onChange={(e) => updateEditingProduct(index, "price", parseFloat(e.target.value) || 0)}
+                                              />
+                                            </div>
+                                            <div className="w-20">
+                                              <Label>Qty</Label>
+                                              <Input
+                                                type="number"
+                                                min="1"
+                                                value={product.quantity}
+                                                onChange={(e) => updateEditingProduct(index, "quantity", parseInt(e.target.value) || 1)}
+                                              />
+                                            </div>
+                                            <div className="w-24">
+                                              <Label>Total</Label>
+                                              <Input
+                                                value={product.totalPrice.toFixed(2)}
+                                                readOnly
+                                                className="bg-muted"
+                                              />
+                                            </div>
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex flex-col gap-2">
-                                    <Button
-                                      size="sm"
-                                      onClick={saveEditedSale}
-                                      disabled={loading}
-                                    >
-                                      Save
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={cancelEditingSale}
-                                      disabled={loading}
-                                    >
-                                      Cancel
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </>
-                            ) : (
-                              // Display mode
-                              <>
-                                <TableCell>
-                                  {sale.createdAt ? new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
-                                </TableCell>
-                                <TableCell>₹{sale.totalAmount.toFixed(2)}</TableCell>
-                                <TableCell>
-                                  <div className="space-y-1">
-                                    {sale.productsSold.map((product, idx) => (
-                                      <div key={idx} className="text-sm">
-                                        {product.productName} ({product.quantity} × ₹{product.price.toFixed(2)})
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <div className="flex flex-col gap-2">
+                                        <Button
+                                          size="sm"
+                                          onClick={saveEditedSale}
+                                          disabled={loading}
+                                        >
+                                          Save
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={cancelEditingSale}
+                                          disabled={loading}
+                                        >
+                                          Cancel
+                                        </Button>
                                       </div>
-                                    ))}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => startEditingSale(sale)}
-                                      disabled={loading}
-                                    >
-                                      Edit
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        console.log("Daily sales summary delete button clicked");
-                                        console.log("Sale ID:", sale.id);
-                                        if (sale.id) {
-                                          handleDeleteDailySale(sale.id);
-                                        } else {
-                                          console.log("Sale ID is missing");
-                                          toast.error("Cannot delete sale: Missing ID");
-                                        }
-                                      }}
-                                    >
-                                      <Trash className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </>
-                            )}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                                    </TableCell>
+                                  </>
+                                ) : (
+                                  // Display mode
+                                  <>
+                                    <TableCell>
+                                      {sale.createdAt ? new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                    </TableCell>
+                                    <TableCell>₹{sale.totalAmount.toFixed(2)}</TableCell>
+                                    <TableCell>
+                                      <div className="space-y-1">
+                                        {sale.productsSold.map((product, idx) => (
+                                          <div key={idx} className="text-sm">
+                                            {product.productName} ({product.quantity} × ₹{product.price.toFixed(2)})
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <div className="flex justify-end gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => startEditingSale(sale)}
+                                          disabled={loading}
+                                        >
+                                          Edit
+                                        </Button>
+                                        <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            console.log("Daily sales summary delete button clicked");
+                                            console.log("Sale ID:", sale.id);
+                                            if (sale.id) {
+                                              handleDeleteDailySale(sale.id);
+                                            } else {
+                                              console.log("Sale ID is missing");
+                                              toast.error("Cannot delete sale: Missing ID");
+                                            }
+                                          }}
+                                        >
+                                          <Trash className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </>
+                                )}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>
