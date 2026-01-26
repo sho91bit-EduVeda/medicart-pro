@@ -18,7 +18,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt, Info, AlertCircle, X, ArrowLeft, Home } from "lucide-react";
+import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt, Info, AlertCircle, X, ArrowLeft, Home, LayoutDashboard } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ExcelUpload } from "@/components/common/ExcelUpload";
 import { IndianMedicineDatasetImport } from "@/components/admin/IndianMedicineDatasetImport";
@@ -924,8 +924,16 @@ const Owner = () => {
       setOrders(ordersData);
     } catch (error: any) {
       console.error("Failed to fetch orders:", error);
-      // Only show error if it's not a permission issue
-      if (!error.message?.includes("permission") && !error.message?.includes("insufficient")) {
+      // Handle Firebase permission errors gracefully
+      if (error.message?.includes("permission") || 
+          error.message?.includes("insufficient") || 
+          error.code === "permission-denied" || 
+          error.code === "PERMISSION_DENIED") {
+        // Silently handle permission errors - don't show toast to user
+        console.warn("Orders permission denied - this is expected for new users");
+        setOrders([]); // Set empty array to avoid UI errors
+      } else {
+        // Show error for other types of failures
         toast.error("Failed to load orders");
       }
     } finally {
@@ -980,26 +988,17 @@ const Owner = () => {
 
   // Update navigation items to group related functionalities into logical categories
   const navigationItems = [
-    // Inventory Management Group
-    { id: "data-import", label: "Add Medicines", icon: Database, category: "Inventory" },
-    { id: "manage-inventory", label: "Manage Inventory", icon: Package, category: "Inventory" },
-    { id: "store-purchase", label: "Store Purchase", icon: Receipt, category: "Inventory" },
+    // Store Purchase Group
+    { id: "store-purchase", label: "Store Purchase", icon: Receipt, category: "Store Purchase" },
     
     // Marketing & Promotions Group
-    { id: "offers", label: "Manage Offers", icon: Percent, category: "Marketing" },
     { id: "announcements", label: "Announcements", icon: Bell, category: "Marketing" },
     
     // Customer Relations Group
-    { id: "requests", label: "Medicine Requests", icon: Mail, category: "Customer Relations" },
     { id: "orders", label: "Orders", icon: Package, category: "Customer Relations" },
-    
-    // Analytics & Reporting Group
-    { id: "sales-reporting", label: "Sales Reporting", icon: TrendingUp, category: "Analytics" },
     
     // Store Configuration Group
     { id: "settings", label: "Settings", icon: Settings, category: "Configuration" },
-    { id: "features", label: "Features", icon: Package, category: "Configuration" },
-    { id: "seed-database", label: "Seed Database", icon: Database, category: "Configuration" },
   ];
   // Effect to handle hash changes for navigation
   useEffect(() => {
@@ -1109,7 +1108,7 @@ const Owner = () => {
                   </SheetHeader>
                   <div className="flex flex-col h-[calc(100vh-100px)]">
                     <div className="flex-1 overflow-y-auto space-y-6">
-                      {/* Dashboard Home button as first option */}
+                      {/* Home and Dashboard buttons */}
                       <div className="space-y-1">
                         <Button
                           variant="ghost"
@@ -1122,6 +1121,18 @@ const Owner = () => {
                         >
                           <Home className="w-5 h-5" />
                           <span className="font-medium">Home</span>
+                        </Button>
+                        <Button
+                          variant={activeSection === "dashboard-home" ? "default" : "ghost"}
+                          className="justify-start gap-3 w-full text-gray-800 dark:text-white"
+                          onClick={() => {
+                            setActiveSection("dashboard-home");
+                            // Close the sheet using the proper Radix UI API
+                            document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
+                          }}
+                        >
+                          <LayoutDashboard className="w-5 h-5" />
+                          <span className="font-medium">Dashboard</span>
                         </Button>
                       </div>
                       
@@ -2484,20 +2495,46 @@ const Owner = () => {
             )}
 
             {activeSection === "features" && (
-              <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-2 pb-4 border-b border-slate-200">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                      <Package className="w-5 h-5" />
-                      Feature Flags
-                    </h3>
-                  </div>
-                  <div className="pt-4">
-                    <FeatureFlagsPanel />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="space-y-6">
+                <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 pb-4 border-b border-slate-200">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                        <Package className="w-5 h-5" />
+                        Feature Flags
+                      </h3>
+                    </div>
+                    <div className="pt-4">
+                      <FeatureFlagsPanel />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 pb-4 border-b border-slate-200">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <h3 className="text-sm sm:text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                        <Database className="w-5 h-5" />
+                        Seed Database
+                      </h3>
+                    </div>
+                    <div className="pt-4">
+                      <p className="text-muted-foreground mb-4">
+                        Seed your database with the extensive Indian Medicine Dataset containing over 250,000 medicines. This will populate your store with a comprehensive medicine inventory.
+                      </p>
+                      <Button 
+                        onClick={seedDatabase}
+                        className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                      >
+                        <Database className="w-4 h-4" />
+                        Seed Database
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
           </motion.div>
         </motion.main>

@@ -2,10 +2,12 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBKG_NTSDqJPHxPXBjc9HFwcpSfe_ADf6M",
   authDomain: "kalyanam-pharmaceuticals.firebaseapp.com",
+  databaseURL: "https://kalyanam-pharmaceuticals-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "kalyanam-pharmaceuticals",
   storageBucket: "kalyanam-pharmaceuticals.firebasestorage.app",
   messagingSenderId: "674243081044",
@@ -28,3 +30,4 @@ try {
 
 export const db = firestore;
 export const storage = getStorage(app);
+export const rtdb = getDatabase(app);

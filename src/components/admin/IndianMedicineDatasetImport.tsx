@@ -13,8 +13,9 @@ import {
   DialogDescription as DialogDesc,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { db } from "@/integrations/firebase/config";
+import { db, rtdb } from "@/integrations/firebase/config";
 import { addDoc, collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
+import { ref, get, update } from "firebase/database";
 import { Search, Download, Database, Loader2, Plus, X } from "lucide-react";
 
 interface IndianMedicine {
@@ -148,23 +149,33 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
     }
   };
 
-  // Search medicines from the dataset
+  // Search medicines from the dataset using Firebase Realtime Database
   const searchMedicinesInDataset = async (searchTerm: string) => {
     try {
-      const response = await fetch("https://raw.githubusercontent.com/junioralive/Indian-Medicine-Dataset/main/DATA/indian_medicine_data.json");
-      const data: IndianMedicine[] = await response.json();
+      // Fetch from Firebase Realtime Database
+      const databaseRef = ref(rtdb, "indian_medicine_data");
+      const snapshot = await get(databaseRef);
       
-      // Filter medicines based on search term
-      const filtered = data.filter(med => 
-        med.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        med.manufacturer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (med.short_composition1 && med.short_composition1.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      
-      return filtered.slice(0, 50); // Limit to 50 results
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        // Data is already an array
+        const medicinesArray: IndianMedicine[] = data;
+        
+        // Filter medicines based on search term
+        const filtered = medicinesArray.filter(med => 
+          med.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          med.manufacturer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (med.short_composition1 && med.short_composition1.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        
+        return filtered.slice(0, 50); // Limit to 50 results
+      } else {
+        console.error("No data available in Realtime Database");
+        return [];
+      }
     } catch (error) {
       // Log error for debugging
-      console.error("Error fetching medicines:", error);
+      console.error("Error fetching medicines from Realtime Database:", error);
       return [];
     }
   };
@@ -303,6 +314,9 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
     }
     
     try {
+      // Check if this is a new medicine being added manually (not from the dataset)
+      const isManualEntry = !selectedMedicine && !selectedLocalProduct;
+      
       if (selectedLocalProduct) {
         // Update existing product
         await updateDoc(doc(db, "products", selectedLocalProduct.id), {
@@ -333,29 +347,69 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
           created_at: new Date().toISOString()
         });
         toast.success("Medicine added successfully!");
+        
+        // If this is a manually entered medicine, add it to the Realtime Database as well
+        if (isManualEntry) {
+          try {
+            // Fetch current data from Realtime Database
+            const databaseRef = ref(rtdb, "indian_medicine_data");
+            const snapshot = await get(databaseRef);
+            let currentMedicines: IndianMedicine[] = [];
+            
+            if (snapshot.exists()) {
+              currentMedicines = snapshot.val();
+            }
+            
+            // Create new medicine entry with a unique ID
+            const newMedicine: IndianMedicine = {
+              id: `manual_${Date.now()}`, // Generate a unique ID for manual entries
+              name: formData.name,
+              "price(₹)": formData.original_price,
+              Is_discontinued: "FALSE", // Assume it's not discontinued
+              manufacturer_name: "Manually Added", // Mark as manually added
+              type: "generic", // Default type for manual entries
+              pack_size_label: "Varies", // Default packaging
+              short_composition1: formData.composition || "Generic Composition", // Use composition from form
+              short_composition2: "" // Leave empty
+            };
+            
+            // Add the new medicine to the existing array
+            const updatedMedicines = [...currentMedicines, newMedicine];
+            
+            // Update the Realtime Database with the new array
+            await update(ref(rtdb, "indian_medicine_data"), { ".": updatedMedicines });
+            
+            toast.success("Medicine added to inventory and dataset successfully!");
+          } catch (rtError: any) {
+            // If adding to RTDB fails, still show success for Firestore
+            console.error("Error adding medicine to Realtime Database:", rtError);
+            // Don't throw error as the main function (adding to Firestore) succeeded
+          }
+        }
+        
+        // Close the dialog
+        setIsDialogOpen(false);
+        // Reset to first page
+        setCurrentPage(1);
+        // Reset form
+        setFormData({
+          name: "",
+          category_id: "", // Changed to empty string for default "Select" option
+          description: "",
+          uses: "",
+          composition: "",
+          original_price: "",
+          image_url: "",
+          in_stock: true,
+          stock_quantity: 10,
+        });
+        setSelectedMedicine(null);
+        setSelectedLocalProduct(null);
+        // Clear search results
+        setLocalProducts([]);
+        setMedicines([]);
+        setSearchPerformed(false);
       }
-      // Close the dialog
-      setIsDialogOpen(false);
-      // Reset to first page
-      setCurrentPage(1);
-      // Reset form
-      setFormData({
-        name: "",
-        category_id: "", // Changed to empty string for default "Select" option
-        description: "",
-        uses: "",
-        composition: "",
-        original_price: "",
-        image_url: "",
-        in_stock: true,
-        stock_quantity: 10,
-      });
-      setSelectedMedicine(null);
-      setSelectedLocalProduct(null);
-      // Clear search results
-      setLocalProducts([]);
-      setMedicines([]);
-      setSearchPerformed(false);
     } catch (error: any) {
       // Log error for debugging
       console.error("Error adding medicine:", error);
