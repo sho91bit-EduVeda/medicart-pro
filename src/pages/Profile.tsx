@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { db } from '@/integrations/firebase/config';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { auth } from '@/integrations/firebase/config';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, createUserWithEmailAndPassword } from 'firebase/auth';
 import { motion } from 'framer-motion';
@@ -43,6 +43,8 @@ import NotificationBell from '@/components/common/NotificationBell';
 import { UnifiedAuth } from '@/components/common/UnifiedAuth';
 import logoImage from '@/assets/Logo.png';
 import RequestMedicineSheet from '@/components/common/RequestMedicineSheet';
+import CommonHeader from '@/components/layout/CommonHeader';
+import AppFooter from '@/components/layout/AppFooter';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -251,92 +253,7 @@ export default function Profile() {
       {/* Quick Links Sidebar - Only show when authenticated */}
       {isAuthenticated && <QuickLinksSidebar />}
 
-      {/* Header with scroll-aware animation */}
-      <motion.header
-        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-xl"
-        initial={{ y: 0 }}
-        animate={{ y: 0 }}
-        transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 30,
-          mass: 1
-        }}
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}> 
-              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
-                <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-8 h-8 object-contain" />
-              </div>
-              <div>
-                {/* Desktop view - Full business name */}
-                <h1 className="hidden md:block text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
-                <p className="hidden md:block text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
-
-                {/* Mobile view - Shortened business name */}
-                <div className="md:hidden">
-                  <h1 className="text-xl font-bold">Kalyanam</h1>
-                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
-                </div>
-              </div>
-            </div>
-
-            <nav className="hidden md:flex items-center gap-1">
-              <Button
-                variant="ghost"
-                className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
-                onClick={() => navigate('/')}
-              >
-                Home
-              </Button>
-              <Button
-                variant="ghost"
-                className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
-                onClick={() => navigate('/reviews')}
-              >
-                Reviews
-              </Button>
-              {isAuthenticated && (
-                <Button
-                  variant="ghost"
-                  className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
-                  onClick={() => navigate('/owner#manage-products')}
-                >
-                  Inventory
-                </Button>
-              )}
-              {!isAuthenticated && (
-                <RequestMedicineSheet>
-                  <Button 
-                    variant="ghost" 
-                    className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
-                    onClick={(e) => {
-                      // Prevent event from bubbling up to nav
-                      e.stopPropagation();
-                    }}
-                  >
-                    Request Medicine
-                  </Button>
-                </RequestMedicineSheet>
-              )}
-            </nav>
-
-            <div className="flex items-center gap-2">
-              {/* Notification Bell and User Account Dropdown - Only visible when owner is logged in */}
-              {isAuthenticated && (
-                <>
-                  <NotificationBell />
-                  <UserAccountDropdown />
-                </>
-              )}
-
-              {/* Mobile menu button - Pass onReviewsClick and onUnifiedLoginClick props */}
-              <MobileMenu />
-            </div>
-          </div>
-        </div>
-      </motion.header>
+      <CommonHeader />
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">

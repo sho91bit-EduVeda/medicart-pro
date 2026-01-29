@@ -32,24 +32,23 @@ const RequestMedicineSheet: React.FC<RequestMedicineSheetProps> = ({ children, m
   const isPrescriptionUploadEnabled = true; // prescriptionUpload;
 
   const handleClose = () => {
-    console.log('RequestMedicineSheet handleClose called');
     // Directly close without passing event
     setOpen(false);
   };
   
-  // Debug the open state changes
+  // Effect for handling open state changes
   React.useEffect(() => {
-    console.log('RequestMedicineSheet open state changed to:', open);
+    // Handle open state changes if needed
   }, [open]);
 
-  console.log('RequestMedicineSheet rendering with:', { prescriptionUpload, isPrescriptionUploadEnabled, open, children });
+
 
   if (!isPrescriptionUploadEnabled) {
-    console.log('RequestMedicineSheet: prescriptionUpload disabled, rendering children only');
+
     return children; // Only render the trigger child, don't wrap in dialog if feature is disabled
   }
   
-  console.log('RequestMedicineSheet: prescriptionUpload enabled (forced), rendering full component');
+
     
   return (
     <Dialog open={open} onOpenChange={setOpen}>

@@ -17,9 +17,7 @@ import {
   LogOut,
   LogIn,
   Store,
-  Package,
-  PackagePlus,
-  ShoppingCart
+  Package
 } from "lucide-react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -27,7 +25,6 @@ import { toast } from "sonner";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
-import RequestMedicineSheet from "@/components/common/RequestMedicineSheet";
 
 interface MobileMenuProps {
   onSearchClick?: () => void;
@@ -101,6 +98,25 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick 
       }
     ];
 
+    // Add unified login only if neither customer nor owner is authenticated
+    if (!isAuthenticated && !isCustomerAuthenticated) {
+      items.push({
+        id: "login",
+        label: "Login / Sign Up",
+        icon: User,
+        action: () => {
+          // For unauthenticated users, close the menu and trigger the unified login
+          setOpen(false);
+          if (onUnifiedLoginClick) {
+            onUnifiedLoginClick();
+          }
+        },
+        active: false
+      });
+    }
+
+
+
     return items;
   };
 
@@ -138,37 +154,6 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick 
                 </Button>
               );
             })}
-
-            {/* Wishlist Link - Only show if delivery enabled and authenticated (customer) */}
-            {deliveryEnabled && isCustomerAuthenticated && (
-              <Button
-                variant={location.pathname === "/wishlist" ? "default" : "ghost"}
-                className="justify-start gap-3 py-6 text-left text-gray-800 dark:text-white"
-                onClick={() => handleNavigation("/wishlist")}
-              >
-                <Heart className="w-5 h-5" />
-                <span className="font-medium">Wishlist ({wishlistItems.length})</span>
-              </Button>
-            )}
-
-            {/* Request Medicine - Only show when not authenticated */}
-            {!isAuthenticated && (
-              <RequestMedicineSheet>
-                <Button
-                  variant="ghost"
-                  className="justify-start gap-3 py-6 text-left text-gray-800 dark:text-white w-full"
-                  onClick={(e) => {
-                    console.log('Request Medicine button clicked in MobileMenu');
-                    console.log('Event type:', e.type);
-                    console.log('Event target:', e.target);
-                    e.stopPropagation();
-                  }}
-                >
-                  <PackagePlus className="w-5 h-5" />
-                  <span className="font-medium">Request Medicine</span>
-                </Button>
-              </RequestMedicineSheet>
-            )}
           </div>
 
           {/* User Account Dropdown - Only show when logged in */}

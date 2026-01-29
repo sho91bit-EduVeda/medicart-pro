@@ -24,7 +24,6 @@ try {
     experimentalForceLongPolling: true,
   });
 } catch (e) {
-  console.log("Firestore already initialized, using existing instance");
   firestore = getFirestore(app);
 }
 

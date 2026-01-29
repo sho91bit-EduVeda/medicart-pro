@@ -32,9 +32,7 @@ export const seedDatabase = async () => {
                 categoryRefs[cat.name] = newCatRef.id;
             });
             categoryIds = categoryRefs;
-            console.log("Seeding categories...");
         } else {
-            console.log("Categories already exist, skipping.");
             // Get existing category IDs
             categoriesSnapshot.forEach(doc => {
                 const data = doc.data();
@@ -113,9 +111,7 @@ export const seedDatabase = async () => {
                 });
             });
 
-            console.log("Seeding sample medicines...");
         } else {
-            console.log("Products already exist, skipping medicine seeding.");
         }
 
         // 3. Seed Store Settings

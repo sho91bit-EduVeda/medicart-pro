@@ -21,6 +21,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { motion, useReducedMotion } from "framer-motion";
+import CommonHeader from "@/components/layout/CommonHeader";
+import AppFooter from "@/components/layout/AppFooter";
 
 const Contact = () => {
   const navigate = useNavigate();
@@ -73,8 +75,6 @@ const Contact = () => {
         }
       });
       
-      console.log("FormSubmit response:", response);
-      
       if (response.ok) {
         toast.success("Message sent successfully! We'll get back to you soon.");
         setFormData({
@@ -97,81 +97,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with animation */}
-      <motion.header 
-        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-600 text-white shadow-xl"
-        initial={{ y: prefersReducedMotion ? 0 : -100 }}
-        animate={{ y: 0 }}
-        transition={{ 
-          type: "spring", 
-          stiffness: 300, 
-          damping: 30,
-          mass: 1
-        }}
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div 
-              className="flex items-center gap-3 cursor-pointer" 
-              onClick={() => navigate("/")}
-            >
-              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
-                <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-8 h-8 object-contain" />
-              </div>
-              <div>
-                {/* Desktop view - Full business name */}
-                <h1 className="hidden md:block text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
-                <p className="hidden md:block text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
-
-                {/* Mobile view - Shortened business name */}
-                <div className="md:hidden">
-                  <h1 className="text-xl font-bold">Kalyanam</h1>
-                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-            <motion.button 
-              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium flex items-center gap-2 hidden md:flex"
-              onClick={() => navigate("/")}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
-              <Store className="w-4 h-4" />
-              <span className="hidden md:block">View Store</span>
-            </motion.button>
-            <NotificationBell />
-            {isAuthenticated && <UserAccountDropdown />}
-            
-            {/* Login/Signup buttons - Only show when no one is logged in */}
-            {!isAuthenticated && !isCustomerAuthenticated && (
-              <div className="flex items-center gap-1 md:hidden">
-                <UnifiedAuth
-                  trigger={
-                    <motion.button
-                      className="rounded-full p-2 text-white hover:bg-white/20 transition-colors"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      title="Login / Signup"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                      </svg>
-                    </motion.button>
-                  }
-                />
-              </div>
-            )}
-            
-            <MobileMenu />
-            </div>
-          </div>
-        </div>
-      </motion.header>
+      <CommonHeader showStoreButton={true} />
 
       {/* Main Content with animations */}
       <motion.div 
@@ -492,78 +418,7 @@ const Contact = () => {
         </motion.div>
       </motion.div>
       
-      {/* Footer with animation */}
-      <motion.footer 
-        className="bg-gradient-to-r from-blue-700 via-indigo-800 to-purple-700 text-white border-t mt-12 shadow-2xl"
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.3, duration: 0.6 }}
-      >
-        <div className="container mx-auto px-4 py-8">
-          <motion.div 
-            className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.4 }}
-          >
-            <motion.div 
-              className="flex flex-col items-center md:items-start gap-1"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.5 }}
-            >
-              <p className="text-blue-100 text-sm">
-                © 2025 Kalyanam Pharmaceuticals. All rights reserved.
-              </p>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <p className="text-blue-100 text-sm cursor-help underline decoration-dashed">
-                      Created By Shobhit Shukla (+91-9643000619)
-                    </p>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p className="text-xs text-blue-100">
-                      If you need to move your business online as well, contact here.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </motion.div>
-            <motion.div 
-              className="flex gap-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.6 }}
-            >
-              <motion.button 
-                onClick={() => navigate("/privacy-policy")}
-                className="text-left text-blue-100 hover:text-blue-200 text-sm transition-colors"
-                whileHover={{ y: -2 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                Privacy Policy
-              </motion.button>
-              <motion.button 
-                onClick={() => navigate("/terms-of-service")}
-                className="text-left text-blue-100 hover:text-blue-200 text-sm transition-colors"
-                whileHover={{ y: -2 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                Terms of Service
-              </motion.button>
-              <motion.button 
-                onClick={() => navigate("/shipping-policy")}
-                className="text-left text-blue-100 hover:text-blue-200 text-sm transition-colors"
-                whileHover={{ y: -2 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                Shipping Policy
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        </div>
-      </motion.footer>
+      <AppFooter />
     </div>
   );
 };

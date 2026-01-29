@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -14,6 +15,24 @@ import { toast } from 'sonner';
 export function UserAccountDropdown() {
   const navigate = useNavigate();
   const { isAuthenticated, signOut: ownerSignOut, user: ownerUser, isAdmin } = useAuth();
+  
+  // Debug ref
+  const userRef = useRef<HTMLButtonElement>(null);
+  
+  useEffect(() => {
+    if (userRef.current) {
+      const computedStyle = window.getComputedStyle(userRef.current);
+      console.log('UserAccountDropdown DOM element:', {
+        exists: !!userRef.current,
+        offsetParent: userRef.current.offsetParent,
+        offsetWidth: userRef.current.offsetWidth,
+        offsetHeight: userRef.current.offsetHeight,
+        display: computedStyle.display,
+        visibility: computedStyle.visibility,
+        opacity: computedStyle.opacity
+      });
+    }
+  }, []);
   const { 
     isAuthenticated: isCustomerAuthenticated, 
     signOut: customerSignOut,
@@ -53,6 +72,7 @@ export function UserAccountDropdown() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
+          ref={userRef}
           className="relative flex items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-300 shadow-sm border border-white/10 bg-white/10 hover:bg-white/20"
         >
           <UserRound className="w-5 h-5 text-white" />

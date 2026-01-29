@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { Store, ShoppingBag, CreditCard, MapPin, FileText, ArrowLeft } from "lucide-react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { motion, useReducedMotion } from "framer-motion";
+import CommonHeader from "@/components/layout/CommonHeader";
+import AppFooter from "@/components/layout/AppFooter";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -164,49 +166,7 @@ const Checkout = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Header with animation */}
-      <motion.header 
-        className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
-        initial={{ y: prefersReducedMotion ? 0 : -100 }}
-        animate={{ y: 0 }}
-        transition={{ 
-          type: "spring", 
-          stiffness: 300, 
-          damping: 30,
-          mass: 1
-        }}
-      >
-        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
-            <motion.div 
-              className="flex items-center gap-1 sm:gap-2 cursor-pointer" 
-              onClick={() => navigate("/")}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
-                <Store className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-lg sm:text-xl font-bold">Kalyanam Pharmaceuticals</h1>
-                <p className="text-xs text-muted-foreground">Checkout</p>
-              </div>
-              <div className="block sm:hidden">
-                <h1 className="text-sm font-bold">Checkout</h1>
-              </div>
-            </motion.div>
-            <motion.button 
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9 sm:h-10 sm:w-10"
-              onClick={() => navigate(-1)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <ArrowLeft className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Back</span>
-            </motion.button>
-          </div>
-        </div>
-      </motion.header>
+      <CommonHeader showBackButton={true} />
 
       <motion.div 
         className="container mx-auto px-2 sm:px-4 py-4 sm:py-8"

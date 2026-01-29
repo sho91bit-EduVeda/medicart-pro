@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Popover,
   PopoverContent,
@@ -18,6 +18,14 @@ const NotificationBell = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user, isAdmin } = useAuth();
+  
+  // Debug logging
+  console.log('NotificationBell - Auth State:', {
+    user: user ? 'exists' : 'null',
+    userId: user ? user.uid : 'no-user',
+    isAdmin,
+    shouldRender: user && isAdmin
+  });
 
   // Modal state
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
@@ -102,16 +110,55 @@ const NotificationBell = () => {
     }
   };
 
+  // TEMPORARY DEBUGGING - Show visual indicator of auth state
   // Only render the component if the user is authenticated and is an admin
   if (!user || !isAdmin) {
-    return null;
+    return (
+      <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-red-500/20 border border-red-500/30">
+        <span className="text-white text-xs">?</span>
+        {user && <span className="absolute top-0 right-0 w-2 h-2 bg-yellow-400 rounded-full"></span>}
+        {isAdmin && <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-400 rounded-full"></span>}
+      </div>
+    );
   }
+  
+  // Add ref to check if component is actually mounted
+  const bellRef = useRef<HTMLButtonElement>(null);
+  
+  useEffect(() => {
+    if (bellRef.current) {
+      const computedStyle = window.getComputedStyle(bellRef.current);
+      console.log('NotificationBell DOM element:', {
+        exists: !!bellRef.current,
+        offsetParent: bellRef.current.offsetParent,
+        offsetWidth: bellRef.current.offsetWidth,
+        offsetHeight: bellRef.current.offsetHeight,
+        display: computedStyle.display,
+        visibility: computedStyle.visibility,
+        opacity: computedStyle.opacity,
+        position: computedStyle.position,
+        zIndex: computedStyle.zIndex
+      });
+      
+      // Log parent element info
+      if (bellRef.current.parentElement) {
+        const parentStyle = window.getComputedStyle(bellRef.current.parentElement);
+        console.log('Parent element:', {
+          tagName: bellRef.current.parentElement.tagName,
+          className: bellRef.current.parentElement.className,
+          display: parentStyle.display,
+          visibility: parentStyle.visibility
+        });
+      }
+    }
+  }, []);
 
   return (
     <>
       <Popover>
         <PopoverTrigger asChild>
           <button
+            ref={bellRef}
             className={`relative flex items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-300 shadow-sm border border-white/10 ${isHovered ? 'bg-white/20' : 'bg-white/10'} ${isActive ? 'scale-90' : ''}`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}

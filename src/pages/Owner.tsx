@@ -51,6 +51,8 @@ import {
 import { Menu } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { DashboardHome } from "@/components/dashboard/DashboardHome";
+import CommonHeader from "@/components/layout/CommonHeader";
+import AppFooter from "@/components/layout/AppFooter";
 
 
 interface Category {
@@ -1052,154 +1054,7 @@ const Owner = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header with animation */}
-      <motion.header 
-        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-xl"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ 
-          type: "spring", 
-          stiffness: 100, 
-          damping: 15,
-          mass: 1
-        }}
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <img src={logoImage} alt="Kalyanam Logo" className="w-6 h-6" />
-                </div>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold hidden sm:block">Dashboard</h1>
-                <div className="sm:hidden">
-                  <h1 className="text-xl font-bold">Dashboard</h1>
-                </div>
-                <p className="text-sm text-white/90">
-                  {userName ? `Welcome, ${userName}!` : "Manage your medical store"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              
-              {/* Notification Bell - Only show if there are notifications */}
-              <NotificationBell />
-              
-              {/* User Account Dropdown - Only show when logged in */}
-              <UserAccountDropdown />
-              
-              {/* Mobile menu trigger - Moved to the extreme right */}
-              <Sheet>
-                <SheetTrigger asChild className="md:hidden">
-                  <motion.button 
-                    className="rounded-full p-2 text-white hover:bg-white/20 transition-colors"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  >
-                    <Menu className="w-6 h-6" />
-                  </motion.button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] sm:w-[340px] max-h-screen bg-gradient-to-br from-blue-500/10 via-indigo-600/10 to-purple-600/10">
-                  <SheetHeader>
-                    <SheetTitle className="text-gray-800 dark:text-white font-bold">Menu</SheetTitle>
-                  </SheetHeader>
-                  <div className="flex flex-col h-[calc(100vh-100px)]">
-                    <div className="flex-1 overflow-y-auto space-y-6">
-                      {/* Home and Dashboard buttons */}
-                      <div className="space-y-1">
-                        <Button
-                          variant="ghost"
-                          className="justify-start gap-3 w-full text-gray-800 dark:text-white"
-                          onClick={() => {
-                            window.location.href = '/';
-                            // Close the sheet using the proper Radix UI API
-                            document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
-                          }}
-                        >
-                          <Home className="w-5 h-5" />
-                          <span className="font-medium">Home</span>
-                        </Button>
-                        <Button
-                          variant={activeSection === "dashboard-home" ? "default" : "ghost"}
-                          className="justify-start gap-3 w-full text-gray-800 dark:text-white"
-                          onClick={() => {
-                            setActiveSection("dashboard-home");
-                            // Close the sheet using the proper Radix UI API
-                            document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
-                          }}
-                        >
-                          <LayoutDashboard className="w-5 h-5" />
-                          <span className="font-medium">Dashboard</span>
-                        </Button>
-                      </div>
-                      
-                      {/* Group navigation items by category */}
-                      {Array.from(new Set(navigationItems.map(item => item.category))).map((category) => (
-                        <div key={category}>
-                          <h3 className="text-sm font-semibold text-gray-700 dark:text-white/80 px-1 pb-2">{category}</h3>
-                          <div className="space-y-1">
-                            {navigationItems
-                              .filter(item => item.category === category)
-                              .map((item) => {
-                                const Icon = item.icon;
-                                return (
-                                  <Button
-                                    key={item.id}
-                                    variant={activeSection === item.id ? "default" : "ghost"}
-                                    className="justify-start gap-3 w-full text-gray-800 dark:text-white"
-                                    onClick={() => {
-                                      if (item.id === "seed-database") {
-                                        seedDatabase();
-                                      } else if (item.id === "add-product") {
-                                        setActiveSection("data-import");
-                                      } else if (item.id === "categories") {
-                                        setActiveSection("manage-inventory");
-                                        // Close the sheet using the proper Radix UI API
-                                        document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
-                                        // Scroll to the categories section
-                                        setTimeout(() => {
-                                          const categorySection = document.querySelector('[data-section="manage-categories"]');
-                                          if (categorySection) {
-                                            categorySection.scrollIntoView({ behavior: 'smooth' });
-                                          }
-                                        }, 100);
-                                        return; // Exit early to prevent closing the sheet again
-                                      } else {
-                                        setActiveSection(item.id);
-                                      }
-                                      // Close the sheet using the proper Radix UI API
-                                      document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}));
-                                    }}
-                                  >
-                                    <Icon className="w-5 h-5" />
-                                    <span className="font-medium">{item.label}</span>
-                                  </Button>
-                                );
-                              })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="space-y-1 pt-4 border-t pb-2">
-                      <UserAccountDropdown />
-                    </div>
-                  </div>
-                  
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <div className="text-center text-xs text-muted-foreground">
-                      © 2025 Kalyanam Pharmaceuticals
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </div>
-        </div>
-      </motion.header>
+      <CommonHeader />
       <div className="flex flex-1">
         {/* Sidebar Navigation with animation - Hidden on mobile */}
         <motion.nav 

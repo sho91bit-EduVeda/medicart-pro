@@ -14,6 +14,7 @@ import { MobileMenu } from "@/components/layout/MobileMenu";
 import logoImage from "@/assets/Logo.png";
 import AppFooter from "@/components/layout/AppFooter";
 import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
+import CommonHeader from "@/components/layout/CommonHeader";
 
 interface Product {
   id: string;

@@ -64,7 +64,6 @@ const Contact = () => {
         }
       });
 
-      console.log("FormSubmit response:", response);
 
       if (response.ok) {
         toast.success("Message sent successfully! We'll get back to you soon.");

@@ -76,7 +76,7 @@ export function SearchPopup({
   initialTab = 'details',
   showBackButton = true // Default to true to maintain existing behavior
 }: SearchPopupProps) {
-  console.log('SearchPopup rendered with:', { searchQuery, isOpen, showBackButton });
+
   
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -152,16 +152,13 @@ export function SearchPopup({
   }, [isOpen, initialTab]);
 
   useEffect(() => {
-    console.log('useEffect triggered - isOpen:', isOpen, 'searchQuery:', searchQuery);
     // Auto-open popup when there's a search query and it's not already open
     if (searchQuery && !isOpen) {
-      console.log('Auto-opening popup due to search query');
       // Note: We can't directly modify isOpen since it's a prop
       // The parent component should handle this logic
     }
     
     if (isOpen && searchQuery) {
-      console.log('Searching for products...');
       searchProducts();
       fetchDiscount();
     }
@@ -188,9 +185,7 @@ export function SearchPopup({
   };
 
   const searchProducts = async () => {
-    console.log('searchProducts called with query:', searchQuery);
     if (!searchQuery.trim()) {
-      console.log('Empty search query, returning');
       return;
     }
 
@@ -250,11 +245,9 @@ export function SearchPopup({
       }
 
       setProducts(productsData);
-      console.log('Products set in state:', productsData.length, 'items');
 
       // If only one product found, select it automatically
       if (productsData.length === 1) {
-        console.log('Only one product found, selecting automatically:', productsData[0].name);
         setSelectedProduct(productsData[0]);
       }
     } catch (error) {
@@ -298,7 +291,6 @@ export function SearchPopup({
   const loadReviews = async (productId: string) => {
     setReviewsLoading(true);
     try {
-      console.log('Loading reviews for product ID:', productId);
       // Simple query without orderBy to avoid composite index requirement
       const q = query(
         collection(db, 'product_reviews'),
@@ -306,7 +298,6 @@ export function SearchPopup({
       );
 
       const querySnapshot = await getDocs(q);
-      console.log('Found', querySnapshot.docs.length, 'reviews');
       
       const reviewsData: any[] = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -320,7 +311,6 @@ export function SearchPopup({
         return dateB.getTime() - dateA.getTime();
       });
       
-      console.log('Reviews data:', reviewsData);
       setReviews(reviewsData);
     } catch (error) {
       console.error('Failed to load reviews:', error);
@@ -395,7 +385,6 @@ export function SearchPopup({
         }
       }
 
-      console.log('Submitting review for product:', selectedProduct.id);
       const docRef = await addDoc(collection(db, 'product_reviews'), {
         product_id: selectedProduct.id,
         user_id: userId,
@@ -407,7 +396,6 @@ export function SearchPopup({
         is_anonymous: isAnonymous,
         created_at: new Date().toISOString()
       });
-      console.log('Review submitted with ID:', docRef.id);
 
       // Wait a short time for Firestore to index the document
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -416,11 +404,9 @@ export function SearchPopup({
       setTitle("");
       setComment("");
       setRating(5);
-      console.log('Loading reviews for product:', selectedProduct.id);
       loadReviews(selectedProduct.id);
     } catch (error: any) {
       toast.error('Failed to submit review');
-      console.error(error);
     } finally {
       setSubmittingReview(false);
     }

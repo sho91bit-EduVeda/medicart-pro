@@ -129,7 +129,6 @@ interface Product {
     name: string;
   };
   discount_percentage?: number;
-  composition?: string;
 }
 
 
@@ -214,6 +213,9 @@ const Index = () => {
   const [isSearchResult, setIsSearchResult] = useState(false); // Track if popup is from search vs direct product view
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  useEffect(() => {
+    console.log('showSuggestions changed:', showSuggestions);
+  }, [showSuggestions]);
   useEffect(() => {
     console.log('suggestions changed:', suggestions);
   }, [suggestions]);
@@ -316,8 +318,7 @@ const Index = () => {
     searchFiltered = products.filter(product =>
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (product.brand && product.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (product.categories && product.categories.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (product.composition && product.composition.toLowerCase().includes(searchQuery.toLowerCase()))
+      (product.categories && product.categories.name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }
 
@@ -497,28 +498,22 @@ const Index = () => {
 
     try {
       // console.log('Fetching suggestions for:', searchTerm);
-      
-      // Get all products and filter client-side for better composition search
+      // Get products that start with the searchTerm
       const productsQuery = query(
         collection(db, "products"),
-        limit(50) // Limit to reasonable number for performance
+        where("name", ">=", searchTerm),
+        where("name", "<=", searchTerm + "\uf8ff"),
+        limit(5)
       );
 
       const querySnapshot = await getDocs(productsQuery);
-      const allProducts = querySnapshot.docs.map(doc => ({
+      const productsData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...(doc.data() as any)
       })) as Product[];
 
-      // Filter products that match the search term in name, brand, or composition
-      const filteredProducts = allProducts.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.brand && product.brand.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (product.composition && product.composition.toLowerCase().includes(searchTerm.toLowerCase()))
-      ).slice(0, 5); // Limit to 5 suggestions
-
-      // console.log('Suggestions fetched:', filteredProducts);
-      setSuggestions(filteredProducts);
+      // console.log('Suggestions fetched:', productsData);
+      setSuggestions(productsData);
     } catch (error) {
       console.error("Failed to fetch suggestions:", error);
     }
@@ -587,8 +582,7 @@ const Index = () => {
       const filtered = productsSectionFilteredBase.filter(product =>
         product.name.toLowerCase().includes(productsSearchQuery.toLowerCase()) ||
         (product.brand && product.brand.toLowerCase().includes(productsSearchQuery.toLowerCase())) ||
-        (product.categories && product.categories.name.toLowerCase().includes(productsSearchQuery.toLowerCase())) ||
-        (product.composition && product.composition.toLowerCase().includes(productsSearchQuery.toLowerCase()))
+        (product.categories && product.categories.name.toLowerCase().includes(productsSearchQuery.toLowerCase()))
       );
       setProductsSectionFiltered(filtered);
     } else {
@@ -614,137 +608,11 @@ const Index = () => {
           mass: 1
         }}
       >
-        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
-          {/* Mobile Layout - Stacked rows */}
-          <div className="md:hidden space-y-3">
-            {/* First row: Logo and company name */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => navigate("/")}>
-                <div className="p-1.5 sm:p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
-                  <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-7 h-7 sm:w-8 sm:h-8 object-contain" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold">Kalyanam</h1>
-                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-1 sm:gap-2">
-                {/* Mobile icons */}
-                {!isAuthenticated && isCustomerAuthenticated && (
-                  <div title="Shopping Cart">
-                    <ShoppingCart discountPercentage={discountPercentage} />
-                  </div>
-                )}
-                
-                {/* Login/Signup buttons - Only show when no one is logged in */}
-                {!isAuthenticated && !isCustomerAuthenticated && (
-                  <div className="flex items-center gap-1">
-                    <UnifiedAuth
-                      trigger={
-                        <motion.button
-                          className="rounded-full p-2 text-white hover:bg-white/20 transition-colors"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                          title="Login / Signup"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                          </svg>
-                        </motion.button>
-                      }
-                    />
-                  </div>
-                )}
-                
-                {/* Mobile menu button */}
-                <MobileMenu
-                  onReviewsClick={() => setShowReviews(true)}
-                  onUnifiedLoginClick={() => document.getElementById('mobile-unified-login-trigger')?.click()}
-                />
-              </div>
-            </div>
-            
-            {/* Second row: Search bar */}
-            <div className="relative search-container">
-              <div className="relative w-full search-input-container">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
-                <Input
-                  type="search"
-                  placeholder="Search medicines..."
-                  className="pl-9 pr-10 h-10 w-full rounded-full bg-white/10 border-none text-white placeholder:text-white/60 focus-visible:ring-2 focus-visible:ring-white/40 transition-all shadow-inner"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleSearchSubmit();
-                    }
-                  }}
-                />
-                <motion.button
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 rounded-full p-2 text-white hover:bg-white/20 z-10"
-                  onClick={handleSearchSubmit}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                >
-                  <Search className="w-4 h-4" />
-                </motion.button>
-              </div>
-
-              {/* Autocomplete Suggestions */}
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-60 overflow-y-auto">
-                  {suggestions.map((product) => (
-                    <div
-                      key={product.id}
-                      className="px-4 py-3 hover:bg-muted cursor-pointer flex items-center gap-3 border-b border-muted last:border-b-0"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleSuggestionSelect(product);
-                      }}
-                    >
-                      {product.image_url ? (
-                        <img
-                          src={product.image_url}
-                          alt={product.name}
-                          className="w-10 h-10 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center flex-shrink-0">
-                          <Package className="w-5 h-5 text-primary" />
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm text-foreground truncate">{product.name}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-xs text-muted-foreground">
-                            ₹{product.original_price.toFixed(2)}
-                          </p>
-                          {!product.in_stock && (
-                            <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
-                              Out of Stock
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Desktop Layout - Original flex layout */}
-          <div className="hidden md:flex items-center justify-between gap-1 sm:gap-2 md:gap-3">
-            <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => navigate("/")}>
-              <div className="p-1.5 sm:p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
-                <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-7 h-7 sm:w-8 sm:h-8 object-contain" />
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
+              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
+                <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-8 h-8 object-contain" />
               </div>
               <div>
                 {/* Desktop view - Full business name */}
@@ -759,10 +627,10 @@ const Index = () => {
               </div>
             </div>
 
-            <nav className="hidden md:flex items-center gap-0.5 lg:gap-1">
+            <nav className="hidden md:flex items-center gap-1">
               <Button
                 variant="ghost"
-                className="text-white hover:bg-white/20 h-10 px-3 lg:px-4 rounded-full font-medium text-sm lg:text-base"
+                className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
                 onClick={() => setShowReviews(true)}
               >
                 Reviews
@@ -770,39 +638,36 @@ const Index = () => {
               {isAuthenticated && (
                 <Button
                   variant="ghost"
-                  className="text-white hover:bg-white/20 h-10 px-3 lg:px-4 rounded-full font-medium text-sm lg:text-base"
+                  className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
                   onClick={() => navigate("/owner#manage-products")}
                 >
-                  <span className="hidden lg:inline">Inventory</span>
-                  <span className="lg:hidden">Inv</span>
+                  Inventory
                 </Button>
               )}
               {!isAuthenticated && (
                 <RequestMedicineSheet>
                   <Button
                     variant="ghost"
-                    className="text-white hover:bg-white/20 h-10 px-3 lg:px-4 rounded-full font-medium text-sm lg:text-base"
+                    className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
                     onClick={(e) => {
-                      console.log('Desktop Request Medicine button clicked');
                       // Prevent event from bubbling up to nav
                       e.stopPropagation();
                     }}
                   >
-                    <span className="hidden lg:inline">Request Medicine</span>
-                    <span className="lg:hidden">Request</span>
+                    Request Medicine
                   </Button>
                 </RequestMedicineSheet>
               )}
             </nav>
 
-            {/* Search Box - Desktop only */}
-            <div className="hidden md:flex flex-1 min-w-[180px] lg:min-w-[200px] max-w-md lg:max-w-lg mx-1 md:mx-2 lg:mx-4 relative search-container">
+            {/* Search Box - Hidden on mobile, responsive on tablet/desktop */}
+            <div className="hidden md:flex flex-1 min-w-[200px] max-w-lg mx-2 lg:mx-4 relative search-container">
               <div className="relative w-full search-input-container">
-                <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
                 <Input
                   type="search"
                   placeholder="Search medicines..."
-                  className="pl-9 md:pl-10 pr-10 md:pr-12 h-10 w-full rounded-full bg-white/10 border-none text-white placeholder:text-white/60 focus-visible:ring-2 focus-visible:ring-white/40 transition-all shadow-inner min-w-[160px] md:min-w-[180px]"
+                  className="pl-10 pr-12 h-10 w-full rounded-full bg-white/10 border-none text-white placeholder:text-white/60 focus-visible:ring-2 focus-visible:ring-white/40 transition-all shadow-inner min-w-[180px]"
                   value={searchQuery}
                   onChange={handleSearchChange}
                   onKeyDown={(e) => {
@@ -867,7 +732,7 @@ const Index = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-2">
               {/* Customer-facing icons - Only show when owner is NOT logged in and customer is authenticated */}
               {!isAuthenticated && (
                 <>
@@ -876,16 +741,16 @@ const Index = () => {
                     <div className="hidden md:flex items-center gap-1">
                       {isCustomerAuthenticated && (
                         <motion.button
-                          className="relative rounded-full p-1.5 sm:p-2 text-primary-foreground hover:bg-white/20 transition-colors"
+                          className="relative rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
                           onClick={() => navigate("/wishlist")}
                           title="Wishlist"
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                           transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         >
-                          <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <Heart className="w-5 h-5" />
                           {wishlistItems.length > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-4 h-4 sm:w-5 sm:h-5 text-[0.6rem] sm:text-xs flex items-center justify-center">
+                            <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-5 h-5 text-xs flex items-center justify-center">
                               {wishlistItems.length}
                             </span>
                           )}
@@ -896,25 +761,25 @@ const Index = () => {
 
                   {/* Shopping Cart - Standard e-commerce position - only show when customer is authenticated */}
                   {isCustomerAuthenticated && (
-                    <div title="Shopping Cart">
+                    <div className="hidden md:block" title="Shopping Cart">
                       <ShoppingCart discountPercentage={discountPercentage} />
                     </div>
                   )}
 
                   {/* Unified Login - Responsive version that adapts to screen size */}
                   {!isAuthenticated && !isCustomerAuthenticated && (
-                    <div className="hidden md:flex items-center gap-1">
+                    <div className="hidden lg:flex items-center gap-1">
                       <UnifiedAuth
                         trigger={
                           <motion.button
-                            className="rounded-full px-3 py-2 md:px-4 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm whitespace-nowrap"
+                            className="rounded-full px-4 py-2 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm whitespace-nowrap"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             transition={{ type: "spring", stiffness: 400, damping: 17 }}
                           >
-                            <span className="hidden lg:inline">Get Started</span>
-                            <span className="lg:hidden">Start</span>
-                            <ArrowRight className="ml-2 h-4 w-4 hidden md:inline" />
+                            <span className="hidden xl:inline">Get Started</span>
+                            <span className="xl:hidden">Start</span>
+                            <ArrowRight className="ml-2 h-4 w-4" />
                           </motion.button>
                         }
                       />
@@ -937,6 +802,78 @@ const Index = () => {
                 onUnifiedLoginClick={() => document.getElementById('mobile-unified-login-trigger')?.click()}
               />
             </div>
+          </div>
+
+          {/* Mobile Search Box - Visible only on mobile */}
+          <div className="md:hidden mt-3 px-2 relative search-container">
+            <div className="relative search-input-container">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
+              <Input
+                type="search"
+                placeholder="Search medicines..."
+                className="pl-10 pr-12 py-2 w-full rounded-full bg-white/20 border-none text-primary-foreground placeholder:text-primary-foreground/70 focus-visible:ring-2 focus-visible:ring-white/50"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSearchSubmit();
+                  }
+                }}
+              />
+              <motion.button
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 text-primary-foreground hover:bg-white/20 z-10"
+                onClick={handleSearchSubmit}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <Search className="w-4 h-4" />
+              </motion.button>
+            </div>
+
+            {/* Autocomplete Suggestions */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-60 overflow-y-auto">
+                {suggestions.map((product) => (
+                  <div
+                    key={product.id}
+                    className="px-4 py-3 hover:bg-muted cursor-pointer flex items-center gap-3 border-b border-muted last:border-b-0"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSuggestionSelect(product);
+                    }}
+                  >
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="w-10 h-10 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center flex-shrink-0">
+                        <Package className="w-5 h-5 text-primary" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm text-foreground truncate">{product.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-muted-foreground">
+                          ₹{product.original_price.toFixed(2)}
+                        </p>
+                        {!product.in_stock && (
+                          <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+                            Out of Stock
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </motion.header>
@@ -1360,7 +1297,7 @@ const Index = () => {
       >
         <div className="container mx-auto px-4 py-8">
           <motion.div
-            className="flex flex-col gap-8"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
             initial="hidden"
             animate="visible"
             variants={{
@@ -1373,18 +1310,17 @@ const Index = () => {
               }
             }}
           >
-            {/* Company Info - Full width on mobile */}
-            <motion.div className="w-full" variants={{
+            <motion.div className="space-y-4" variants={{
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 }
             }}>
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-white shadow-md">
                   <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-6 h-6 object-contain" />
                 </div>
                 <h2 className="text-xl font-bold text-white">Kalyanam Pharmaceuticals</h2>
               </div>
-              <p className="text-blue-100 text-sm mb-4">
+              <p className="text-blue-100 text-sm">
                 Your trusted healthcare partner delivering quality pharmaceutical products and expert solutions right to your doorstep.
               </p>
               <div className="flex gap-3">
@@ -1408,12 +1344,12 @@ const Index = () => {
               </div>
             </motion.div>
 
-            {/* Quick Links and Categories - Side by side on mobile */}
-            <motion.div className="w-full" variants={{
+            {/* Combined Quick Links and Categories column for mobile */}
+            <motion.div className="sm:col-span-1 lg:col-span-2" variants={{
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 }
             }}>
-              <div className="grid grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div>
                   <h3 className="text-lg font-semibold mb-4 text-white">Quick Links</h3>
                   <ul className="space-y-3">
@@ -1484,38 +1420,7 @@ const Index = () => {
               </div>
             </motion.div>
 
-            {/* Mobile Contact Info - Visible only on mobile */}
-            <motion.div className="w-full lg:hidden" variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 }
-            }}>
-              <h3 className="text-lg font-semibold mb-4 text-white">Contact Info</h3>
-              <div className="space-y-3 text-blue-100">
-                <div className="flex items-start gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-1 flex-shrink-0">
-                    <path d="M20 10c0-4.4-3.6-8-8-8s-8 3.6-8 8 3.6 8 8 8 8-3.6 8-8z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                  </svg>
-                  <span className="text-sm">Mansarovar Yojna, 2/50, Kanpur Rd, Sector O, Mansarovar, Transport Nagar, Lucknow, Uttar Pradesh 226012</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                  </svg>
-                  <span className="text-sm">079053 82771</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="20" height="16" x="2" y="4" rx="2"></rect>
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
-                  </svg>
-                  <span className="text-sm">info@kalyanampharmacy.com</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Contact Info - Hidden on mobile */}
-            <motion.div className="hidden lg:block" variants={{
+            <motion.div variants={{
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 }
             }}>
@@ -1536,8 +1441,6 @@ const Index = () => {
                 </li>
                 <li className="flex items-center gap-3">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="20" height="16" x="2" y="4" rx="2"></rect>
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
                   </svg>
                   <span className="text-sm">info@kalyanampharmacy.com</span>
                 </li>

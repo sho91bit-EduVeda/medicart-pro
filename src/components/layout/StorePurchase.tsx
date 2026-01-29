@@ -37,8 +37,6 @@ export const StorePurchase = () => {
   const parseMedicalStoreInvoice = (text: string) => {
     if (!text.trim()) return;
 
-    console.log("Parsing medical store invoice text:", text);
-    
     // Split text into lines for better processing
     const lines = text.split('\n').filter(line => line.trim().length > 0);
     

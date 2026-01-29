@@ -69,10 +69,6 @@ class WhatsAppService {
 
       if (isTestMode) {
         // Mock response for testing
-        console.log('📱 WhatsApp Test Notification:');
-        console.log('To:', this.settings.phone_number);
-        console.log('Message:', message);
-        console.log('---');
 
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -107,7 +103,6 @@ class WhatsAppService {
       }
 
       const result = await response.json();
-      console.log('WhatsApp message sent successfully:', result);
       return true;
     } catch (error) {
       console.error('Failed to send WhatsApp notification:', error);
