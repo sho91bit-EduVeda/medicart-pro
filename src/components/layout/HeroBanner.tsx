@@ -192,6 +192,54 @@ export const HeroBanner = ({ discountPercentage }: { discountPercentage: number 
             </div>
           </div>
 
+          {/* LEAVE A STORE REVIEW BUTTON - Mobile view */}
+          {!isAuthenticated && (
+            <div className="flex justify-center mt-2">
+              <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+                <DialogTrigger asChild>
+                  <motion.button
+                    className="rounded-full px-4 py-2 flex items-center gap-2 bg-background hover:bg-accent transition-colors border border-primary/30 shadow-sm text-sm"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  >
+                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <span>Leave Review</span>
+                  </motion.button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl">
+                  {/* Gradient Header */}
+                  <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                    <DialogHeader className="relative z-10">
+                      <DialogTitle className="text-xl font-bold text-white flex items-center gap-3">
+                        <span className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                          <Star className="w-5 h-5" />
+                        </span>
+                        Write a Store Review
+                      </DialogTitle>
+                    </DialogHeader>
+                  </div>
+                  <div className="overflow-y-auto bg-slate-50 relative max-h-[calc(90vh-100px)]">
+                    <div className="absolute inset-0" style={{
+                      backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
+                      backgroundSize: '20px 20px',
+                      opacity: 0.3
+                    }}></div>
+                    <div className="relative z-10">
+                      <StoreReviewForm
+                        onClose={() => setShowReviewDialog(false)}
+                        onSubmit={() => {
+                          // Refresh reviews if needed
+                        }}
+                      />
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
+
           {/* STORE INFO */}
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">

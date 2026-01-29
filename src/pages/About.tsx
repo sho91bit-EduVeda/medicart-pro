@@ -5,7 +5,9 @@ import { Heart, Award, Users, Clock, Package, Store, Home, Menu } from "lucide-r
 import NotificationBell from "@/components/common/NotificationBell";
 import { MobileMenu } from "@/components/layout/MobileMenu";
 import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
+import { UnifiedAuth } from "@/components/common/UnifiedAuth";
 import { useAuth } from "@/hooks/useAuth";
+import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import logoImage from "@/assets/Logo.png";
 import AppFooter from "@/components/layout/AppFooter";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
@@ -15,6 +17,7 @@ const About = () => {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const { isAuthenticated } = useAuth();
+  const { isAuthenticated: isCustomerAuthenticated } = useCustomerAuth();
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,6 +68,29 @@ const About = () => {
             </motion.button>
             <NotificationBell />
             {isAuthenticated && <UserAccountDropdown />}
+            
+            {/* Login/Signup buttons - Only show when no one is logged in */}
+            {!isAuthenticated && !isCustomerAuthenticated && (
+              <div className="flex items-center gap-1 md:hidden">
+                <UnifiedAuth
+                  trigger={
+                    <motion.button
+                      className="rounded-full p-2 text-white hover:bg-white/20 transition-colors"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                      title="Login / Signup"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                    </motion.button>
+                  }
+                />
+              </div>
+            )}
+            
             <MobileMenu />
             </div>
           </div>

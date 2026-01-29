@@ -75,6 +75,13 @@ service cloud.firestore {
     
     // User-specific data
     match /users/{userId} {
+      // Allow users to read their own user document
+      allow read: if isOwner(userId);
+      // Allow authenticated users to create their own user document
+      allow create: if isOwner(userId);
+      // Allow users to update their own user document
+      allow update: if isOwner(userId);
+      
       // Cart - Users can only access their own cart
       match /cart/{itemId} {
         allow read, write: if isOwner(userId);
@@ -89,6 +96,11 @@ service cloud.firestore {
       match /prescriptions/{prescriptionId} {
         allow read, write: if isOwner(userId);
       }
+    }
+    
+    // Customers collection - Allow users to read/write their own customer data
+    match /customers/{customerId} {
+      allow read, write: if isOwner(customerId);
     }
     
     // Prescription Uploads - Users can only read/write their own prescriptions
@@ -114,10 +126,10 @@ service cloud.firestore {
       allow create: if true;
     }
     
-    // Unavailable Medicines - Public read, authenticated write
+    // Unavailable Medicines - Public read and write (for tracking)
     match /unavailable_medicines/{medicineId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if true;  // Allow anyone to track unavailable medicines
     }
     
     // Medicine Requests - Public create (for anyone to request), authenticated read for owner/admin

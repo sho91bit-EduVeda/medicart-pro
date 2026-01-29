@@ -48,6 +48,7 @@ interface Product {
   categories?: {
     name: string;
   };
+  composition?: string;
 }
 
 interface Category {
@@ -127,21 +128,26 @@ const CategoryPage = () => {
     if (!searchTerm.trim()) return;
     
     try {
-      // Get products that start with the searchTerm
+      // Get all products and filter client-side for better composition search
       const productsQuery = query(
         collection(db, "products"),
-        where("name", ">=", searchTerm),
-        where("name", "<=", searchTerm + "\uf8ff"),
-        limit(5)
+        limit(50) // Limit to reasonable number for performance
       );
       
       const querySnapshot = await getDocs(productsQuery);
-      const productsData = querySnapshot.docs.map(doc => ({
+      const allProducts = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...(doc.data() as any)
       })) as Product[];
+
+      // Filter products that match the search term in name, brand, or composition
+      const filteredProducts = allProducts.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.brand && product.brand.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (product.composition && product.composition.toLowerCase().includes(searchTerm.toLowerCase()))
+      ).slice(0, 5); // Limit to 5 suggestions
       
-      setSuggestions(productsData);
+      setSuggestions(filteredProducts);
     } catch (error) {
       console.error("Failed to fetch suggestions:", error);
     }
@@ -151,7 +157,7 @@ const CategoryPage = () => {
   const handleSuggestionSelect = (product: Product) => {
     setSearchQuery(product.name);
     setShowSuggestions(false);
-    setIsSearchResult(true); // This is from a search
+    setIsSearchResult(false); // This is a direct product view, not a search result
     setShowSearchPopup(true);
   };
 
@@ -458,10 +464,8 @@ const CategoryPage = () => {
                 </div>
               )}
               
-              {/* Mobile menu button - Pass onOwnerLoginClick prop */}
-              <MobileMenu 
-                onOwnerLoginClick={() => document.getElementById('mobile-owner-login-trigger')?.click()}
-              />
+              {/* Mobile menu button */}
+              <MobileMenu />
             </div>
           </div>
           
