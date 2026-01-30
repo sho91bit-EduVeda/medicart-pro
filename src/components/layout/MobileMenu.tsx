@@ -10,14 +10,12 @@ import {
   SheetTrigger
 } from "@/components/ui/sheet";
 import {
-  Home,
   Star,
   Heart,
   User,
   LogOut,
   LogIn,
-  Store,
-  Package
+  Home
 } from "lucide-react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -25,14 +23,16 @@ import { toast } from "sonner";
 import KalyanamLogo from "@/components/svgs/KalyanamLogo";
 import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
+import { adminNavigationItems } from "@/config/adminNavigation";
 
 interface MobileMenuProps {
   onSearchClick?: () => void;
   onReviewsClick?: () => void;
   onUnifiedLoginClick?: () => void; // Updated prop name
+  activeSection?: string; // For admin dashboard active section tracking
 }
 
-export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick }: MobileMenuProps) {
+export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick, activeSection }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,104 +65,118 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick 
   };
 
 
-  // Build menu items dynamically based on authentication state
+  // Build menu items dynamically based on authentication state and user type
   const getMenuItems = () => {
-    let items = [
-      {
-        id: "home",
-        label: "Home",
-        icon: Home,
-        action: () => handleNavigation("/"),
-        active: location.pathname === "/"
-      },
-      {
-        id: "products",
-        label: "Products",
-        icon: Package,
-        action: () => handleNavigation("/products"),
-        active: location.pathname === "/products"
-      },
-      {
-        id: "about",
-        label: "About",
-        icon: Store,
-        action: () => handleNavigation("/about"),
-        active: location.pathname === "/about"
-      },
-      {
-        id: "contact",
-        label: "Contact Us",
-        icon: User,
-        action: () => handleNavigation("/contact"),
-        active: location.pathname === "/contact"
-      }
-    ];
+    let items = [];
 
-    // Add offers and reviews if authenticated
-    if (isAuthenticated) {
-      items.push({
-        id: "offers",
-        label: "Offers",
-        icon: Store,
-        action: () => handleNavigation("/offers"),
-        active: location.pathname === "/offers"
-      });
-    }
+    // Admin navigation items (when authenticated as admin)
+    if (isAuthenticated && isAdmin) {
+      // Get all admin items that require auth and are admin-only
+      const adminItems = adminNavigationItems
+        .filter(item => 
+          item.adminOnly !== false && 
+          item.requiresAuth !== false
+        );
 
-    if (deliveryEnabled && !isAuthenticated) {
-      items.push({
-        id: "reviews",
-        label: "Reviews",
-        icon: Star,
-        action: () => {
-          if (onReviewsClick) {
-            onReviewsClick();
-          } else {
-            handleNavigation("/reviews");
-          }
-          setOpen(false);
+      // Group items by category (same as sidebar)
+      const groupedItems = adminItems.reduce((acc, item) => {
+        if (!acc[item.category]) {
+          acc[item.category] = [];
+        }
+        acc[item.category].push({
+          ...item,
+          action: () => {
+            if (item.external && item.path) {
+              // External navigation
+              if (item.path === "/") {
+                window.location.href = item.path;
+              } else {
+                navigate(item.path);
+              }
+            } else {
+              // Internal navigation using hash
+              handleNavigation(`#${item.id}`);
+            }
+            setOpen(false);
+          },
+          active: activeSection === item.id
+        });
+        return acc;
+      }, {} as Record<string, any[]>);
+
+      items = groupedItems;
+    } 
+    // Customer/General user navigation items
+    else {
+      items = [
+        {
+          id: "home",
+          label: "Home",
+          icon: adminNavigationItems.find(item => item.id === "home")?.icon || User,
+          action: () => handleNavigation("/"),
+          active: location.pathname === "/"
         },
-        active: location.pathname === "/reviews"
-      });
-    }
+        {
+          id: "products",
+          label: "Products",
+          icon: adminNavigationItems.find(item => item.id === "manage-inventory")?.icon || Package,
+          action: () => handleNavigation("/products"),
+          active: location.pathname === "/products"
+        },
+        {
+          id: "about",
+          label: "About",
+          icon: adminNavigationItems.find(item => item.id === "dashboard")?.icon || Store,
+          action: () => handleNavigation("/about"),
+          active: location.pathname === "/about"
+        },
+        {
+          id: "contact",
+          label: "Contact Us",
+          icon: User,
+          action: () => handleNavigation("/contact"),
+          active: location.pathname === "/contact"
+        }
+      ];
 
-    // Add wishlist if customer is authenticated
-    if (isCustomerAuthenticated && deliveryEnabled) {
-      items.push({
-        id: "wishlist",
-        label: `Wishlist (${wishlistItems.length})`,
-        icon: Heart,
-        action: () => handleNavigation("/wishlist"),
-        active: location.pathname === "/wishlist"
-      });
-    }
+      if (deliveryEnabled && !isAuthenticated) {
+        items.push({
+          id: "reviews",
+          label: "Reviews",
+          icon: Star,
+          action: () => {
+            if (onReviewsClick) {
+              onReviewsClick();
+            } else {
+              handleNavigation("/reviews");
+            }
+            setOpen(false);
+          },
+          active: location.pathname === "/reviews"
+        });
+      }
 
-    // Add owner-specific items if authenticated as owner
-    if (isAuthenticated) {
-      items.push({
-        id: "owner",
-        label: "Owner Dashboard",
-        icon: Store,
-        action: () => handleNavigation("/owner"),
-        active: location.pathname.startsWith("/owner")
-      });
-      items.push({
-        id: "logout-owner",
-        label: "Logout",
-        icon: LogOut,
-        action: handleLogout,
-        active: false
-      });
-    }
-    // Add customer logout if authenticated as customer
-    else if (isCustomerAuthenticated) {
-      items.push({
-        id: "logout-customer",
-        label: "Logout",
-        icon: LogOut,
-        action: handleLogout,
-        active: false
-      });
+      // Add wishlist if customer is authenticated
+      if (isCustomerAuthenticated && deliveryEnabled) {
+        items.push({
+          id: "wishlist",
+          label: `Wishlist (${wishlistItems.length})`,
+          icon: Heart,
+          action: () => handleNavigation("/wishlist"),
+          active: location.pathname === "/wishlist"
+        });
+      }
+
+      // Add customer logout if authenticated as customer
+      if (isCustomerAuthenticated) {
+        items.push({
+          id: "logout-customer",
+          label: "Logout",
+          icon: LogOut,
+          action: handleLogout,
+          active: false
+        });
+      }
     }
 
     return items;
@@ -187,21 +201,51 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick 
         </SheetHeader>
 
         <div className="flex flex-col h-[calc(100vh-100px)]">
-          <div className="flex-1 overflow-y-auto mt-4 flex flex-col gap-2">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Button
-                  key={item.id}
-                  variant={item.active ? "default" : "ghost"}
-                  className="justify-start gap-3 py-6 text-left text-gray-800 dark:text-white"
-                  onClick={item.action}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                </Button>
-              );
-            })}
+          <div className="flex-1 overflow-y-auto mt-4">
+            {/* Grouped menu items */}
+            {isAuthenticated && isAdmin ? (
+              Object.entries(menuItems as Record<string, any[]>).map(([category, items]) => (
+                <div key={category} className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-white/80 px-4 py-2">
+                    {category}
+                  </h3>
+                  <div className="space-y-1">
+                    {items.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Button
+                          key={item.id}
+                          variant={item.active ? "default" : "ghost"}
+                          className="w-full justify-start gap-3 py-5 text-left text-gray-800 dark:text-white hover:bg-white/10"
+                          onClick={item.action}
+                        >
+                          <Icon className="w-5 h-5" />
+                          <span className="font-medium">{item.label}</span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            ) : (
+              // Non-admin users (customer/general)
+              <div className="flex flex-col gap-2">
+                {(menuItems as any[]).map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Button
+                      key={item.id}
+                      variant={item.active ? "default" : "ghost"}
+                      className="justify-start gap-3 py-6 text-left text-gray-800 dark:text-white"
+                      onClick={item.action}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* User Account Dropdown - Only show when logged in */}

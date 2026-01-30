@@ -1,6 +1,6 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Store, Search, Package } from "lucide-react";
+import { Store, Search, Package, Home, LayoutDashboard } from "lucide-react";
 import NotificationBell from "@/components/common/NotificationBell";
 import { MobileMenu } from "@/components/layout/MobileMenu";
 import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
@@ -23,6 +23,7 @@ interface CommonHeaderProps {
   suggestions?: Array<{id: string, name: string, image_url?: string, original_price: number, in_stock: boolean}>;
   showSuggestions?: boolean;
   onSuggestionSelect?: (product: any) => void;
+  activeSection?: string; // For admin dashboard mobile menu
 }
 
 const CommonHeader = ({
@@ -36,9 +37,11 @@ const CommonHeader = ({
   onSearchSubmit,
   suggestions = [],
   showSuggestions = false,
-  onSuggestionSelect
+  onSuggestionSelect,
+  activeSection
 }: CommonHeaderProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const prefersReducedMotion = useReducedMotion();
   const { isAuthenticated, isAdmin, user } = useAuth();
   const { isAuthenticated: isCustomerAuthenticated, user: customerUser } = useCustomerAuth();
@@ -193,6 +196,8 @@ const CommonHeader = ({
               </motion.button>
             )}
     
+
+            
             {/* User Account Section - Show appropriate dropdown based on user type */}
             <div className="flex items-center gap-1.5">
               {isAuthenticated ? (
@@ -225,7 +230,7 @@ const CommonHeader = ({
               )}
             </div>
                 
-            <MobileMenu />
+            <MobileMenu activeSection={activeSection} />
           </div>
         </div>
     

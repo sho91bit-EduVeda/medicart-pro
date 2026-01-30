@@ -204,9 +204,8 @@ const NotificationBell = () => {
           }
         `}</style>
             {notifications.length > 0 && (
-              <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full shadow-lg z-10">
+                {notifications.length > 99 ? '99+' : notifications.length}
               </span>
             )}
           </button>

@@ -553,7 +553,7 @@ export function SearchPopup({
                   {/* Product Details */}
                   <div className="space-y-2">
                     {/* Product Details */}
-                    <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1 md:max-h-[250px]">
+                    <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 md:max-h-[320px]">
                       {selectedProduct.description && (
                         <div>
                           <h3 className="text-sm md:text-base font-semibold mb-1">Description</h3>

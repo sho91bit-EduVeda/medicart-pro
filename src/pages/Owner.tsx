@@ -18,7 +18,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt, Info, AlertCircle, X, ArrowLeft, Home, LayoutDashboard } from "lucide-react";
+import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt, Info, AlertCircle, X, ArrowLeft, Home, LayoutDashboard, Users, ShoppingCart } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ExcelUpload } from "@/components/common/ExcelUpload";
 import { IndianMedicineDatasetImport } from "@/components/admin/IndianMedicineDatasetImport";
@@ -53,6 +53,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { DashboardHome } from "@/components/dashboard/DashboardHome";
 import CommonHeader from "@/components/layout/CommonHeader";
 import CompleteFooter from "@/components/layout/CompleteFooter";
+import { adminNavigationItems } from "@/config/adminNavigation";
 
 
 interface Category {
@@ -988,20 +989,10 @@ const Owner = () => {
     }
   };
 
-  // Update navigation items to group related functionalities into logical categories
-  const navigationItems = [
-    // Store Purchase Group
-    { id: "store-purchase", label: "Store Purchase", icon: Receipt, category: "Store Purchase" },
-    
-    // Marketing & Promotions Group
-    { id: "announcements", label: "Announcements", icon: Bell, category: "Marketing" },
-    
-    // Customer Relations Group
-    { id: "orders", label: "Orders", icon: Package, category: "Customer Relations" },
-    
-    // Store Configuration Group
-    { id: "settings", label: "Settings", icon: Settings, category: "Configuration" },
-  ];
+  // Filter navigation items for admin dashboard (exclude non-admin items)
+  const navigationItems = adminNavigationItems.filter(item => 
+    item.adminOnly !== false && item.requiresAuth !== false
+  );
   // Effect to handle hash changes for navigation
   useEffect(() => {
     const handleHashChange = () => {
@@ -1054,7 +1045,7 @@ const Owner = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <CommonHeader />
+      <CommonHeader activeSection={activeSection} />
       <div className="flex flex-1">
         {/* Sidebar Navigation with animation - Hidden on mobile */}
         <motion.nav 
@@ -1085,6 +1076,12 @@ const Owner = () => {
                           variant={activeSection === item.id ? "default" : "ghost"}
                           className="w-full justify-start gap-3 py-6 text-left text-gray-800 dark:text-white transition-all duration-200 pl-8"
                           onClick={() => {
+                            // Handle external navigation
+                            if (item.external) {
+                              window.location.href = item.path;
+                              return;
+                            }
+                            
                             // Handle special navigation cases for DashboardHome component
                             if (item.id === "add-product") {
                               setActiveSection("data-import");

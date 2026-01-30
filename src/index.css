@@ -215,4 +215,46 @@ All colors MUST be HSL.
       transform: translateY(0);
     }
   }
+  
+  /* Mobile Footer Layout - Quick Links and Categories side by side */
+  @media (max-width: 768px) {
+    .footer-mobile-layout {
+      grid-template-columns: 1fr 1fr !important;
+      grid-template-rows: auto auto auto auto !important;
+    }
+    
+    .footer-mobile-layout > div:nth-child(1) {
+      /* Company Info - spans full width */
+      grid-column: 1 / -1;
+    }
+    
+    .footer-mobile-layout > div:nth-child(2) {
+      /* Quick Links - first column */
+      grid-column: 1;
+      grid-row: 2;
+    }
+    
+    .footer-mobile-layout > div:nth-child(3) {
+      /* Categories - second column */
+      grid-column: 2;
+      grid-row: 2;
+    }
+    
+    .footer-mobile-layout > div:nth-child(4) {
+      /* Contact Info - spans full width below */
+      grid-column: 1 / -1;
+      grid-row: 3;
+    }
+    
+    /* Remove white border and reduce spacing between Quick Links and Categories */
+    .footer-mobile-layout > div:nth-child(2),
+    .footer-mobile-layout > div:nth-child(3) {
+      padding-right: 0.5rem;
+      padding-left: 0.5rem;
+    }
+    
+    .footer-mobile-layout > div:nth-child(3) {
+      border-left: none !important;
+    }
+  }
 }
