@@ -215,12 +215,6 @@ const Index = () => {
   const [isSearchResult, setIsSearchResult] = useState(false); // Track if popup is from search vs direct product view
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  useEffect(() => {
-    console.log('showSuggestions changed:', showSuggestions);
-  }, [showSuggestions]);
-  useEffect(() => {
-    console.log('suggestions changed:', suggestions);
-  }, [suggestions]);
   const [showReviews, setShowReviews] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
@@ -503,7 +497,6 @@ const Index = () => {
 
   // Wrapper function for CommonHeader search change
   const handleSearchValueChange = (value: string) => {
-    // console.log('Search input changed:', value);
     setSearchQuery(value);
 
     // Clear existing timeout
@@ -533,7 +526,6 @@ const Index = () => {
     if (!searchTerm.trim()) return;
 
     try {
-      // console.log('Fetching suggestions for:', searchTerm);
       // Get products that start with the searchTerm
       const productsQuery = query(
         collection(db, "products"),
@@ -548,7 +540,6 @@ const Index = () => {
         ...(doc.data() as any)
       })) as Product[];
 
-      // console.log('Suggestions fetched:', productsData);
       setSuggestions(productsData);
     } catch (error) {
       console.error("Failed to fetch suggestions:", error);
@@ -584,7 +575,6 @@ const Index = () => {
 
         if (searchContainer && !searchContainer.contains(event.target as Node) &&
           suggestionsDropdown && !suggestionsDropdown.contains(event.target as Node)) {
-          // console.log('Click outside detected, closing suggestions');
           setShowSuggestions(false);
         }
       }

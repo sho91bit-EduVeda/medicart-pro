@@ -19,14 +19,6 @@ const NotificationBell = () => {
   const [loading, setLoading] = useState(true);
   const { user, isAdmin } = useAuth();
   
-  // Debug logging
-  console.log('NotificationBell - Auth State:', {
-    user: user ? 'exists' : 'null',
-    userId: user ? user.uid : 'no-user',
-    isAdmin,
-    shouldRender: user && isAdmin
-  });
-
   // Modal state
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -128,27 +120,10 @@ const NotificationBell = () => {
   useEffect(() => {
     if (bellRef.current) {
       const computedStyle = window.getComputedStyle(bellRef.current);
-      console.log('NotificationBell DOM element:', {
-        exists: !!bellRef.current,
-        offsetParent: bellRef.current.offsetParent,
-        offsetWidth: bellRef.current.offsetWidth,
-        offsetHeight: bellRef.current.offsetHeight,
-        display: computedStyle.display,
-        visibility: computedStyle.visibility,
-        opacity: computedStyle.opacity,
-        position: computedStyle.position,
-        zIndex: computedStyle.zIndex
-      });
       
       // Log parent element info
       if (bellRef.current.parentElement) {
         const parentStyle = window.getComputedStyle(bellRef.current.parentElement);
-        console.log('Parent element:', {
-          tagName: bellRef.current.parentElement.tagName,
-          className: bellRef.current.parentElement.className,
-          display: parentStyle.display,
-          visibility: parentStyle.visibility
-        });
       }
     }
   }, []);

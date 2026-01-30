@@ -15,7 +15,9 @@ import {
   User,
   LogOut,
   LogIn,
-  Home
+  Home,
+  Package,
+  Store
 } from "lucide-react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -86,16 +88,22 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick,
         acc[item.category].push({
           ...item,
           action: () => {
+            console.log("MobileMenu - Customers button clicked:", {
+              itemId: item.id,
+              label: item.label,
+              path: item.path,
+              isExternal: item.external,
+              currentPath: location.pathname
+            });
+            
             if (item.external && item.path) {
               // External navigation
-              if (item.path === "/") {
-                window.location.href = item.path;
-              } else {
-                navigate(item.path);
-              }
+              console.log("MobileMenu - External navigation to:", item.path);
+              navigate(item.path);
             } else {
               // Internal navigation using hash
-              handleNavigation(`#${item.id}`);
+              console.log("MobileMenu - Navigating with hash:", `#${item.id}`);
+              window.location.hash = `#${item.id}`;
             }
             setOpen(false);
           },

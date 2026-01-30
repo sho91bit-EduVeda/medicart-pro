@@ -15,7 +15,7 @@ service cloud.firestore {
     
     // Helper function to check if user is an admin/owner
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.admin == true;
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['OWNER', 'owner'];
     }
     
     // Categories - Public read, authenticated write
@@ -98,9 +98,9 @@ service cloud.firestore {
       }
     }
     
-    // Customers collection - Allow users to read/write their own customer data
+    // Customers collection - Allow admin users to read/write all customer data, users can read/write their own data
     match /customers/{customerId} {
-      allow read, write: if isOwner(customerId);
+      allow read, write: if isAuthenticated() && (isOwner(customerId) || isAdmin());
     }
     
     // Prescription Uploads - Users can only read/write their own prescriptions

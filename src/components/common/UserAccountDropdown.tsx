@@ -22,15 +22,6 @@ export function UserAccountDropdown() {
   useEffect(() => {
     if (userRef.current) {
       const computedStyle = window.getComputedStyle(userRef.current);
-      console.log('UserAccountDropdown DOM element:', {
-        exists: !!userRef.current,
-        offsetParent: userRef.current.offsetParent,
-        offsetWidth: userRef.current.offsetWidth,
-        offsetHeight: userRef.current.offsetHeight,
-        display: computedStyle.display,
-        visibility: computedStyle.visibility,
-        opacity: computedStyle.opacity
-      });
     }
   }, []);
   const { 

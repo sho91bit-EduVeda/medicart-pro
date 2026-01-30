@@ -46,22 +46,6 @@ const CommonHeader = ({
   const { isAuthenticated, isAdmin, user } = useAuth();
   const { isAuthenticated: isCustomerAuthenticated, user: customerUser } = useCustomerAuth();
 
-  // Debug logging
-  console.log('CommonHeader - Auth State:', {
-    isAuthenticated,
-    isAdmin,
-    user: user ? 'exists' : 'null',
-    isCustomerAuthenticated,
-    customerUser: customerUser ? 'exists' : 'null',
-    showStoreButton,
-    showBackButton
-  });
-
-  // Log when admin icons should render
-  if (isAuthenticated) {
-    console.log('Admin icons should be rendering');
-  }
-
   return (
     <motion.header
       className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-600 text-white shadow-xl"

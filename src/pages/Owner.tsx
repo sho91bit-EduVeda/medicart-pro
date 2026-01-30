@@ -926,7 +926,6 @@ const Owner = () => {
       
       setOrders(ordersData);
     } catch (error: any) {
-      console.error("Failed to fetch orders:", error);
       // Handle Firebase permission errors gracefully
       if (error.message?.includes("permission") || 
           error.message?.includes("insufficient") || 
@@ -937,6 +936,7 @@ const Owner = () => {
         setOrders([]); // Set empty array to avoid UI errors
       } else {
         // Show error for other types of failures
+        console.error("Failed to fetch orders:", error);
         toast.error("Failed to load orders");
       }
     } finally {
@@ -1076,9 +1076,18 @@ const Owner = () => {
                           variant={activeSection === item.id ? "default" : "ghost"}
                           className="w-full justify-start gap-3 py-6 text-left text-gray-800 dark:text-white transition-all duration-200 pl-8"
                           onClick={() => {
+                            console.log("Desktop sidebar - Customers button clicked:", {
+                              itemId: item.id,
+                              label: item.label,
+                              path: item.path,
+                              isExternal: item.external,
+                              currentPath: window.location.pathname
+                            });
+                            
                             // Handle external navigation
-                            if (item.external) {
-                              window.location.href = item.path;
+                            if (item.external && item.path) {
+                              console.log("Desktop sidebar - External navigation to:", item.path);
+                              navigate(item.path);
                               return;
                             }
                             
