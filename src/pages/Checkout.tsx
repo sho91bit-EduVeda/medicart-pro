@@ -17,7 +17,7 @@ import { Store, ShoppingBag, CreditCard, MapPin, FileText, ArrowLeft } from "luc
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { motion, useReducedMotion } from "framer-motion";
 import CommonHeader from "@/components/layout/CommonHeader";
-import AppFooter from "@/components/layout/AppFooter";
+import CompleteFooter from "@/components/layout/CompleteFooter";
 
 const Checkout = () => {
   const navigate = useNavigate();

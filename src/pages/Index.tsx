@@ -55,6 +55,8 @@ import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { CustomerAccountDropdown } from "@/components/common/CustomerAccountDropdown";
 import CustomerLoginModal from "@/components/common/CustomerLoginModal";
 import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
+import CompleteFooter from "@/components/layout/CompleteFooter";
+import CommonHeader from "@/components/layout/CommonHeader";
 
 import {
   Tooltip,
@@ -222,6 +224,7 @@ const Index = () => {
   const [showReviews, setShowReviews] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
+  const [activeMobileTab, setActiveMobileTab] = useState("popular");
 
   // Filter and sort state
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
@@ -354,8 +357,36 @@ const Index = () => {
     );
   }
 
+  // Apply mobile tab filtering
+  let tabFiltered = [...filtered];
+  
+  switch (activeMobileTab) {
+    case 'popular':
+      // Sort by review count or popularity (using ID as proxy for now)
+      tabFiltered.sort((a, b) => b.id.localeCompare(a.id));
+      break;
+    case 'offers':
+      // Show products with discounts
+      tabFiltered = tabFiltered.filter(product => 
+        product.discount_percentage && product.discount_percentage > 0
+      );
+      break;
+    case 'new':
+      // Show newer products (using ID as proxy)
+      tabFiltered.sort((a, b) => b.id.localeCompare(a.id));
+      break;
+    case 'prescriptions':
+      // Show prescription required products
+      tabFiltered = tabFiltered.filter(product => 
+        product.requires_prescription === true
+      );
+      break;
+    default:
+      break;
+  }
+
   // Apply sorting
-  const sortedProducts = [...filtered];
+  const sortedProducts = [...tabFiltered];
 
   switch (currentSort) {
     case 'price-low-high':
@@ -467,6 +498,11 @@ const Index = () => {
   // Handle search input change with debouncing
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    handleSearchValueChange(value);
+  };
+
+  // Wrapper function for CommonHeader search change
+  const handleSearchValueChange = (value: string) => {
     // console.log('Search input changed:', value);
     setSearchQuery(value);
 
@@ -596,287 +632,15 @@ const Index = () => {
       {/* Quick Links Sidebar - Only show when authenticated */}
       {isAuthenticated && <QuickLinksSidebar />}
 
-      {/* Header with scroll-aware animation */}
-      <motion.header
-        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-xl"
-        initial={{ y: prefersReducedMotion ? 0 : -100 }}
-        animate={headerControls}
-        transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 30,
-          mass: 1
-        }}
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
-              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
-                <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-8 h-8 object-contain" />
-              </div>
-              <div>
-                {/* Desktop view - Full business name */}
-                <h1 className="hidden md:block text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
-                <p className="hidden md:block text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
-
-                {/* Mobile view - Shortened business name */}
-                <div className="md:hidden">
-                  <h1 className="text-xl font-bold">Kalyanam</h1>
-                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
-                </div>
-              </div>
-            </div>
-
-            <nav className="hidden md:flex items-center gap-1">
-              <Button
-                variant="ghost"
-                className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
-                onClick={() => setShowReviews(true)}
-              >
-                Reviews
-              </Button>
-              {isAuthenticated && (
-                <Button
-                  variant="ghost"
-                  className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
-                  onClick={() => navigate("/owner#manage-products")}
-                >
-                  Inventory
-                </Button>
-              )}
-              {!isAuthenticated && (
-                <RequestMedicineSheet>
-                  <Button
-                    variant="ghost"
-                    className="text-white hover:bg-white/20 h-10 px-4 rounded-full font-medium"
-                    onClick={(e) => {
-                      // Prevent event from bubbling up to nav
-                      e.stopPropagation();
-                    }}
-                  >
-                    Request Medicine
-                  </Button>
-                </RequestMedicineSheet>
-              )}
-            </nav>
-
-            {/* Search Box - Hidden on mobile, responsive on tablet/desktop */}
-            <div className="hidden md:flex flex-1 min-w-[200px] max-w-lg mx-2 lg:mx-4 relative search-container">
-              <div className="relative w-full search-input-container">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
-                <Input
-                  type="search"
-                  placeholder="Search medicines..."
-                  className="pl-10 pr-12 h-10 w-full rounded-full bg-white/10 border-none text-white placeholder:text-white/60 focus-visible:ring-2 focus-visible:ring-white/40 transition-all shadow-inner min-w-[180px]"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleSearchSubmit();
-                    }
-                  }}
-                />
-                <motion.button
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 rounded-full p-2 text-white hover:bg-white/20 z-10"
-                  onClick={handleSearchSubmit}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                >
-                  <Search className="w-4 h-4" />
-                </motion.button>
-              </div>
-
-              {/* Autocomplete Suggestions */}
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-60 overflow-y-auto">
-                  {suggestions.map((product) => (
-                    <div
-                      key={product.id}
-                      className="px-4 py-3 hover:bg-muted cursor-pointer flex items-center gap-3 border-b border-muted last:border-b-0"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleSuggestionSelect(product);
-                      }}
-                    >
-                      {product.image_url ? (
-                        <img
-                          src={product.image_url}
-                          alt={product.name}
-                          className="w-10 h-10 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center flex-shrink-0">
-                          <Package className="w-5 h-5 text-primary" />
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm text-foreground truncate">{product.name}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-xs text-muted-foreground">
-                            ₹{product.original_price.toFixed(2)}
-                          </p>
-                          {!product.in_stock && (
-                            <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
-                              Out of Stock
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Customer-facing icons - Only show when owner is NOT logged in and customer is authenticated */}
-              {!isAuthenticated && (
-                <>
-                  {/* Wishlist Icon - Standard e-commerce position - only show when customer is authenticated */}
-                  {deliveryEnabled && (
-                    <div className="hidden md:flex items-center gap-1">
-                      {isCustomerAuthenticated && (
-                        <motion.button
-                          className="relative rounded-full p-2 text-primary-foreground hover:bg-white/20 transition-colors"
-                          onClick={() => navigate("/wishlist")}
-                          title="Wishlist"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                        >
-                          <Heart className="w-5 h-5" />
-                          {wishlistItems.length > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-white text-primary rounded-full w-5 h-5 text-xs flex items-center justify-center">
-                              {wishlistItems.length}
-                            </span>
-                          )}
-                        </motion.button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Shopping Cart - Standard e-commerce position - only show when customer is authenticated */}
-                  {isCustomerAuthenticated && (
-                    <div className="hidden md:block" title="Shopping Cart">
-                      <ShoppingCart discountPercentage={discountPercentage} />
-                    </div>
-                  )}
-
-                  {/* Unified Login - Responsive version that adapts to screen size */}
-                  {!isAuthenticated && !isCustomerAuthenticated && (
-                    <div className="hidden lg:flex items-center gap-1">
-                      <UnifiedAuth
-                        trigger={
-                          <motion.button
-                            className="rounded-full px-4 py-2 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10 shadow-sm whitespace-nowrap"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                          >
-                            <span className="hidden xl:inline">Get Started</span>
-                            <span className="xl:hidden">Start</span>
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </motion.button>
-                        }
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Notification Bell and User Account Dropdown - Only visible when owner is logged in */}
-              {isAuthenticated && (
-                <>
-                  <NotificationBell />
-                  <UserAccountDropdown />
-                </>
-              )}
-
-              {/* Mobile menu button - Always visible on mobile, positioned at extreme right */}
-              <MobileMenu
-                onReviewsClick={() => setShowReviews(true)}
-                onUnifiedLoginClick={() => document.getElementById('mobile-unified-login-trigger')?.click()}
-              />
-            </div>
-          </div>
-
-          {/* Mobile Search Box - Visible only on mobile */}
-          <div className="md:hidden mt-3 px-2 relative search-container">
-            <div className="relative search-input-container">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-4 h-4 z-10" />
-              <Input
-                type="search"
-                placeholder="Search medicines..."
-                className="pl-10 pr-12 py-2 w-full rounded-full bg-white/20 border-none text-primary-foreground placeholder:text-primary-foreground/70 focus-visible:ring-2 focus-visible:ring-white/50"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleSearchSubmit();
-                  }
-                }}
-              />
-              <motion.button
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 text-primary-foreground hover:bg-white/20 z-10"
-                onClick={handleSearchSubmit}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <Search className="w-4 h-4" />
-              </motion.button>
-            </div>
-
-            {/* Autocomplete Suggestions */}
-            {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-60 overflow-y-auto">
-                {suggestions.map((product) => (
-                  <div
-                    key={product.id}
-                    className="px-4 py-3 hover:bg-muted cursor-pointer flex items-center gap-3 border-b border-muted last:border-b-0"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleSuggestionSelect(product);
-                    }}
-                  >
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="w-10 h-10 object-cover rounded"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center flex-shrink-0">
-                        <Package className="w-5 h-5 text-primary" />
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm text-foreground truncate">{product.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-xs text-muted-foreground">
-                          ₹{product.original_price.toFixed(2)}
-                        </p>
-                        {!product.in_stock && (
-                          <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
-                            Out of Stock
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </motion.header>
+      <CommonHeader 
+        showSearchBar={true}
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchValueChange}
+        onSearchSubmit={handleSearchSubmit}
+        suggestions={suggestions}
+        showSuggestions={showSuggestions}
+        onSuggestionSelect={handleSuggestionSelect}
+      />
 
       {/* Mobile Announcement Banner */}
       <div className="md:hidden">
@@ -913,7 +677,7 @@ const Index = () => {
         showBackButton={isSearchResult} // Only show back button when it's actually a search result
       />
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-6"> 
         {/* Categories Section with scroll-triggered animation */}
         <motion.section
           ref={categoriesRef}
@@ -1000,7 +764,10 @@ const Index = () => {
 
         {/* Mobile Search Tabs */}
         <div className="md:hidden mb-6">
-          <MobileSearchTabs />
+          <MobileSearchTabs 
+            activeTab={activeMobileTab}
+            onTabChange={setActiveMobileTab}
+          />
         </div>
 
         {/* Desktop Search Bar and Filters */}
@@ -1179,7 +946,7 @@ const Index = () => {
                     requires_prescription={product.requires_prescription}
                     category_animation_data={product.category_id ? getCategoryAnimation(getCategoryNameById(product.category_id)) : undefined}
                     onClick={() => {
-                      setSearchQuery(product.name);
+                      // Don't auto-fill search query - just show product popup
                       setIsSearchResult(false); // Not a search result, direct product view
                       setShowSearchPopup(true);
                     }}
@@ -1242,7 +1009,7 @@ const Index = () => {
         />
 
         {/* Product Recommendations */}
-        {deliveryEnabled && (
+        {isAuthenticated && deliveryEnabled && (
           <section className="mb-8">
             <ProductRecommendations
               onProductClick={(productName) => {
@@ -1283,222 +1050,8 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Footer with scroll-triggered animation */}
-      <motion.footer
-        ref={footerRef}
-        className="bg-gradient-to-r from-blue-700 via-indigo-800 to-purple-700 text-white py-12 mt-8 border-t shadow-2xl"
-        initial="hidden"
-        animate={isFooterInView ? "visible" : "hidden"}
-        variants={{
-          visible: { opacity: 1, y: 0 },
-          hidden: { opacity: 0, y: 20 }
-        }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="container mx-auto px-4 py-8">
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: {
-                  staggerChildren: 0.1
-                }
-              }
-            }}
-          >
-            <motion.div className="space-y-4" variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 }
-            }}>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-white shadow-md">
-                  <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-6 h-6 object-contain" />
-                </div>
-                <h2 className="text-xl font-bold text-white">Kalyanam Pharmaceuticals</h2>
-              </div>
-              <p className="text-blue-100 text-sm">
-                Your trusted healthcare partner delivering quality pharmaceutical products and expert solutions right to your doorstep.
-              </p>
-              <div className="flex gap-3">
-                <motion.button className="rounded-full p-2 border border-white/20 bg-white/10 hover:bg-white/20 text-white" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                  </svg>
-                </motion.button>
-                <motion.button className="rounded-full p-2 border border-white/20 bg-white/10 hover:bg-white/20 text-white" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
-                  </svg>
-                </motion.button>
-                <motion.button className="rounded-full p-2 border border-white/20 bg-white/10 hover:bg-white/20 text-white" whileHover={{ y: -3 }} whileTap={{ y: 1 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                  </svg>
-                </motion.button>
-              </div>
-            </motion.div>
-
-            {/* Combined Quick Links and Categories column for mobile */}
-            <motion.div className="sm:col-span-1 lg:col-span-2" variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 }
-            }}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 text-white">Quick Links</h3>
-                  <ul className="space-y-3">
-                    <li>
-                      <motion.button
-                        onClick={() => navigate("/")}
-                        className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
-                        whileHover={{ x: 5 }}
-                      >
-                        Home
-                      </motion.button>
-                    </li>
-                    <li>
-                      <motion.button
-                        onClick={() => navigate("/about")}
-                        className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
-                        whileHover={{ x: 5 }}
-                      >
-                        About Us
-                      </motion.button>
-                    </li>
-                    <li>
-                      <motion.button
-                        onClick={() => navigate("/products")}
-                        className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
-                        whileHover={{ x: 5 }}
-                      >
-                        Products
-                      </motion.button>
-                    </li>
-                    <li>
-                      <motion.button
-                        onClick={() => navigate("/offers")}
-                        className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
-                        whileHover={{ x: 5 }}
-                      >
-                        Offers
-                      </motion.button>
-                    </li>
-                    <li>
-                      <motion.button
-                        onClick={() => navigate("/contact")}
-                        className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
-                        whileHover={{ x: 5 }}
-                      >
-                        Contact
-                      </motion.button>
-                    </li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 text-white">Categories</h3>
-                  <ul className="space-y-3">
-                    {categories.slice(0, 5).map((category) => (
-                      <li key={category.id}>
-                        <motion.button
-                          onClick={() => navigate(`/category/${category.id}`)}
-                          className="text-left text-blue-100 hover:text-white transition-colors text-sm w-full"
-                          whileHover={{ x: 5 }}
-                        >
-                          {category.name}
-                        </motion.button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 }
-            }}>
-              <h3 className="text-lg font-semibold mb-4 text-white">Contact Info</h3>
-              <ul className="space-y-3 text-blue-100">
-                <li className="flex items-start gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-1 flex-shrink-0">
-                    <path d="M20 10c0-4.4-3.6-8-8-8s-8 3.6-8 8 3.6 8 8 8 8-3.6 8-8z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                  </svg>
-                  <span className="text-sm">Mansarovar Yojna, 2/50, Kanpur Rd, Sector O, Mansarovar, Transport Nagar, Lucknow, Uttar Pradesh 226012</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                  </svg>
-                  <span className="text-sm">079053 82771</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  </svg>
-                  <span className="text-sm">info@kalyanampharmacy.com</span>
-                </li>
-              </ul>
-            </motion.div>
-          </motion.div>
-
-          <motion.div
-            className="border-t mt-6 pt-4 flex flex-col md:flex-row justify-between items-center gap-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            <div className="flex flex-col items-center md:items-start gap-1">
-              <p className="text-blue-100 text-sm">
-                © 2025 Kalyanam Pharmaceuticals. All rights reserved.
-              </p>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <p className="text-blue-100 text-sm cursor-help underline decoration-dashed">
-                      Created By Shobhit Shukla (+91-9643000619)
-                    </p>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p className="text-xs text-blue-100">
-                      If you need to move your business online as well, contact here.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <div className="flex gap-6">
-              <motion.button
-                onClick={() => navigate("/privacy-policy")}
-                className="text-left text-blue-100 hover:text-white text-sm transition-colors"
-                whileHover={{ y: -2 }}
-              >
-                Privacy Policy
-              </motion.button>
-              <motion.button
-                onClick={() => navigate("/terms-of-service")}
-                className="text-left text-blue-100 hover:text-white text-sm transition-colors"
-                whileHover={{ y: -2 }}
-              >
-                Terms of Service
-              </motion.button>
-              <motion.button
-                onClick={() => navigate("/shipping-policy")}
-                className="text-left text-blue-100 hover:text-white text-sm transition-colors"
-                whileHover={{ y: -2 }}
-              >
-                Shipping Policy
-              </motion.button>
-            </div>
-          </motion.div>
-        </div>
-      </motion.footer>
+      
+      <CompleteFooter />
     </div>
   );
 };

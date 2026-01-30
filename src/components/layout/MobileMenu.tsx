@@ -98,24 +98,72 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick 
       }
     ];
 
-    // Add unified login only if neither customer nor owner is authenticated
-    if (!isAuthenticated && !isCustomerAuthenticated) {
+    // Add offers and reviews if authenticated
+    if (isAuthenticated) {
       items.push({
-        id: "login",
-        label: "Login / Sign Up",
-        icon: User,
-        action: () => {
-          // For unauthenticated users, close the menu and trigger the unified login
-          setOpen(false);
-          if (onUnifiedLoginClick) {
-            onUnifiedLoginClick();
-          }
-        },
-        active: false
+        id: "offers",
+        label: "Offers",
+        icon: Store,
+        action: () => handleNavigation("/offers"),
+        active: location.pathname === "/offers"
       });
     }
 
+    if (deliveryEnabled && !isAuthenticated) {
+      items.push({
+        id: "reviews",
+        label: "Reviews",
+        icon: Star,
+        action: () => {
+          if (onReviewsClick) {
+            onReviewsClick();
+          } else {
+            handleNavigation("/reviews");
+          }
+          setOpen(false);
+        },
+        active: location.pathname === "/reviews"
+      });
+    }
 
+    // Add wishlist if customer is authenticated
+    if (isCustomerAuthenticated && deliveryEnabled) {
+      items.push({
+        id: "wishlist",
+        label: `Wishlist (${wishlistItems.length})`,
+        icon: Heart,
+        action: () => handleNavigation("/wishlist"),
+        active: location.pathname === "/wishlist"
+      });
+    }
+
+    // Add owner-specific items if authenticated as owner
+    if (isAuthenticated) {
+      items.push({
+        id: "owner",
+        label: "Owner Dashboard",
+        icon: Store,
+        action: () => handleNavigation("/owner"),
+        active: location.pathname.startsWith("/owner")
+      });
+      items.push({
+        id: "logout-owner",
+        label: "Logout",
+        icon: LogOut,
+        action: handleLogout,
+        active: false
+      });
+    }
+    // Add customer logout if authenticated as customer
+    else if (isCustomerAuthenticated) {
+      items.push({
+        id: "logout-customer",
+        label: "Logout",
+        icon: LogOut,
+        action: handleLogout,
+        active: false
+      });
+    }
 
     return items;
   };

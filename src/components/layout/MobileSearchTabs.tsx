@@ -2,9 +2,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, TrendingUp, Tag, Clock, FileText } from "lucide-react";
 
-const MobileSearchTabs = () => {
-  const [activeTab, setActiveTab] = useState("popular");
+interface MobileSearchTabsProps {
+  activeTab?: string;
+  onTabChange?: (tabId: string) => void;
+}
 
+const MobileSearchTabs = ({ activeTab = "popular", onTabChange }: MobileSearchTabsProps) => {
   const tabs = [
     { id: "popular", label: "Popular", icon: TrendingUp },
     { id: "offers", label: "Offers", icon: Tag },
@@ -22,7 +25,11 @@ const MobileSearchTabs = () => {
           return (
             <motion.button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                if (onTabChange) {
+                  onTabChange(tab.id);
+                }
+              }}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                 isActive
                   ? "bg-blue-600 text-white shadow-md"

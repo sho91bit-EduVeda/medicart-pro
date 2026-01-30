@@ -15,7 +15,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { motion, useReducedMotion } from "framer-motion";
 import CommonHeader from "@/components/layout/CommonHeader";
-import AppFooter from "@/components/layout/AppFooter";
+import CompleteFooter from "@/components/layout/CompleteFooter";
 
 interface Product {
   id: string;
@@ -311,7 +311,7 @@ const ProductDetail = () => {
           />
         </motion.div>
       </motion.div>
-    <AppFooter />
+    <CompleteFooter />
   </div>
   );
 };

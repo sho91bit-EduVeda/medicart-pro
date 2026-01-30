@@ -9,7 +9,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import NotificationBell from "@/components/common/NotificationBell";
 import { MobileMenu } from "@/components/layout/MobileMenu";
 import logoImage from "@/assets/Logo.png";
-import AppFooter from "@/components/layout/AppFooter";
+import CompleteFooter from "@/components/layout/CompleteFooter";
 
 const Reviews = () => {
   const navigate = useNavigate();
@@ -118,7 +118,7 @@ const Reviews = () => {
           </motion.div>
         </div>
       </motion.main>
-    <AppFooter />
+    <CompleteFooter />
   </div>
   );
 };

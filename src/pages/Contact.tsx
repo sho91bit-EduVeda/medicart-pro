@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import { motion, useReducedMotion } from "framer-motion";
 import CommonHeader from "@/components/layout/CommonHeader";
-import AppFooter from "@/components/layout/AppFooter";
+import CompleteFooter from "@/components/layout/CompleteFooter";
 
 const Contact = () => {
   const navigate = useNavigate();
@@ -97,7 +97,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <CommonHeader showStoreButton={true} />
+      <CommonHeader showStoreButton={true} showSearchBar={true} />
 
       {/* Main Content with animations */}
       <motion.div 
@@ -418,7 +418,7 @@ const Contact = () => {
         </motion.div>
       </motion.div>
       
-      <AppFooter />
+      <CompleteFooter />
     </div>
   );
 };

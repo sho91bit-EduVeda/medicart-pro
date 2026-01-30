@@ -23,7 +23,7 @@ import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { useSearchParams } from "react-router-dom";
 import { UserAccountDropdown } from "@/components/common/UserAccountDropdown";
 import CommonHeader from "@/components/layout/CommonHeader";
-import AppFooter from "@/components/layout/AppFooter";
+import CompleteFooter from "@/components/layout/CompleteFooter";
 
 // Import animations
 import allergyAnim from "@/assets/animations/category-allergy.json";

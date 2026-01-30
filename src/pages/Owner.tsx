@@ -52,7 +52,7 @@ import { Menu } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { DashboardHome } from "@/components/dashboard/DashboardHome";
 import CommonHeader from "@/components/layout/CommonHeader";
-import AppFooter from "@/components/layout/AppFooter";
+import CompleteFooter from "@/components/layout/CompleteFooter";
 
 
 interface Category {

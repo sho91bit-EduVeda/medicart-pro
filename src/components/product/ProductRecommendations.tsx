@@ -125,7 +125,7 @@ export function ProductRecommendations({
   return (
     <motion.section 
       ref={ref}
-      className="py-12 bg-muted/30 rounded-2xl px-6"
+      className="py-6 bg-muted/30 rounded-2xl px-6 mb-6"  // Further reduced padding and margin
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={{

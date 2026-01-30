@@ -44,7 +44,7 @@ import { UnifiedAuth } from '@/components/common/UnifiedAuth';
 import logoImage from '@/assets/Logo.png';
 import RequestMedicineSheet from '@/components/common/RequestMedicineSheet';
 import CommonHeader from '@/components/layout/CommonHeader';
-import AppFooter from '@/components/layout/AppFooter';
+import CompleteFooter from '@/components/layout/CompleteFooter';
 
 export default function Profile() {
   const navigate = useNavigate();

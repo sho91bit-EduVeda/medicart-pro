@@ -15,7 +15,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { motion, useReducedMotion } from "framer-motion";
 import logoImage from "@/assets/Logo.png";
-import AppFooter from "@/components/layout/AppFooter";
+import CommonHeader from "@/components/layout/CommonHeader";
+import CompleteFooter from "@/components/layout/CompleteFooter";
 
 // Import animations
 import allergyAnim from "@/assets/animations/category-allergy.json";
@@ -53,6 +54,22 @@ const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Handle search submission
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      // Filter products based on search query
+      const filtered = products.filter(product =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (product.brand && product.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (product.composition && product.composition.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+      setFilteredProducts(filtered);
+    } else {
+      // Show all products when search is cleared
+      setFilteredProducts(products);
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [discountPercentage] = useState(0); // In a real app, this would come from settings
 
@@ -155,81 +172,13 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with animation */}
-      <motion.header 
-        className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-600 text-white shadow-xl"
-        initial={{ y: prefersReducedMotion ? 0 : -100 }}
-        animate={{ y: 0 }}
-        transition={{ 
-          type: "spring", 
-          stiffness: 300, 
-          damping: 30,
-          mass: 1
-        }}
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div 
-              className="flex items-center gap-3 cursor-pointer" 
-              onClick={() => navigate("/")}
-            >
-              <div className="p-2 bg-white rounded-lg backdrop-blur-sm border border-white/20 shadow-lg">
-                <img src={logoImage} alt="Kalyanam Pharmaceuticals Logo" className="w-8 h-8 object-contain" />
-              </div>
-              <div>
-                {/* Desktop view - Full business name */}
-                <h1 className="hidden md:block text-2xl font-bold">Kalyanam Pharmaceuticals</h1>
-                <p className="hidden md:block text-sm text-primary-foreground/90">Your Trusted Healthcare Partner</p>
-
-                {/* Mobile view - Shortened business name */}
-                <div className="md:hidden">
-                  <h1 className="text-xl font-bold">Kalyanam</h1>
-                  <p className="text-[0.6rem] text-primary-foreground/90 uppercase tracking-wider">Pharmaceuticals</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-            <motion.button 
-              className="rounded-full px-4 py-2 text-primary-foreground hover:bg-white/20 transition-colors font-medium flex items-center gap-2 hidden md:flex"
-              onClick={() => navigate("/")}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
-              <Store className="w-4 h-4" />
-              <span className="hidden md:block">View Store</span>
-            </motion.button>
-            <NotificationBell />
-            {isAuthenticated && <UserAccountDropdown />}
-            
-            {/* Login/Signup buttons - Only show when no one is logged in */}
-            {!isAuthenticated && !isCustomerAuthenticated && (
-              <div className="flex items-center gap-1 md:hidden">
-                <UnifiedAuth
-                  trigger={
-                    <motion.button
-                      className="rounded-full p-2 text-white hover:bg-white/20 transition-colors"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      title="Login / Signup"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                      </svg>
-                    </motion.button>
-                  }
-                />
-              </div>
-            )}
-            
-            <MobileMenu />
-            </div>
-          </div>
-        </div>
-      </motion.header>
+      <CommonHeader 
+        showStoreButton={true} 
+        showSearchBar={true}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onSearchSubmit={handleSearchSubmit}
+      />
 
       {/* Main Content with animations */}
       <motion.div 
@@ -297,6 +246,11 @@ const Products = () => {
                 className="pl-12 pr-4 py-6 text-base rounded-2xl border-2 border-muted shadow-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearchSubmit();
+                  }
+                }}
               />
             </motion.div>
           </div>
@@ -378,7 +332,7 @@ const Products = () => {
           )}
         </motion.div>
       </motion.div>
-    <AppFooter />
+      <CompleteFooter />
   </div>
   );
 };

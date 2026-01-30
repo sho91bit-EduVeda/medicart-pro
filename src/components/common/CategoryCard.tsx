@@ -32,6 +32,12 @@ const CategoryCard = ({ id, name, description, imageUrl, productCount, variants,
   const navigate = useNavigate();
   const IconComponent = getCategoryIcon(name);
 
+  const handleExploreClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent the flip animation click
+    e.stopPropagation();
+    navigate(`/category/${id}`);
+  };
+
   return (
     <motion.div
       variants={variants || {
@@ -106,7 +112,10 @@ const CategoryCard = ({ id, name, description, imageUrl, productCount, variants,
             </div>
 
             <div className="mt-auto w-full">
-              <button className="w-full bg-white text-primary font-semibold text-sm py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-white/90 transition-colors shadow-sm">
+              <button 
+                className="w-full bg-white text-primary font-semibold text-sm py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-white/90 transition-colors shadow-sm"
+                onClick={handleExploreClick}
+              >
                 Explore
                 <ArrowRight className="w-4 h-4" />
               </button>
