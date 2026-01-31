@@ -127,84 +127,75 @@ const StoreReviewForm: React.FC<StoreReviewFormProps> = ({ onClose, onSubmit, sh
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Leave a Store Review</CardTitle>
-        <CardDescription>
-          Share your experience with our pharmacy
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Overall Rating</Label>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className={`w-8 h-8 cursor-pointer transition-colors ${star <= rating
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-300 hover:text-yellow-200"
-                    }`}
-                  onClick={() => setRating(star)}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="title" className="text-sm font-medium mb-2 block">Review Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Summarize your experience"
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label className="text-sm font-medium mb-2 block">Overall Rating</Label>
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+              key={star}
+              className={`w-8 h-8 cursor-pointer transition-colors ${star <= rating
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-gray-300 hover:text-yellow-200"
+                }`}
+              onClick={() => setRating(star)}
             />
-          </div>
+          ))}
+        </div>
+      </div>
 
-          <div>
-            <Label htmlFor="comment" className="text-sm font-medium mb-2 block">Your Review</Label>
-            <Textarea
-              id="comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Tell us about your experience with our store..."
-              rows={4}
-            />
-          </div>
+      <div>
+        <Label htmlFor="title" className="text-sm font-medium mb-2 block">Review Title</Label>
+        <Input
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Summarize your experience"
+        />
+      </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name" className="text-sm font-medium mb-2 block">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="email" className="text-sm font-medium mb-2 block">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Your email"
-              />
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex gap-2">
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Submitting...' : 'Submit Review'}
-          </Button>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+      <div>
+        <Label htmlFor="comment" className="text-sm font-medium mb-2 block">Your Review</Label>
+        <Textarea
+          id="comment"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Tell us about your experience with our store..."
+          rows={4}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="name" className="text-sm font-medium mb-2 block">Name</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+          />
+        </div>
+        <div>
+          <Label htmlFor="email" className="text-sm font-medium mb-2 block">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Your email"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button type="submit" disabled={submitting}>
+          {submitting ? 'Submitting...' : 'Submit Review'}
+        </Button>
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 };
 

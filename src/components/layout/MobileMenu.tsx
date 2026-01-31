@@ -168,17 +168,6 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick,
           active: location.pathname === "/wishlist"
         });
       }
-
-      // Add customer logout if authenticated as customer
-      if (isCustomerAuthenticated) {
-        items.push({
-          id: "logout-customer",
-          label: "Logout",
-          icon: LogOut,
-          action: handleLogout,
-          active: false
-        });
-      }
     }
 
     return items;

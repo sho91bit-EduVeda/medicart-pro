@@ -24,6 +24,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import RequestMedicineSheet from "@/components/common/RequestMedicineSheet";
+import ReviewsPopup from "@/components/common/ReviewsPopup";
 import LottieAnimation from "@/components/common/LottieAnimation";
 import quickLinksAnim from "@/assets/animations/quick-links.json";
 
@@ -86,7 +87,7 @@ export function QuickLinksSidebar() {
       id: "reviews",
       label: "Reviews",
       icon: Mail,
-      path: "/reviews"
+      path: "#reviews"
     }
   ];
 
@@ -121,6 +122,12 @@ export function QuickLinksSidebar() {
     if ((!isAuthenticated || isCustomerAuthenticated) && link.id === "request-medicine") {
       // For guests and customers, we'll just close the menu and let the hash navigation handle it
       setIsOpen(false);
+      return;
+    }
+
+    // Special handling for reviews for customers (should be handled by ReviewsPopup)
+    if (isCustomerAuthenticated && link.id === "reviews") {
+      // ReviewsPopup handles its own state, so we don't need to do anything here
       return;
     }
 
@@ -232,6 +239,48 @@ export function QuickLinksSidebar() {
                           </Button>
                         </motion.div>
                       </RequestMedicineSheet>
+                    );
+                  }
+
+                  // Special handling for reviews for customers
+                  if (isCustomerAuthenticated && link.id === "reviews") {
+                    return (
+                      <ReviewsPopup key={link.id}>
+                        <motion.div
+                          className="relative"
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          transition={{ delay: quickLinks.indexOf(link) * 0.05 }}
+                          onMouseEnter={() => setHoveredItem(link.id)}
+                          onMouseLeave={() => setHoveredItem(null)}
+                        >
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start gap-3 py-4 text-left relative"
+                            // No onClick handler needed - ReviewsPopup handles its own state
+                          >
+                            <motion.div
+                              animate={hoveredItem === link.id ? { rotate: 360 } : { rotate: 0 }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <Icon className="w-5 h-5" />
+                            </motion.div>
+                            <span className="font-medium">{link.label}</span>
+
+                            {/* Hover animation indicator */}
+                            {hoveredItem === link.id && (
+                              <motion.div
+                                className="absolute inset-0 bg-primary/5 rounded-lg"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ duration: 0.2 }}
+                              />
+                            )}
+                          </Button>
+                        </motion.div>
+                      </ReviewsPopup>
                     );
                   }
 
