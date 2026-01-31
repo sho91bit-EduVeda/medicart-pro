@@ -40,6 +40,7 @@ export default function Wishlist() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchPopup, setShowSearchPopup] = useState(false);
+  const [selectedProductForPopup, setSelectedProductForPopup] = useState<Product | null>(null); // Track selected product for direct view
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -155,8 +156,12 @@ export default function Wishlist() {
         <SearchPopup 
           searchQuery={searchQuery} 
           isOpen={showSearchPopup} 
-          onClose={() => setShowSearchPopup(false)} 
+          onClose={() => {
+            setShowSearchPopup(false);
+            setSelectedProductForPopup(null); // Clear selected product
+          }} 
           showBackButton={false} // Set to false since we're viewing individual wishlist items
+          selectedProduct={selectedProductForPopup} // Pass the directly selected product
         />
         
         {loading ? (
@@ -264,11 +269,13 @@ export default function Wishlist() {
                     name={product.name}
                     original_price={product.original_price}
                     discountPercentage={discountPercentage}
+                    productDiscountPercentage={product.discount_percentage}
                     image_url={product.image_url}
                     in_stock={product.in_stock}
                     quantity={product.stock_quantity || 0}
                     onClick={() => {
-                      setSearchQuery(product.name);
+                      // Set the selected product directly instead of doing a search
+                      setSelectedProductForPopup(product);
                       setShowSearchPopup(true);
                     }}
                   />

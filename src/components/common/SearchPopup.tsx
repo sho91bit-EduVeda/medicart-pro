@@ -17,7 +17,8 @@ import {
   Heart,
   Star,
   Phone,
-  PackagePlus
+  PackagePlus,
+  Search
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -53,6 +54,7 @@ interface Product {
   side_effects?: string;
   composition?: string;
   stock_quantity?: number;
+  discount_percentage?: number;
 }
 
 interface Category {
@@ -67,19 +69,22 @@ interface SearchPopupProps {
   onClose: () => void;
   initialTab?: 'details';
   showBackButton?: boolean; // Add this new prop
+  selectedProduct?: Product | null; // Add this new prop for direct product view
 }
 
-export function SearchPopup({
-  searchQuery,
-  isOpen,
-  onClose,
-  initialTab = 'details',
-  showBackButton = true // Default to true to maintain existing behavior
-}: SearchPopupProps) {
+export function SearchPopup(props: SearchPopupProps) {
+  const { 
+    searchQuery, 
+    isOpen, 
+    onClose, 
+    initialTab = 'details', 
+    showBackButton = true, 
+    selectedProduct = null 
+  } = props;
 
   
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [currentSelectedProduct, setCurrentSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const { addItem } = useCart();
@@ -158,18 +163,25 @@ export function SearchPopup({
       // The parent component should handle this logic
     }
     
-    if (isOpen && searchQuery) {
-      searchProducts();
-      fetchDiscount();
+    if (isOpen) {
+      if (selectedProduct) {
+        // Direct product view - set the selected product immediately
+        setCurrentSelectedProduct(selectedProduct);
+        fetchDiscount();
+      } else if (searchQuery) {
+        // Search-based view - perform search
+        searchProducts();
+        fetchDiscount();
+      }
     }
-  }, [isOpen, searchQuery]);
+  }, [isOpen, searchQuery, selectedProduct]);
 
-  // Load reviews when selectedProduct changes
+  // Load reviews when currentSelectedProduct changes
   useEffect(() => {
-    if (selectedProduct) {
-      loadReviews(selectedProduct.id);
+    if (currentSelectedProduct) {
+      loadReviews(currentSelectedProduct.id);
     }
-  }, [selectedProduct]);
+  }, [currentSelectedProduct]);
 
   const fetchDiscount = async () => {
     try {
@@ -191,11 +203,12 @@ export function SearchPopup({
 
     setLoading(true);
     try {
-      // First try prefix search
+      // First try prefix search with lowercase (case-insensitive)
+      const lowerSearchQuery = searchQuery.toLowerCase();
       let q = query(
         collection(db, "products"),
-        where("name", ">=", searchQuery),
-        where("name", "<=", searchQuery + "\uf8ff"),
+        where("name", ">=", lowerSearchQuery),
+        where("name", "<=", lowerSearchQuery + "\uf8ff"),
         limit(20)
       );
 
@@ -248,7 +261,7 @@ export function SearchPopup({
 
       // If only one product found, select it automatically
       if (productsData.length === 1) {
-        setSelectedProduct(productsData[0]);
+        setCurrentSelectedProduct(productsData[0]);
       }
     } catch (error) {
       console.error("Failed to search products:", error);
@@ -282,7 +295,7 @@ export function SearchPopup({
   };
 
   const handleViewDetails = async (product: Product) => {
-    setSelectedProduct(product);
+    setCurrentSelectedProduct(product);
     setActiveTab('details');
     // Load reviews when viewing product details
     loadReviews(product.id);
@@ -320,7 +333,7 @@ export function SearchPopup({
   };
 
   const submitReview = async () => {
-    if (!selectedProduct) return;
+    if (!currentSelectedProduct) return;
 
     // Validate required fields
     if (rating === 0) {
@@ -348,7 +361,7 @@ export function SearchPopup({
         // Check if authenticated user already reviewed
         const q = query(
           collection(db, 'product_reviews'),
-          where('product_id', '==', selectedProduct.id),
+          where('product_id', '==', currentSelectedProduct.id),
           where('user_id', '==', userId)
         );
         const existingReviews = await getDocs(q);
@@ -373,7 +386,7 @@ export function SearchPopup({
         // Check if this anonymous user already reviewed this product
         const q = query(
           collection(db, 'product_reviews'),
-          where('product_id', '==', selectedProduct.id),
+          where('product_id', '==', currentSelectedProduct.id),
           where('user_id', '==', userId)
         );
         const existingReviews = await getDocs(q);
@@ -386,7 +399,7 @@ export function SearchPopup({
       }
 
       const docRef = await addDoc(collection(db, 'product_reviews'), {
-        product_id: selectedProduct.id,
+        product_id: currentSelectedProduct.id,
         user_id: userId,
         rating,
         title,
@@ -404,7 +417,7 @@ export function SearchPopup({
       setTitle("");
       setComment("");
       setRating(5);
-      loadReviews(selectedProduct.id);
+      loadReviews(currentSelectedProduct.id);
     } catch (error: any) {
       toast.error('Failed to submit review');
     } finally {
@@ -412,17 +425,15 @@ export function SearchPopup({
     }
   };
 
-  const handleBackToList = () => {
-    setSelectedProduct(null);
-    // Reset the search to show all results again
-    searchProducts();
-  };
-
   // If a product is selected, show its details
-  if (selectedProduct) {
-    const discountedPrice = selectedProduct.original_price * (1 - discountPercentage / 100);
-    const savings = selectedProduct.original_price - discountedPrice;
-    const isWishlisted = isInWishlist(selectedProduct.id);
+  if (currentSelectedProduct) {
+    // Use product-specific discount if available, otherwise use global discount
+    const effectiveDiscount = currentSelectedProduct.discount_percentage !== undefined && currentSelectedProduct.discount_percentage > 0 
+      ? currentSelectedProduct.discount_percentage 
+      : discountPercentage;
+    const discountedPrice = currentSelectedProduct.original_price * (1 - effectiveDiscount / 100);
+    const savings = currentSelectedProduct.original_price - discountedPrice;
+    const isWishlisted = isInWishlist(currentSelectedProduct.id);
 
     // Calculate average rating
     const calculatedAverageRating = reviews.length > 0
@@ -438,18 +449,9 @@ export function SearchPopup({
               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
               <DialogHeader className="relative z-10">
                 <DialogTitle className="text-base sm:text-lg md:text-xl font-bold text-white truncate pr-8">
-                  {selectedProduct.name}
+                  {currentSelectedProduct.name}
                 </DialogTitle>
                 <div className="flex justify-between items-center mt-1 sm:mt-2">
-                  {showBackButton && (
-                    <Button
-                      variant="ghost"
-                      onClick={handleBackToList}
-                      className="text-xs sm:text-sm h-7 sm:h-8 px-2 sm:px-3 text-white hover:bg-white/20 border border-white/20"
-                    >
-                      ← Back
-                    </Button>
-                  )}
                   <div className="flex-1"></div>
                 </div>
               </DialogHeader>
@@ -467,17 +469,17 @@ export function SearchPopup({
                 {/* Product Image and Category - Hidden on mobile */}
                 <div className="hidden md:flex flex-col gap-4">
                   <div className="w-2/3 sm:w-1/2 mx-auto rounded-lg overflow-hidden bg-white border border-slate-200 shadow-sm aspect-[1/1] flex items-center justify-center p-1">
-                    {selectedProduct.image_url ? (
+                    {currentSelectedProduct.image_url ? (
                       <img
-                        src={selectedProduct.image_url}
-                        alt={selectedProduct.name}
+                        src={currentSelectedProduct.image_url}
+                        alt={currentSelectedProduct.name}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
-                        {selectedProduct.category_id ? (
+                        {currentSelectedProduct.category_id ? (
                           <div className="w-10 h-10 sm:w-12 md:w-16 sm:h-12 md:h-16">
-                            <LottieAnimation animationData={getCategoryAnimation(getCategoryNameById(selectedProduct.category_id))} />
+                            <LottieAnimation animationData={getCategoryAnimation(getCategoryNameById(currentSelectedProduct.category_id))} />
                           </div>
                         ) : (
                           <span className="text-xl sm:text-2xl md:text-3xl">💊</span>
@@ -491,9 +493,9 @@ export function SearchPopup({
                       variant="outline" 
                       className="text-[0.65rem] px-2 py-0.5 font-medium tracking-wide uppercase bg-slate-50 text-slate-700 border-slate-200"
                     >
-                      {selectedProduct.category_id 
-                        ? getCategoryNameById(selectedProduct.category_id) 
-                        : (selectedProduct.categories?.name || "Uncategorized")}
+                      {currentSelectedProduct.category_id 
+                        ? getCategoryNameById(currentSelectedProduct.category_id) 
+                        : (currentSelectedProduct.categories?.name || "Uncategorized")}
                     </Badge>
                   </div>
                       
@@ -543,7 +545,7 @@ export function SearchPopup({
                 {/* Product Info - Takes full width on mobile, half on desktop */}
                 <div className="w-full md:w-auto md:flex-1 space-y-3 overflow-y-auto max-h-[75vh] md:max-h-none bg-white rounded-lg border border-slate-200 shadow-sm p-3 md:p-4">
                   <div>
-                    {!selectedProduct.in_stock && (
+                    {!currentSelectedProduct.in_stock && (
                       <div className="flex items-center gap-2">
                         <Badge variant="destructive" className="text-xs">Out of Stock</Badge>
                       </div>
@@ -554,45 +556,45 @@ export function SearchPopup({
                   <div className="space-y-2">
                     {/* Product Details */}
                     <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 md:max-h-[320px]">
-                      {selectedProduct.description && (
+                      {currentSelectedProduct.description && (
                         <div>
                           <h3 className="text-sm md:text-base font-semibold mb-1">Description</h3>
-                          <p className="text-muted-foreground text-xs md:text-sm">{selectedProduct.description}</p>
+                          <p className="text-muted-foreground text-xs md:text-sm">{currentSelectedProduct.description}</p>
                         </div>
                       )}
     
-                      {selectedProduct.composition && (
+                      {currentSelectedProduct.composition && (
                         <div>
                           <h3 className="text-sm md:text-base font-semibold mb-1">Composition</h3>
-                          <p className="text-muted-foreground text-xs md:text-sm">{selectedProduct.composition}</p>
+                          <p className="text-muted-foreground text-xs md:text-sm">{currentSelectedProduct.composition}</p>
                         </div>
                       )}
     
-                      {selectedProduct.uses && (
+                      {currentSelectedProduct.uses && (
                         <div>
                           <h3 className="text-sm md:text-base font-semibold mb-1">Uses</h3>
-                          <p className="text-muted-foreground text-xs md:text-sm">{selectedProduct.uses}</p>
+                          <p className="text-muted-foreground text-xs md:text-sm">{currentSelectedProduct.uses}</p>
                         </div>
                       )}
     
-                      {selectedProduct.side_effects && (
+                      {currentSelectedProduct.side_effects && (
                         <div>
                           <h3 className="text-sm md:text-base font-semibold mb-1">Side Effects</h3>
-                          <p className="text-muted-foreground text-xs md:text-sm">{selectedProduct.side_effects}</p>
+                          <p className="text-muted-foreground text-xs md:text-sm">{currentSelectedProduct.side_effects}</p>
                         </div>
                       )}
     
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <h4 className="font-medium text-xs text-muted-foreground">Availability</h4>
-                          <p className={`font-medium text-xs ${selectedProduct.in_stock ? 'text-green-600' : 'text-red-600'}`}>
-                            {selectedProduct.in_stock ? 'In Stock' : 'Out of Stock'}
+                          <p className={`font-medium text-xs ${currentSelectedProduct.in_stock ? 'text-green-600' : 'text-red-600'}`}>
+                            {currentSelectedProduct.in_stock ? 'In Stock' : 'Out of Stock'}
                           </p>
                         </div>
-                        {selectedProduct.stock_quantity !== undefined && selectedProduct.stock_quantity > 0 && (
+                        {currentSelectedProduct.stock_quantity !== undefined && currentSelectedProduct.stock_quantity > 0 && (
                           <div>
                             <h4 className="font-medium text-xs text-muted-foreground">Stock</h4>
-                            <p className="font-medium text-xs">{selectedProduct.stock_quantity} units</p>
+                            <p className="font-medium text-xs">{currentSelectedProduct.stock_quantity} units</p>
                           </div>
                         )}
                       </div>
@@ -606,14 +608,14 @@ export function SearchPopup({
                         </span>
                         {discountPercentage > 0 && (
                           <span className="text-xs text-muted-foreground line-through">
-                            ₹{selectedProduct.original_price.toFixed(2)}
+                            ₹{currentSelectedProduct.original_price.toFixed(2)}
                           </span>
                         )}
                       </div>
-                      {discountPercentage > 0 && (
+                      {effectiveDiscount > 0 && (
                         <div className="flex items-center gap-1.5 mb-2">
                           <Badge className="bg-destructive text-destructive-foreground text-xs px-1.5 py-0.5">
-                            {discountPercentage}% OFF
+                            {effectiveDiscount}% OFF
                           </Badge>
                           <span className="text-secondary font-semibold text-xs">
                             Save ₹{savings.toFixed(2)}
@@ -622,8 +624,8 @@ export function SearchPopup({
                       )}
                       <div className="flex flex-col gap-1">
                         {/* Request Availability button should only show for out-of-stock products */}
-                        {!selectedProduct.in_stock && (
-                          <RequestMedicineSheet medicineName={selectedProduct.name}>
+                        {!currentSelectedProduct.in_stock && (
+                          <RequestMedicineSheet medicineName={currentSelectedProduct.name}>
                             <Button 
                               className="w-full h-7 text-xs" 
                               size="sm"
@@ -638,11 +640,11 @@ export function SearchPopup({
                           </RequestMedicineSheet>
                         )}
                         {/* Add to Cart button should only show for in-stock products and when delivery is enabled */}
-                        {selectedProduct.in_stock && deliveryEnabled && (
+                        {currentSelectedProduct.in_stock && deliveryEnabled && (
                           <Button
                             className="w-full h-7 text-xs"
                             size="sm"
-                            onClick={() => handleAddToCart(selectedProduct)}
+                            onClick={() => handleAddToCart(currentSelectedProduct)}
                           >
                             <ShoppingCart className="w-3 h-3 mr-1.5" />
                             Add to Cart
@@ -738,7 +740,7 @@ export function SearchPopup({
             <DialogHeader>
               <DialogTitle className="text-xl md:text-2xl">Customer Reviews</DialogTitle>
               <DialogDescription>
-                {selectedProduct?.name}
+                {currentSelectedProduct?.name}
               </DialogDescription>
             </DialogHeader>
                 
@@ -843,7 +845,13 @@ export function SearchPopup({
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-3 sm:p-4 text-white relative overflow-hidden rounded-t-xl">
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
           <DialogHeader className="relative z-10">
-            <DialogTitle className="text-base sm:text-lg md:text-xl font-bold text-white">Search Results for "{searchQuery}"</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg md:text-xl font-bold text-white flex items-center gap-2">
+              <Search className="w-5 h-5" />
+              Search Results for "{searchQuery}"
+            </DialogTitle>
+            <DialogDescription className="text-blue-100 text-sm mt-1">
+              Found {products.length} product{products.length !== 1 ? 's' : ''} matching your search
+            </DialogDescription>
           </DialogHeader>
         </div>
 
@@ -892,7 +900,11 @@ export function SearchPopup({
 
                 <div className="grid gap-4">
                   {products.map((product) => {
-                    const discountedPrice = product.original_price * (1 - discountPercentage / 100);
+                    // Use product-specific discount if available, otherwise use global discount
+                    const effectiveDiscount = product.discount_percentage !== undefined && product.discount_percentage > 0 
+                      ? product.discount_percentage 
+                      : discountPercentage;
+                    const discountedPrice = product.original_price * (1 - effectiveDiscount / 100);
                     const isWishlisted = isInWishlist(product.id);
 
                     return (

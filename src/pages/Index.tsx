@@ -213,8 +213,19 @@ const Index = () => {
   const { loadWishlist, items: wishlistItems } = useWishlist();
   const [showSearchPopup, setShowSearchPopup] = useState(false);
   const [isSearchResult, setIsSearchResult] = useState(false); // Track if popup is from search vs direct product view
+  const [selectedProductForPopup, setSelectedProductForPopup] = useState<Product | null>(null); // Track selected product for direct view
   const [suggestions, setSuggestions] = useState<Product[]>([]);
+
+  // Log when suggestions change
+  useEffect(() => {
+    // Logging removed for production
+  }, [suggestions]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Log when showSuggestions changes
+  useEffect(() => {
+    // Logging removed for production
+  }, [showSuggestions]);
   const [showReviews, setShowReviews] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
@@ -290,6 +301,8 @@ const Index = () => {
         id: doc.id,
         ...doc.data()
       })) as Product[];
+
+      // Product data logging removed for production
 
       setProducts(productsData);
       setProductsSectionFiltered(productsData);
@@ -523,22 +536,45 @@ const Index = () => {
 
   // Fetch autocomplete suggestions
   const fetchSuggestions = async (searchTerm: string) => {
-    if (!searchTerm.trim()) return;
+    if (!searchTerm.trim()) {
+      return;
+    }
 
     try {
-      // Get products that start with the searchTerm
+      // Get products that start with the searchTerm (case-insensitive)
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      
+      // First, try the range query approach
       const productsQuery = query(
         collection(db, "products"),
-        where("name", ">=", searchTerm),
-        where("name", "<=", searchTerm + "\uf8ff"),
+        where("name", ">=", lowerSearchTerm),
+        where("name", "<=", lowerSearchTerm + "\uf8ff"),
         limit(5)
       );
 
       const querySnapshot = await getDocs(productsQuery);
-      const productsData = querySnapshot.docs.map(doc => ({
+      
+      let productsData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...(doc.data() as any)
       })) as Product[];
+
+      // If range query returns nothing, try client-side filtering as fallback
+      if (productsData.length === 0) {
+        // Get all products and filter client-side
+        const allProductsQuery = query(collection(db, "products")); // No ordering needed
+        const allProductsSnapshot = await getDocs(allProductsQuery);
+        
+        const allProductsData = allProductsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...(doc.data() as any)
+        })) as Product[];
+        
+        // Filter products that start with the search term
+        productsData = allProductsData.filter(product =>
+          product.name.toLowerCase().startsWith(lowerSearchTerm)
+        ).slice(0, 5); // Limit to 5 results
+      }
 
       setSuggestions(productsData);
     } catch (error) {
@@ -550,8 +586,10 @@ const Index = () => {
   const handleSuggestionSelect = (product: Product) => {
     setSearchQuery(product.name);
     setShowSuggestions(false);
-    setIsSearchResult(false); // This is a direct product view, not a search result
+    setIsSearchResult(true); // This is from a search/suggestion
     setShowSearchPopup(true);
+    // Set the selected product directly for immediate display
+    setSelectedProductForPopup(product);
     trackSearch(product.name);
   };
 
@@ -619,8 +657,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Quick Links Sidebar - Only show when authenticated */}
-      {isAuthenticated && <QuickLinksSidebar />}
+      {/* Quick Links Sidebar - Show when authenticated (owner or customer) */}
+      {(isAuthenticated || isCustomerAuthenticated) && <QuickLinksSidebar />}
 
       <CommonHeader 
         showSearchBar={true}
@@ -661,10 +699,12 @@ const Index = () => {
         onClose={() => {
           setShowSearchPopup(false);
           setIsSearchResult(false); // Reset search context
+          setSelectedProductForPopup(null); // Clear selected product
           // Clear the search query when closing the popup to show all products
           setSearchQuery("");
         }}
         showBackButton={isSearchResult} // Only show back button when it's actually a search result
+        selectedProduct={selectedProductForPopup} // Pass the directly selected product
       />
 
       <div className="container mx-auto px-4 py-6"> 
@@ -930,13 +970,15 @@ const Index = () => {
                     name={product.name}
                     original_price={product.original_price}
                     discountPercentage={discountPercentage}
+                    productDiscountPercentage={product.discount_percentage}
                     image_url={product.image_url}
                     in_stock={product.in_stock}
                     quantity={product.stock_quantity || 0}
                     requires_prescription={product.requires_prescription}
                     category_animation_data={product.category_id ? getCategoryAnimation(getCategoryNameById(product.category_id)) : undefined}
                     onClick={() => {
-                      // Don't auto-fill search query - just show product popup
+                      // Set the selected product directly instead of doing a search
+                      setSelectedProductForPopup(product);
                       setIsSearchResult(false); // Not a search result, direct product view
                       setShowSearchPopup(true);
                     }}
@@ -966,13 +1008,15 @@ const Index = () => {
                     name={product.name}
                     original_price={product.original_price}
                     discountPercentage={discountPercentage}
+                    productDiscountPercentage={product.discount_percentage}
                     image_url={product.image_url}
                     in_stock={product.in_stock}
                     quantity={product.stock_quantity || 0}
                     requires_prescription={product.requires_prescription}
                     category_animation_data={product.category_id ? getCategoryAnimation(getCategoryNameById(product.category_id)) : undefined}
                     onClick={() => {
-                      setSearchQuery(product.name);
+                      // Set the selected product directly instead of doing a search
+                      setSelectedProductForPopup(product);
                       setIsSearchResult(false); // Not a search result, direct product view
                       setShowSearchPopup(true);
                     }}

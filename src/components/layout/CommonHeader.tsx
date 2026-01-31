@@ -40,6 +40,7 @@ const CommonHeader = ({
   onSuggestionSelect,
   activeSection
 }: CommonHeaderProps) => {
+  // Debug logging removed for production
   const navigate = useNavigate();
   const location = useLocation();
   const prefersReducedMotion = useReducedMotion();
@@ -86,20 +87,17 @@ const CommonHeader = ({
 
           {/* Desktop/Tablet: Search bar in same line */}
           <div className="hidden md:flex flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-5 h-5 z-10" />
-              <Input
-                type="search"
-                placeholder="Search medicines..."
-                className="pl-12 pr-4 py-3 w-full rounded-full bg-white/20 border-2 border-white/30 text-primary-foreground placeholder:text-primary-foreground/80 focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:border-white/50 transition-all duration-300 shadow-lg"
-                value={searchQuery}
-                onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && onSearchSubmit) {
-                    onSearchSubmit();
-                  }
-                }}
-              />
+            <div className="relative w-full flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-5 h-5 z-10" />
+                <Input
+                  type="search"
+                  placeholder="Search medicines..."
+                  className="pl-12 pr-4 py-3 w-full rounded-full bg-white/20 border-2 border-white/30 text-primary-foreground placeholder:text-primary-foreground/80 focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:border-white/50 transition-all duration-300 shadow-lg"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+                />
+              </div>
               
               {/* Autocomplete Suggestions Dropdown - Desktop */}
               {showSuggestions && suggestions.length > 0 && (
@@ -221,20 +219,17 @@ const CommonHeader = ({
         
         {/* Mobile Search - Only visible on mobile */}
         <div className="md:hidden w-full mt-3">
-          <div className="relative w-full">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-5 h-5 z-10" />
-            <Input
-              type="search"
-              placeholder="Search medicines..."
-              className="pl-12 pr-4 py-3 w-full rounded-full bg-white/20 border-2 border-white/30 text-primary-foreground placeholder:text-primary-foreground/80 focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:border-white/50 transition-all duration-300 shadow-lg"
-              value={searchQuery}
-              onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && onSearchSubmit) {
-                  onSearchSubmit();
-                }
-              }}
-            />
+          <div className="relative w-full flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-foreground/70 w-5 h-5 z-10" />
+              <Input
+                type="search"
+                placeholder="Search medicines..."
+                className="pl-12 pr-4 py-3 w-full rounded-full bg-white/20 border-2 border-white/30 text-primary-foreground placeholder:text-primary-foreground/80 focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:border-white/50 transition-all duration-300 shadow-lg"
+                value={searchQuery}
+                onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+              />
+            </div>
                     
             {/* Autocomplete Suggestions Dropdown - Mobile */}
             {showSuggestions && suggestions.length > 0 && (

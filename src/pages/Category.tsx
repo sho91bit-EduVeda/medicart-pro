@@ -90,6 +90,7 @@ const CategoryPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchPopup, setShowSearchPopup] = useState(false);
   const [isSearchResult, setIsSearchResult] = useState(false); // Track if popup is from search vs direct product view
+  const [selectedProductForPopup, setSelectedProductForPopup] = useState<Product | null>(null); // Track selected product for direct view
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -284,10 +285,12 @@ const CategoryPage = () => {
         onClose={() => {
           setShowSearchPopup(false);
           setIsSearchResult(false); // Reset search context
+          setSelectedProductForPopup(null); // Clear selected product
           // Clear the search query when closing the popup to show all products
           setSearchQuery("");
         }} 
         showBackButton={isSearchResult} // Only show back button when it's actually a search result
+        selectedProduct={selectedProductForPopup} // Pass the directly selected product
       />
 
       {/* Main Content with animations */}
@@ -390,7 +393,7 @@ const CategoryPage = () => {
           </motion.div>
         ) : (
           <motion.div 
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
             initial="hidden"
             animate="visible"
             variants={{
@@ -417,13 +420,15 @@ const CategoryPage = () => {
                   name={product.name}
                   original_price={product.original_price}
                   discountPercentage={discountPercentage}
+                  productDiscountPercentage={product.discount_percentage}
                   image_url={product.image_url}
                   in_stock={product.in_stock}
                   quantity={product.stock_quantity || 0}
                   requires_prescription={product.requires_prescription}
                   category_animation_data={category ? getCategoryAnimation(category.name) : undefined}
                   onClick={() => {
-                    setSearchQuery(product.name);
+                    // Set the selected product directly instead of doing a search
+                    setSelectedProductForPopup(product);
                     setIsSearchResult(false); // Not a search result, direct product view
                     setShowSearchPopup(true);
                   }}

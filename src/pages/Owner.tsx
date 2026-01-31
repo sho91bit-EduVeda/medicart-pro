@@ -119,8 +119,26 @@ const Owner = () => {
   const prefersReducedMotion = useReducedMotion();
   const [categories, setCategories] = useState<Category[]>([]);
   const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [productDiscountPercentage, setProductDiscountPercentage] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [products, setProducts] = useState<any[]>([]);
+  interface Product {
+    id: string;
+    name: string;
+    category_id: string;
+    description?: string;
+    uses?: string;
+    side_effects?: string;
+    composition?: string;
+    original_price: number;
+    image_url?: string;
+    in_stock: boolean;
+    stock_quantity: number;
+    discount_percentage?: number;
+    created_at?: string;
+    updated_at?: string;
+  }
+
+  const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
@@ -141,6 +159,11 @@ const Owner = () => {
   const [requestStatusFilter, setRequestStatusFilter] = useState<"all" | "pending" | "in_progress" | "resolved">("all");
   const [requestSortBy, setRequestSortBy] = useState<"created_at" | "medicine_name" | "customer_name">("created_at");
   const [requestSortOrder, setRequestSortOrder] = useState<"asc" | "desc">("desc");
+  
+  // Debug: Monitor productDiscountPercentage changes
+  useEffect(() => {
+    // Debug logging removed for production
+  }, [productDiscountPercentage]);
 
   // State for selected request and modal
   const [selectedRequest, setSelectedRequest] = useState<MedicineRequest | null>(null);
@@ -181,26 +204,30 @@ const Owner = () => {
     return requestSortOrder === "asc" ? comparison : -comparison;
   });
 
-  // Filter products based on search and filter criteria
+  // Debug: Log products state changes
   const filteredProducts = products.filter(product => {
-    try {
-      // Search filter
-      const matchesSearch = product.name && product.name.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      // Category filter
-      const matchesCategory = selectedCategoryFilter === "all" || selectedCategoryFilter === "" || product.category_id === selectedCategoryFilter;
-      
-      // Stock status filter
-      const matchesStockStatus = stockStatusFilter === "all" || 
-        (stockStatusFilter === "in-stock" && product.in_stock) || 
-        (stockStatusFilter === "out-of-stock" && !product.in_stock);
-      
-      return matchesSearch && matchesCategory && matchesStockStatus;
-    } catch (error) {
-      console.error("Error filtering products:", error);
-      return true; // Show all products if there's an error
-    }
+    // Search filter
+    const matchesSearch = product.name && product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Search debug logging removed for production
+    
+    return matchesSearch;
   });
+
+  // Debug: Log products state changes
+  useEffect(() => {
+    // Products debug logging removed for production
+  }, [products]);
+
+  // Debug: Log filtered products changes
+  useEffect(() => {
+    // Filtered products debug logging removed for production
+  }, [filteredProducts]);
+
+  // Debug: Log search query changes
+  useEffect(() => {
+    // Search query debug logging removed for production
+  }, [searchQuery]);
 
   // Product form state
   const [productName, setProductName] = useState("");
@@ -373,12 +400,22 @@ const Owner = () => {
       );
       
       const querySnapshot = await getDocs(q);
-      const productsData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...(doc.data() as any)
-      }));
+      const productsData = querySnapshot.docs.map(doc => {
+        const productData = {
+          id: doc.id,
+          ...(doc.data() as any)
+        } as Product;
+        
+        // Debug: Log discount information for each product
+        // Debug logging removed for production
+        
+        return productData;
+      });
       
       setProducts(productsData);
+      
+      // Debug: Log all products with their discount info
+      // Debug logging removed for production
     } catch (error) {
       console.error("Failed to fetch products:", error);
       toast.error("Failed to load products");
@@ -824,7 +861,9 @@ const Owner = () => {
     }
   };
 
-  const handleEditProduct = (product: any) => {
+  const handleEditProduct = (product: Product) => {
+    // Debug logging removed for production
+    
     setEditingProductId(product.id);
     setProductName(product.name || "");
     setCategoryId(product.category_id || "");
@@ -836,6 +875,21 @@ const Owner = () => {
     setImageUrl(product.image_url || "");
     setInStock(product.in_stock !== undefined ? product.in_stock : true);
     setStockQuantity(product.stock_quantity || 0);
+    
+    // Handle different possible discount field names
+    // Debug logging removed for production
+    
+    const discountValue = product.discount_percentage || 
+                         (product as any).discount || 
+                         (product as any).discountPercent || 
+                         0;
+    
+    // Debug logging removed for production
+    
+    setProductDiscountPercentage(discountValue);
+    
+    // Add a small delay to ensure state is updated before logging
+    // Debug logging removed for production
   };
 
   const handleResetFilters = () => {
@@ -860,6 +914,8 @@ const Owner = () => {
     setImageUrl("");
     setInStock(true);
     setStockQuantity(0);
+    setDiscountPercentage(0);
+    setProductDiscountPercentage(0);
   };
 
   const handleUpdateProduct = async (e: React.FormEvent) => {
@@ -886,7 +942,9 @@ const Owner = () => {
 
     try {
       const productRef = doc(db, "products", editingProductId);
-      await updateDoc(productRef, {
+      
+      // Build update data
+      const updateData: any = {
         name: productName,
         category_id: categoryId,
         description,
@@ -898,7 +956,14 @@ const Owner = () => {
         in_stock: inStock,
         stock_quantity: stockQuantity,
         updated_at: new Date().toISOString()
-      });
+      };
+      
+      // Only add discount_percentage if it has a value
+      if (productDiscountPercentage > 0) {
+        updateData.discount_percentage = productDiscountPercentage;
+      }
+      
+      await updateDoc(productRef, updateData);
 
       toast.success("Product updated successfully!");
       setEditingProductId(null);
@@ -1303,17 +1368,11 @@ const Owner = () => {
                           variant={activeSection === item.id ? "default" : "ghost"}
                           className="w-full justify-start gap-3 py-6 text-left text-gray-800 dark:text-white transition-all duration-200 pl-8"
                           onClick={() => {
-                            console.log("Desktop sidebar - Customers button clicked:", {
-                              itemId: item.id,
-                              label: item.label,
-                              path: item.path,
-                              isExternal: item.external,
-                              currentPath: window.location.pathname
-                            });
+                            // Desktop sidebar debug logging removed for production
                             
                             // Handle external navigation, but allow dashboard to navigate internally when already on owner page
                             if (item.external && item.path && item.id !== "dashboard") {
-                              console.log("Desktop sidebar - External navigation to:", item.path);
+                              // Desktop sidebar debug logging removed for production
                               navigate(item.path);
                               return;
                             }
@@ -1539,6 +1598,30 @@ const Owner = () => {
                         </div>
                         
                         <div className="space-y-2">
+                          <Label htmlFor="discount">Discount Percentage (%)</Label>
+                          <Input
+                            id="discount"
+                            type="number"
+                            step="0.01"
+                            value={productDiscountPercentage}
+                            onChange={(e) => {
+                              const newValue = parseFloat(e.target.value) || 0;
+                              // Debug logging removed for production
+                              setProductDiscountPercentage(newValue);
+                            }}
+                            placeholder="0.00"
+                            min="0"
+                            max="100"
+                          />
+                          <p className="text-sm text-muted-foreground">
+                            Leave as 0 to use default discount from settings
+                          </p>
+                          <p className="text-xs text-blue-600">
+                            Current value: {productDiscountPercentage}
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-2">
                           <Label htmlFor="stock-quantity">Stock Quantity</Label>
                           <Input
                             id="stock-quantity"
@@ -1662,7 +1745,11 @@ const Owner = () => {
                             <Input
                               placeholder="Search products..."
                               value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
+                              onChange={(e) => {
+                                // Search input debug logging removed for production
+                                setSearchQuery(e.target.value);
+                                // Debug logging removed for production
+                              }}
                               className="w-full"
                             />
                           </div>

@@ -88,21 +88,15 @@ export function MobileMenu({ onSearchClick, onReviewsClick, onUnifiedLoginClick,
         acc[item.category].push({
           ...item,
           action: () => {
-            console.log("MobileMenu - Customers button clicked:", {
-              itemId: item.id,
-              label: item.label,
-              path: item.path,
-              isExternal: item.external,
-              currentPath: location.pathname
-            });
+            // MobileMenu debug logging removed for production
             
             if (item.external && item.path) {
               // External navigation
-              console.log("MobileMenu - External navigation to:", item.path);
+              // MobileMenu debug logging removed for production
               navigate(item.path);
             } else {
               // Internal navigation using hash
-              console.log("MobileMenu - Navigating with hash:", `#${item.id}`);
+              // MobileMenu debug logging removed for production
               window.location.hash = `#${item.id}`;
             }
             setOpen(false);

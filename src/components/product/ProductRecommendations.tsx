@@ -167,6 +167,7 @@ export function ProductRecommendations({
             name={product.name}
             original_price={product.original_price}
             discountPercentage={discountPercentage}
+            productDiscountPercentage={product.discount_percentage}
             image_url={product.image_url}
             in_stock={product.in_stock}
             quantity={product.stock_quantity || 0}

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useCustomerAuth } from "@/hooks/useCustomerAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sheet,
@@ -37,6 +38,7 @@ interface QuickLink {
 export function QuickLinksSidebar() {
   const navigate = useNavigate();
   const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated: isCustomerAuthenticated } = useCustomerAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
@@ -72,6 +74,22 @@ export function QuickLinksSidebar() {
     }
   ];
 
+  // Define links for customer authenticated users
+  const customerLinks: QuickLink[] = [
+    {
+      id: "request-medicine",
+      label: "Request Medicine",
+      icon: Package,
+      path: "#request-medicine"
+    },
+    {
+      id: "reviews",
+      label: "Reviews",
+      icon: Mail,
+      path: "/reviews"
+    }
+  ];
+
   // Define links for non-authenticated users
   const guestLinks: QuickLink[] = [
     {
@@ -89,12 +107,19 @@ export function QuickLinksSidebar() {
   ];
 
   // Select appropriate links based on authentication status
-  const quickLinks = isAuthenticated ? ownerLinks : guestLinks;
+  let quickLinks: QuickLink[];
+  if (isAuthenticated && isAdmin) {
+    quickLinks = ownerLinks;
+  } else if (isCustomerAuthenticated) {
+    quickLinks = customerLinks;
+  } else {
+    quickLinks = guestLinks;
+  }
 
   const handleLinkClick = (link: QuickLink) => {
-    // Special handling for request medicine for non-authenticated users
-    if (!isAuthenticated && link.id === "request-medicine") {
-      // For guests, we'll just close the menu and let the hash navigation handle it
+    // Special handling for request medicine for non-authenticated users and customers
+    if ((!isAuthenticated || isCustomerAuthenticated) && link.id === "request-medicine") {
+      // For guests and customers, we'll just close the menu and let the hash navigation handle it
       setIsOpen(false);
       return;
     }
@@ -168,8 +193,8 @@ export function QuickLinksSidebar() {
                 {quickLinks.map((link) => {
                   const Icon = link.icon;
 
-                  // Special handling for request medicine for guests
-                  if (!isAuthenticated && link.id === "request-medicine") {
+                  // Special handling for request medicine for guests and customers
+                  if ((!isAuthenticated || isCustomerAuthenticated) && link.id === "request-medicine") {
                     return (
                       <RequestMedicineSheet key={link.id}>
                         <motion.div
@@ -184,7 +209,7 @@ export function QuickLinksSidebar() {
                           <Button
                             variant="ghost"
                             className="w-full justify-start gap-3 py-4 text-left relative"
-                            onClick={() => setIsOpen(false)} // Close menu when opening sheet
+                            // No onClick handler needed - RequestMedicineSheet handles its own state
                           >
                             <motion.div
                               animate={hoveredItem === link.id ? { rotate: 360 } : { rotate: 0 }}

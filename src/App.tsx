@@ -33,12 +33,7 @@ const RouteTracker = () => {
   const location = useLocation();
   
   useEffect(() => {
-    console.log("=== Route Change ===", {
-      pathname: location.pathname,
-      search: location.search,
-      hash: location.hash,
-      timestamp: new Date().toISOString()
-    });
+    // Route change logging removed for production
   }, [location]);
   
   return null;

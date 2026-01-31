@@ -51,17 +51,17 @@ const ProductSelectorTable = () => {
 
   // Handle product selection from dropdown
   const handleProductSelect = (productName: string, price?: number) => {
-    // Find the product by name
-    const product = products.find(p => p.name === productName);
+    // Find the product by name (case-insensitive)
+    const product = products.find(p => p.name.toLowerCase() === productName.toLowerCase());
     
     if (product) {
-      // Check if product is already selected
-      const existingProduct = selectedProducts.find(p => p.name === productName);
+      // Check if product is already selected (case-insensitive)
+      const existingProduct = selectedProducts.find(p => p.name.toLowerCase() === productName.toLowerCase());
       
       if (existingProduct) {
         // If already selected, increase quantity by 1
         const updatedProducts = selectedProducts.map(p => 
-          p.name === productName 
+          p.name.toLowerCase() === productName.toLowerCase() 
             ? { 
                 ...p, 
                 quantity: p.quantity + 1,

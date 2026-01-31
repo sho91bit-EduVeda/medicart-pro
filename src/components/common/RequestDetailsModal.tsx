@@ -9,6 +9,8 @@ import { db } from '@/integrations/firebase/config';
 import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
 import { auth } from '@/integrations/firebase/config';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 
 interface MedicineRequest {
   id: string;
@@ -27,18 +29,26 @@ interface RequestDetailsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate: () => void;
+  isReadOnly?: boolean; // New prop to make modal read-only for customers
 }
 
 const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
   request,
   open,
   onOpenChange,
-  onUpdate
+  onUpdate,
+  isReadOnly = false
 }) => {
   const [status, setStatus] = useState<MedicineRequest['status']>('pending');
   const [notes, setNotes] = useState('');
   const [reminderDate, setReminderDate] = useState('');
   const [updating, setUpdating] = useState(false);
+  
+  const { user, isAdmin } = useAuth();
+  const { isAuthenticated: isCustomerAuthenticated } = useCustomerAuth();
+  
+  // Determine if this modal should be read-only
+  const isActuallyReadOnly = isReadOnly || isCustomerAuthenticated;
 
   React.useEffect(() => {
     if (request) {
@@ -49,7 +59,7 @@ const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
   }, [request]);
 
   const handleUpdateStatus = async () => {
-    if (!request) return;
+    if (!request || isActuallyReadOnly) return;
 
     setUpdating(true);
     try {
@@ -71,9 +81,9 @@ const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
     }
   };
 
-  // Set a reminder for this request
+  // Set a reminder for this request (admin only)
   const handleSetReminder = async () => {
-    if (!request || !reminderDate) return;
+    if (!request || !reminderDate || isActuallyReadOnly) return;
 
     try {
       await addDoc(collection(db, 'notifications'), {
@@ -172,62 +182,84 @@ const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                   <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
-                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Admin Actions</h4>
+                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">
+                    {isActuallyReadOnly ? 'Request Details' : 'Admin Actions'}
+                  </h4>
                 </div>
       
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-slate-600">Current Status</Label>
-                    <Select value={status} onValueChange={(value: any) => setStatus(value)}>
-                      <SelectTrigger className="h-11 border-slate-200 hover:border-indigo-300 focus:ring-indigo-500 transition-all font-medium">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending" className="text-yellow-600 focus:text-yellow-700">
-                          <span className="flex items-center gap-2">● Pending Review</span>
-                        </SelectItem>
-                        <SelectItem value="in_progress" className="text-blue-600 focus:text-blue-700">
-                          <span className="flex items-center gap-2">● Processing Request</span>
-                        </SelectItem>
-                        <SelectItem value="resolved" className="text-green-600 focus:text-green-700">
-                          <span className="flex items-center gap-2">● Resolved & Closed</span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-      
-                  <div className="space-y-2">
-                    <Label htmlFor="notes" className="text-slate-600">Internal Notes</Label>
-                    <Textarea
-                      id="notes"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Add administrative notes regarding this request..."
-                      rows={6}
-                      className="resize-none border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50/50"
-                    />
-                  </div>
-      
-                  <div className="space-y-2 pt-2">
-                    <Label htmlFor="reminder" className="text-slate-600">Follow-up Reminder</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="reminder"
-                        type="date"
-                        value={reminderDate}
-                        onChange={(e) => setReminderDate(e.target.value)}
-                        className="flex-1 h-10 border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                      />
-                      <Button
-                        onClick={handleSetReminder}
-                        disabled={!reminderDate || updating}
-                        variant="outline"
-                        className="h-10 hover:bg-slate-100 hover:text-indigo-700 border-slate-200"
-                      >
-                        Set
-                      </Button>
+                  {!isActuallyReadOnly && (
+                    <div className="space-y-2">
+                      <Label className="text-slate-600">Current Status</Label>
+                      <Select value={status} onValueChange={(value: any) => setStatus(value)}>
+                        <SelectTrigger className="h-11 border-slate-200 hover:border-indigo-300 focus:ring-indigo-500 transition-all font-medium">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending" className="text-yellow-600 focus:text-yellow-700">
+                            <span className="flex items-center gap-2">● Pending Review</span>
+                          </SelectItem>
+                          <SelectItem value="in_progress" className="text-blue-600 focus:text-blue-700">
+                            <span className="flex items-center gap-2">● Processing Request</span>
+                          </SelectItem>
+                          <SelectItem value="resolved" className="text-green-600 focus:text-green-700">
+                            <span className="flex items-center gap-2">● Resolved & Closed</span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </div>
+                  )}
+                  
+                  {isActuallyReadOnly && (
+                    <div className="space-y-2">
+                      <Label className="text-slate-600">Request Status</Label>
+                      <div className="p-3 bg-slate-50 rounded-md border border-slate-200">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                          status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                        }`}>
+                          {status.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+      
+                  {!isActuallyReadOnly && (
+                    <div className="space-y-2">
+                      <Label htmlFor="notes" className="text-slate-600">Internal Notes</Label>
+                      <Textarea
+                        id="notes"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Add administrative notes regarding this request..."
+                        rows={6}
+                        className="resize-none border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50/50"
+                      />
+                    </div>
+                  )}
+      
+                  {!isActuallyReadOnly && (
+                    <div className="space-y-2 pt-2">
+                      <Label htmlFor="reminder" className="text-slate-600">Follow-up Reminder</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="reminder"
+                          type="date"
+                          value={reminderDate}
+                          onChange={(e) => setReminderDate(e.target.value)}
+                          className="flex-1 h-10 border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        />
+                        <Button
+                          onClick={handleSetReminder}
+                          disabled={!reminderDate || updating}
+                          variant="outline"
+                          className="h-10 hover:bg-slate-100 hover:text-indigo-700 border-slate-200"
+                        >
+                          Set
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -238,18 +270,27 @@ const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
           <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-slate-500 hover:text-slate-800 hover:bg-slate-100">
             Cancel
           </Button>
-          <Button
-            onClick={handleUpdateStatus}
-            disabled={updating}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[140px] shadow-lg shadow-indigo-200"
-          >
-            {updating ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                Updating...
-              </span>
-            ) : 'Update Status'}
-          </Button>
+          {!isActuallyReadOnly ? (
+            <Button
+              onClick={handleUpdateStatus}
+              disabled={updating}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[140px] shadow-lg shadow-indigo-200"
+            >
+              {updating ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  Updating...
+                </span>
+              ) : 'Update Status'}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => onOpenChange(false)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[140px] shadow-lg shadow-indigo-200"
+            >
+              Close
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

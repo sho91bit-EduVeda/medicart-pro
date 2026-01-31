@@ -10,6 +10,7 @@ import { db } from '@/integrations/firebase/config';
 import { collection, addDoc } from 'firebase/firestore';
 import { auth } from '@/integrations/firebase/config';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 
 interface RequestMedicineFormProps {
   medicineName?: string;
@@ -19,6 +20,7 @@ interface RequestMedicineFormProps {
 
 const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName = '', onClose, isFromProductSection = false }) => {
   const { prescriptionUpload } = useFeatureFlags(); // Use prescription upload flag
+  const { user: customerUser, isAuthenticated: isCustomerAuthenticated } = useCustomerAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -28,11 +30,18 @@ const RequestMedicineForm: React.FC<RequestMedicineFormProps> = ({ medicineName 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Set default message when component mounts
+  // Set default message and prepopulate customer data when component mounts
   useEffect(() => {
     // Set a default urgent message
     setMessage('I need this medicine urgently. Can you please make it available and let me know when it arrives?');
-  }, []);
+    
+    // Prepopulate form with customer data if logged in
+    if (isCustomerAuthenticated && customerUser) {
+      setName(customerUser.displayName || '');
+      setEmail(customerUser.email || '');
+      setPhone(customerUser.phoneNumber || '');
+    }
+  }, [isCustomerAuthenticated, customerUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

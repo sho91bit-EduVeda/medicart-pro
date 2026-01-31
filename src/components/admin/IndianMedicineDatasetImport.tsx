@@ -41,6 +41,7 @@ interface Product {
   image_url: string | null;
   in_stock: boolean;
   stock_quantity: number;
+  discount_percentage?: number;
   created_at: string;
 }
 
@@ -54,6 +55,7 @@ interface ProductFormData {
   image_url: string;
   in_stock: boolean;
   stock_quantity: number;
+  discount_percentage: string;
 }
 
 interface Category {
@@ -93,6 +95,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
     image_url: "",
     in_stock: true,
     stock_quantity: 10,
+    discount_percentage: "",
   });
 
   // Update form when categories change
@@ -113,11 +116,12 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
   // Search for existing products in local database
   const searchLocalProducts = async (searchTerm: string) => {
     try {
-      // Search for products in local database
+      // Search for products in local database (case-insensitive)
+      const lowerSearchTerm = searchTerm.toLowerCase();
       const q = query(
         collection(db, "products"),
-        where("name", ">=", searchTerm),
-        where("name", "<=", searchTerm + "\uf8ff")
+        where("name", ">=", lowerSearchTerm),
+        where("name", "<=", lowerSearchTerm + "\uf8ff")
       );
       
       const querySnapshot = await getDocs(q);
@@ -237,6 +241,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
       image_url: "",
       in_stock: medicine.Is_discontinued === "FALSE",
       stock_quantity: 10,
+      discount_percentage: medicine.discount_percentage || "",
     });
     
     // Open the dialog
@@ -259,6 +264,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
       image_url: product.image_url || "",
       in_stock: product.in_stock,
       stock_quantity: product.stock_quantity || 10,
+      discount_percentage: product.discount_percentage || "",
     });
     
     // Open the dialog
@@ -319,7 +325,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
       
       if (selectedLocalProduct) {
         // Update existing product
-        await updateDoc(doc(db, "products", selectedLocalProduct.id), {
+        const updateData: any = {
           name: formData.name,
           category_id: formData.category_id,
           description: formData.description,
@@ -330,11 +336,36 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
           in_stock: formData.in_stock,
           stock_quantity: formData.stock_quantity,
           updated_at: new Date().toISOString()
-        });
+        };
+        
+        // Only add discount_percentage if it has a value
+        if (formData.discount_percentage && parseFloat(formData.discount_percentage) > 0) {
+          updateData.discount_percentage = parseFloat(formData.discount_percentage);
+        }
+        
+        await updateDoc(doc(db, "products", selectedLocalProduct.id), updateData);
         toast.success("Medicine updated successfully!");
+        
+        // Close the dialog after successful update
+        setIsDialogOpen(false);
+        // Reset form
+        setFormData({
+          name: "",
+          category_id: "",
+          description: "",
+          uses: "",
+          composition: "",
+          original_price: "",
+          image_url: "",
+          in_stock: true,
+          stock_quantity: 10,
+          discount_percentage: "",
+        });
+        setSelectedLocalProduct(null);
+        setSelectedMedicine(null);
       } else {
         // Add new product
-        await addDoc(collection(db, "products"), {
+        const productData: any = {
           name: formData.name,
           category_id: formData.category_id,
           description: formData.description,
@@ -345,7 +376,14 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
           in_stock: formData.in_stock,
           stock_quantity: formData.stock_quantity,
           created_at: new Date().toISOString()
-        });
+        };
+        
+        // Only add discount_percentage if it has a value
+        if (formData.discount_percentage && parseFloat(formData.discount_percentage) > 0) {
+          productData.discount_percentage = parseFloat(formData.discount_percentage);
+        }
+        
+        await addDoc(collection(db, "products"), productData);
         toast.success("Medicine added successfully!");
         
         // If this is a manually entered medicine, add it to the Realtime Database as well
@@ -402,6 +440,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
           image_url: "",
           in_stock: true,
           stock_quantity: 10,
+          discount_percentage: "",
         });
         setSelectedMedicine(null);
         setSelectedLocalProduct(null);
@@ -843,7 +882,22 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
                     required
                   />
                 </div>
-                {/* Removed Image URL field to simplify the form */}
+                <div className="space-y-2">
+                  <Label htmlFor="discount">Discount Percentage (%)</Label>
+                  <Input
+                    id="discount"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={formData.discount_percentage}
+                    onChange={(e) => handleInputChange("discount_percentage", e.target.value)}
+                    placeholder="0.00"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Leave blank to use default discount from settings
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-4">
@@ -892,6 +946,7 @@ export const IndianMedicineDatasetImport = ({ categories, onCategoriesChange }: 
                       image_url: "",
                       in_stock: true,
                       stock_quantity: 10,
+                      discount_percentage: "",
                     });
                   }}
                 >

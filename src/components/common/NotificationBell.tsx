@@ -8,6 +8,7 @@ import { Bell, Check, CheckCircle, Clock } from 'lucide-react';
 import { db } from "@/integrations/firebase/config";
 import { collection, query, onSnapshot, updateDoc, doc, where } from "firebase/firestore";
 import { useAuth } from '@/hooks/useAuth';
+import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import RequestDetailsModal from './RequestDetailsModal';
 
 import AllRequestsModal from './AllRequestsModal';
@@ -18,6 +19,7 @@ const NotificationBell = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user, isAdmin } = useAuth();
+  const { user: customerUser, isAuthenticated: isCustomerAuthenticated } = useCustomerAuth();
   
   // Modal state
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
@@ -26,40 +28,62 @@ const NotificationBell = () => {
   // View All Modal state
   const [isViewAllOpen, setIsViewAllOpen] = useState(false);
 
-  // Fetch only pending medicine requests
+  // Ref for bell element
+  const bellRef = useRef<HTMLButtonElement>(null);
+
+  // Fetch medicine requests based on user type
   useEffect(() => {
-    if (!user || !isAdmin) return;
+    if ((!user || !isAdmin) && !isCustomerAuthenticated) return;
 
     setLoading(true);
 
-    // Fetch all pending requests and filter/sort client-side to avoid index issues
-    const q = query(
-      collection(db, "medicine_requests"),
-      where("status", "==", "pending")
-    );
+    let q;
+    
+    if (isAdmin && user) {
+      // Admin: fetch all pending requests
+      q = query(
+        collection(db, "medicine_requests"),
+        where("status", "==", "pending")
+      );
+    } else if (isCustomerAuthenticated && customerUser) {
+      // Customer: fetch only requests made by this customer
+      q = query(
+        collection(db, "medicine_requests"),
+        where("email", "==", customerUser.email)
+      );
+    } else {
+      return;
+    }
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       try {
-        const pendingRequests: any[] = querySnapshot.docs.map(doc => ({
+        const requests: any[] = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
 
-        // Client-side sort locally to ensure we get the latest without needing a composite index immediately
-        pendingRequests.sort((a, b) => {
+        // Client-side sort locally
+        requests.sort((a, b) => {
           const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
           const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
           return dateB - dateA;
         });
 
-        // Limit to 3 items
-        const limitedRequests = pendingRequests.slice(0, 3);
+        // For customers, show all their requests. For admins, limit to 3 pending
+        let limitedRequests;
+        if (isCustomerAuthenticated) {
+          limitedRequests = requests;
+        } else {
+          limitedRequests = requests.slice(0, 3);
+        }
 
         const formattedNotifications = limitedRequests.map(request => ({
           id: request.id,
           type: 'medicine_request_item',
           title: 'Medicine Request',
-          message: `Customer ${request.customer_name} requested ${request.medicine_name}`,
+          message: isAdmin 
+            ? `Customer ${request.customer_name} requested ${request.medicine_name}`
+            : `You requested ${request.medicine_name}`,
           created_at: request.created_at,
           status: request.status,
           read: false,
@@ -78,45 +102,9 @@ const NotificationBell = () => {
     });
 
     return () => unsubscribe();
-  }, [user, isAdmin]);
+  }, [user, isAdmin, isCustomerAuthenticated, customerUser]);
 
-  const handleNotificationClick = async (notification: any) => {
-    if (notification.type === 'medicine_request_item' && notification.original_data) {
-      try {
-        // Update status to in-progress
-        const requestRef = doc(db, 'medicine_requests', notification.id);
-        await updateDoc(requestRef, {
-          status: 'in_progress',
-          updated_at: new Date().toISOString()
-        });
-
-        // Set selected request and open modal
-        setSelectedRequest({
-          ...notification.original_data,
-          status: 'in_progress'
-        });
-        setIsModalOpen(true);
-      } catch (error) {
-        console.error('Error updating request status:', error);
-      }
-    }
-  };
-
-  // TEMPORARY DEBUGGING - Show visual indicator of auth state
-  // Only render the component if the user is authenticated and is an admin
-  if (!user || !isAdmin) {
-    return (
-      <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-red-500/20 border border-red-500/30">
-        <span className="text-white text-xs">?</span>
-        {user && <span className="absolute top-0 right-0 w-2 h-2 bg-yellow-400 rounded-full"></span>}
-        {isAdmin && <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-400 rounded-full"></span>}
-      </div>
-    );
-  }
-  
-  // Add ref to check if component is actually mounted
-  const bellRef = useRef<HTMLButtonElement>(null);
-  
+  // Bell ref effect - must come before any conditional returns
   useEffect(() => {
     if (bellRef.current) {
       const computedStyle = window.getComputedStyle(bellRef.current);
@@ -127,6 +115,40 @@ const NotificationBell = () => {
       }
     }
   }, []);
+
+  // Only render the component if the user is authenticated (admin or customer)
+  if ((!user || !isAdmin) && !isCustomerAuthenticated) {
+    return null;
+  }
+
+  const handleNotificationClick = async (notification: any) => {
+    if (notification.type === 'medicine_request_item' && notification.original_data) {
+      try {
+        // Only update status for admins
+        if (isAdmin) {
+          const requestRef = doc(db, 'medicine_requests', notification.id);
+          await updateDoc(requestRef, {
+            status: 'in_progress',
+            updated_at: new Date().toISOString()
+          });
+
+          setSelectedRequest({
+            ...notification.original_data,
+            status: 'in_progress'
+          });
+        } else {
+          // For customers, just open the modal without updating status
+          setSelectedRequest(notification.original_data);
+        }
+        setIsModalOpen(true);
+      } catch (error) {
+        console.error('Error handling notification click:', error);
+        // Still open modal even if status update fails
+        setSelectedRequest(notification.original_data);
+        setIsModalOpen(true);
+      }
+    }
+  };
 
   return (
     <>
@@ -189,7 +211,7 @@ const NotificationBell = () => {
           <div className="p-4 border-b flex justify-between items-center bg-gray-50/50">
             <h3 className="font-semibold text-sm flex items-center gap-2 text-gray-800">
               <Bell className="w-4 h-4 text-blue-600" />
-              Pending Requests
+              {isAdmin ? 'Pending Requests' : 'My Requests'}
             </h3>
             {notifications.length > 0 && (
               <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold">
@@ -245,17 +267,19 @@ const NotificationBell = () => {
               </div>
             )}
           </div>
-          <div className="p-3 border-t bg-gray-50/50">
-            <button
-              className="w-full py-2 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors flex items-center justify-center gap-1"
-              onClick={() => setIsViewAllOpen(true)}
-            >
-              View all requests
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </button>
-          </div>
+          {isAdmin && (
+            <div className="p-3 border-t bg-gray-50/50">
+              <button
+                className="w-full py-2 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors flex items-center justify-center gap-1"
+                onClick={() => setIsViewAllOpen(true)}
+              >
+                View all requests
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </button>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
 
@@ -267,6 +291,7 @@ const NotificationBell = () => {
           // The list updates automatically via onSnapshot
           // We can refresh selectedRequest if needed, but usually closing modal is fine
         }}
+        isReadOnly={!isAdmin}
       />
 
       <AllRequestsModal

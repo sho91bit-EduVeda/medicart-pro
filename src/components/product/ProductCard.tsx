@@ -19,6 +19,7 @@ interface ProductCardProps {
   quantity?: number;
   requires_prescription?: boolean;
   discountPercentage?: number;
+  productDiscountPercentage?: number;
   onClick?: () => void;
   variants?: Variants;
   custom?: Record<string, unknown>;
@@ -49,6 +50,7 @@ export default function ProductCard({
   quantity = 0,
   requires_prescription = false,
   discountPercentage = 0,
+  productDiscountPercentage,
   onClick,
   variants,
   custom,
@@ -116,14 +118,18 @@ export default function ProductCard({
     }
   };
 
-  const discountedPrice = original_price * (1 - discountPercentage / 100);
+  // Use product-specific discount if available, otherwise use global discount
+  const effectiveDiscount = productDiscountPercentage !== undefined && productDiscountPercentage > 0 
+    ? productDiscountPercentage 
+    : discountPercentage;
+  const discountedPrice = original_price * (1 - effectiveDiscount / 100);
 
   // Show request button only when out of stock AND showRequestOption is true
   const showRequestButton = quantity === 0 && showRequestOption;
 
   return (
     <motion.div 
-      className="group relative bg-card rounded-lg border overflow-hidden shadow-xs hover:shadow-sm transition-all duration-300 cursor-pointer"
+      className="group relative bg-card rounded-lg border overflow-hidden shadow-xs hover:shadow-sm transition-all duration-300 cursor-pointer h-full"
       onClick={handleClick}
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
@@ -142,17 +148,17 @@ export default function ProductCard({
           />
         ) : category_animation_data ? (
           <div className="w-full h-full bg-gradient-to-br from-primary/5 to-secondary/5 flex items-center justify-center">
-            <div className="w-16 h-16">
+            <div className="w-12 h-12 sm:w-16 sm:h-16">
               <LottieAnimation animationData={category_animation_data} />
             </div>
           </div>
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/5 to-secondary/5 flex items-center justify-center">
-            <IconComponent className="w-16 h-16 text-primary" />
+            <IconComponent className="w-12 h-12 sm:w-16 sm:h-16 text-primary" />
           </div>
         )}
         
-        <div className="absolute top-2 left-2">
+        <div className="absolute top-1.5 sm:top-2 left-1.5 sm:left-2">
           <motion.div animate={quantity > 0 && quantity <= 2 ? lowStockControls : {}}>
             <StockStatus quantity={quantity} />
           </motion.div>
@@ -162,10 +168,10 @@ export default function ProductCard({
           <Button
             variant="ghost"
             size="sm"
-            className="absolute top-2 right-2 rounded-full bg-white/80 hover:bg-white shadow-sm p-1.5"
+            className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 rounded-full bg-white/80 hover:bg-white shadow-sm p-1 sm:p-1.5"
             onClick={handleWishlistToggle}
           >
-            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
+            <Heart className={`w-3 h-3 sm:w-4 sm:h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
           </Button>
         )}
 
@@ -173,51 +179,51 @@ export default function ProductCard({
           {in_stock && deliveryEnabled && (
             <Button
               size="sm"
-              className="rounded-full shadow-md bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 h-7 px-2"
+              className="rounded-full shadow-md bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 h-6 sm:h-7 px-1.5 sm:px-2"
               onClick={handleAddToCart}
               disabled={!in_stock}
             >
-              <ShoppingCart className="w-3 h-3 mr-1" />
-              <span className="text-xs">Cart</span>
+              <ShoppingCart className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+              <span className="text-[0.65rem] sm:text-xs">Cart</span>
             </Button>
           )}
           {showRequestButton && (
             <RequestMedicineSheet medicineName={name} isFromProductSection={true}>
               <Button
                 size="sm"
-                className="rounded-full shadow-md bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 h-7 px-2"
+                className="rounded-full shadow-md bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 h-6 sm:h-7 px-1.5 sm:px-2"
                 onClick={(e) => {
                   // Prevent event from bubbling up to the card
                   e.stopPropagation();
                 }}
               >
-                <PackagePlus className="w-3 h-3 mr-1" />
-                <span className="text-xs">Request</span>
+                <PackagePlus className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+                <span className="text-[0.65rem] sm:text-xs">Request</span>
               </Button>
             </RequestMedicineSheet>
           )}
         </div>
       </div>
       
-      <div className="p-3">
-        <h3 className="font-medium text-sm line-clamp-2 mb-1.5">{name}</h3>
+      <div className="p-2 sm:p-3">
+        <h3 className="font-medium text-sm sm:text-sm line-clamp-2 mb-1 sm:mb-1.5">{name}</h3>
         
-        <div className="flex items-center gap-1.5 mb-2">
-          <span className="font-bold text-base">₹{discountedPrice.toFixed(2)}</span>
-          {discountPercentage > 0 && (
+        <div className="flex items-center gap-1 sm:gap-1.5 mb-1.5 sm:mb-2">
+          <span className="font-bold text-sm sm:text-base">₹{discountedPrice.toFixed(2)}</span>
+          {effectiveDiscount > 0 && (
             <>
               <span className="text-muted-foreground line-through text-xs">
                 ₹{original_price.toFixed(2)}
               </span>
-              <span className="text-xs bg-destructive/10 text-destructive px-1 py-0.5 rounded">
-                {discountPercentage}% OFF
+              <span className="text-[0.65rem] sm:text-xs bg-destructive/10 text-destructive px-1 py-0.5 rounded">
+                {effectiveDiscount}% OFF
               </span>
             </>
           )}
         </div>
         
         {requires_prescription && (
-          <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full mb-2">
+          <span className="inline-flex items-center px-1 py-0.5 text-[0.6rem] sm:text-xs font-medium bg-blue-100 text-blue-800 rounded-full mb-1.5 sm:mb-2">
             Prescription Required
           </span>
         )}
@@ -228,13 +234,13 @@ export default function ProductCard({
             <RequestMedicineSheet medicineName={name} isFromProductSection={true}>
               <Button 
                 size="sm"
-                className="w-full rounded-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 h-8 text-xs px-2"
+                className="w-full rounded-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 h-7 sm:h-8 text-[0.65rem] sm:text-xs px-1.5 sm:px-2"
                 onClick={(e) => {
                   // Prevent event from bubbling up to the card
                   e.stopPropagation();
                 }}
               >
-                <PackagePlus className="w-3 h-3 mr-1" />
+                <PackagePlus className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                 Request
               </Button>
             </RequestMedicineSheet>

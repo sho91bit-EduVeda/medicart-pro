@@ -16,6 +16,7 @@ interface MobileProductCardProps {
   quantity?: number;
   requires_prescription?: boolean;
   discountPercentage?: number;
+  productDiscountPercentage?: number;
   onClick?: () => void;
   variants?: Variants;
   custom?: Record<string, unknown>;
@@ -46,6 +47,7 @@ export default function MobileProductCard({
   quantity = 0,
   requires_prescription = false,
   discountPercentage = 0,
+  productDiscountPercentage,
   onClick,
   variants,
   custom,
@@ -100,7 +102,11 @@ export default function MobileProductCard({
     }
   };
 
-  const discountedPrice = original_price * (1 - discountPercentage / 100);
+  // Use product-specific discount if available, otherwise use global discount
+  const effectiveDiscount = productDiscountPercentage !== undefined && productDiscountPercentage > 0 
+    ? productDiscountPercentage 
+    : discountPercentage;
+  const discountedPrice = original_price * (1 - effectiveDiscount / 100);
 
   // Show request button only when out of stock AND showRequestOption is true
   const showRequestButton = quantity === 0 && showRequestOption;
@@ -199,13 +205,13 @@ export default function MobileProductCard({
         
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className="font-bold text-base text-gray-900">₹{discountedPrice.toFixed(2)}</span>
-          {discountPercentage > 0 && (
+          {effectiveDiscount > 0 && (
             <>
               <span className="text-gray-500 line-through text-sm">
                 ₹{original_price.toFixed(2)}
               </span>
               <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">
-                {discountPercentage}% OFF
+                {effectiveDiscount}% OFF
               </span>
             </>
           )}

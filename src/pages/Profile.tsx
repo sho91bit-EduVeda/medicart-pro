@@ -250,8 +250,8 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Quick Links Sidebar - Only show when authenticated */}
-      {isAuthenticated && <QuickLinksSidebar />}
+      {/* Quick Links Sidebar - Show when authenticated (owner or customer) */}
+      {(isAuthenticated || isCustomerAuthenticated) && <QuickLinksSidebar />}
 
       <CommonHeader />
 

@@ -106,7 +106,7 @@ const Products = () => {
         
         setCategories(categoriesData);
       } catch (error) {
-        console.error("Failed to fetch categories:", error);
+        // Error logging removed for production
       }
     };
 
@@ -138,7 +138,7 @@ const Products = () => {
         setProducts(productsData);
         setFilteredProducts(productsData);
       } catch (error) {
-        console.error("Failed to fetch products:", error);
+        // Error logging removed for production
       } finally {
         setLoading(false);
       }
@@ -319,6 +319,7 @@ const Products = () => {
                       name={product.name}
                       original_price={product.original_price}
                       discountPercentage={discountPercentage}
+                      productDiscountPercentage={product.discount_percentage}
                       image_url={product.image_url}
                       in_stock={product.in_stock}
                       quantity={product.stock_quantity || 0}

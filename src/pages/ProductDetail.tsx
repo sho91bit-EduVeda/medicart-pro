@@ -106,7 +106,11 @@ const ProductDetail = () => {
     );
   }
 
-  const discountedPrice = product.original_price * (1 - discountPercentage / 100);
+  // Use product-specific discount if available, otherwise use global discount
+  const effectiveDiscount = product.discount_percentage !== undefined && product.discount_percentage > 0 
+    ? product.discount_percentage 
+    : discountPercentage;
+  const discountedPrice = product.original_price * (1 - effectiveDiscount / 100);
   const savings = product.original_price - discountedPrice;
   const isWishlisted = isInWishlist(product.id);
 
@@ -198,16 +202,16 @@ const ProductDetail = () => {
                   <span className="text-4xl font-bold text-primary">
                     ₹{discountedPrice.toFixed(2)}
                   </span>
-                  {discountPercentage > 0 && (
+                  {effectiveDiscount > 0 && (
                     <span className="text-xl text-muted-foreground line-through">
                       ₹{product.original_price.toFixed(2)}
                     </span>
                   )}
                 </div>
-                {discountPercentage > 0 && (
+                {effectiveDiscount > 0 && (
                   <div className="flex items-center gap-2">
                     <Badge className="bg-destructive text-destructive-foreground">
-                      {discountPercentage}% OFF
+                      {effectiveDiscount}% OFF
                     </Badge>
                     <span className="text-secondary font-semibold">
                       You save ₹{savings.toFixed(2)}
