@@ -40,7 +40,7 @@ export const adminNavigationItems: AdminNavigationItem[] = [
   
   // Customer Relations Group
   { id: "orders", label: "Orders", icon: Package, category: "Customer Relations", requiresAuth: true, adminOnly: true },
-  { id: "customers", label: "Customers", icon: Users, category: "Customer Relations", path: "/owner/customers", external: true, requiresAuth: true, adminOnly: true },
+  { id: "customers", label: "Customers", icon: Users, category: "Customer Relations", requiresAuth: true, adminOnly: true },
   
   // Store Configuration Group
   { id: "settings", label: "Settings", icon: Settings, category: "Configuration", requiresAuth: true, adminOnly: true },

@@ -24,7 +24,7 @@ import NotFound from "./pages/NotFound";
 import ProductSelectorDemo from "./pages/ProductSelectorDemo";
 import AccordionDemo from "./components/ui-custom/AccordionDemo";
 import Profile from "./pages/Profile";
-import Customers from "./pages/Customers";
+// import Customers from "./pages/Customers";
 
 const queryClient = new QueryClient();
 
@@ -85,7 +85,7 @@ const App = () => (
             <Route path="/product-selector-demo" element={<ProductSelectorDemo />} />
             <Route path="/accordion-demo" element={<AccordionDemo />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/owner/customers" element={<Customers />} />
+            {/* <Route path="/owner/customers" element={<Customers />} /> */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db, auth } from "@/integrations/firebase/config";
-import { collection, getDocs, addDoc, doc, getDoc, setDoc, query, orderBy, deleteDoc, updateDoc, where, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, getDoc, setDoc, query, orderBy, deleteDoc, updateDoc, where, onSnapshot, Timestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,11 +18,20 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt, Info, AlertCircle, X, ArrowLeft, Home, LayoutDashboard, Users, ShoppingCart } from "lucide-react";
+import { LogOut, Plus, Percent, Package, Settings, MessageSquare, Database, Store, AlertTriangle, Truck, Trash, Pencil, Mail, Bell, TrendingUp, FileSpreadsheet, ChartBar, CheckCircle, Download, Receipt, Info, AlertCircle, X, ArrowLeft, Home, LayoutDashboard, Users, ShoppingCart, Edit, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ExcelUpload } from "@/components/common/ExcelUpload";
 import { IndianMedicineDatasetImport } from "@/components/admin/IndianMedicineDatasetImport";
 import { StorePurchase } from "@/components/layout/StorePurchase";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import { seedDatabase } from "@/utils/seedData";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
@@ -84,6 +93,17 @@ interface Offer {
   enabled: boolean;
   created_at: string;
   updated_at: string;
+}
+
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  created_at: Timestamp | string;
+  status: "active" | "inactive";
+  last_order_date?: Timestamp | string;
+  total_orders?: number;
 }
 
 interface NavigationItem {
@@ -243,6 +263,13 @@ const Owner = () => {
   useEffect(() => {
     if (activeSection === "orders") {
       fetchOrders();
+    }
+  }, [activeSection]);
+
+  // Fetch customers when customers section is active
+  useEffect(() => {
+    if (activeSection === "customers") {
+      fetchCustomers();
     }
   }, [activeSection]);
 
@@ -910,6 +937,20 @@ const Owner = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
+  // Customer state
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customersLoading, setCustomersLoading] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    phone: ""
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 5;
+
   const fetchOrders = async () => {
     setOrdersLoading(true);
     try {
@@ -941,6 +982,192 @@ const Owner = () => {
       }
     } finally {
       setOrdersLoading(false);
+    }
+  };
+
+  const fetchCustomers = async () => {
+    setCustomersLoading(true);
+    try {
+      // First, try to fetch from users collection (more reliable)
+      const usersQuery = query(
+        collection(db, "users"),
+        orderBy("created_at", "desc")
+      );
+      
+      const usersSnapshot = await getDocs(usersQuery);
+      
+      const usersData: Customer[] = [];
+      
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data();
+        // Only include users with customer or owner roles
+        if (userData.role === 'CUSTOMER' || userData.role === 'OWNER' || userData.role === 'customer' || userData.role === 'owner') {
+          // Try to get the actual Firebase Auth user to access metadata
+          const firebaseUser = auth.currentUser;
+          let lastLoginDate = null;
+          
+          // If this is the current user, use their metadata
+          if (firebaseUser && firebaseUser.uid === doc.id && firebaseUser.metadata.lastSignInTime) {
+            lastLoginDate = new Date(firebaseUser.metadata.lastSignInTime);
+          } 
+          // Otherwise, use the last_login from Firestore if available
+          else if (userData.last_login) {
+            const loginTime = userData.last_login;
+            if (loginTime instanceof Timestamp) {
+              lastLoginDate = loginTime.toDate();
+            } else if (typeof loginTime === 'string') {
+              lastLoginDate = new Date(loginTime);
+            } else if (loginTime && loginTime.seconds) {
+              lastLoginDate = new Date(loginTime.seconds * 1000);
+            }
+          }
+          // Fallback to updated_at if no last_login
+          else if (userData.updated_at) {
+            const updateTime = userData.updated_at;
+            if (updateTime instanceof Timestamp) {
+              lastLoginDate = updateTime.toDate();
+            } else if (typeof updateTime === 'string') {
+              lastLoginDate = new Date(updateTime);
+            } else if (updateTime && updateTime.seconds) {
+              lastLoginDate = new Date(updateTime.seconds * 1000);
+            }
+          }
+          
+          usersData.push({
+            id: doc.id,
+            name: userData.name || userData.displayName || 'Unknown User',
+            email: userData.email || 'No email',
+            phone: userData.phone || 'No phone',
+            created_at: userData.created_at ? new Date(userData.created_at) : new Date(),
+            status: userData.role === 'OWNER' || userData.role === 'owner' ? 'active' : 'active',
+            last_order_date: lastLoginDate,
+            total_orders: 0 // We don't have order data in users collection
+          });
+        } 
+      });
+      
+      
+      if (usersData.length > 0) {
+        setCustomers(usersData);
+        return;
+      }
+      
+      // Fallback to customers collection if users collection is empty
+      const customersQuery = query(
+        collection(db, "customers"),
+        orderBy("created_at", "desc")
+      );
+      
+      const customersSnapshot = await getDocs(customersQuery);
+      const customersData: Customer[] = customersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Customer, 'id'>)
+      }));
+      
+      setCustomers(customersData);
+      
+    } catch (error: any) {
+      // Check if the error is due to missing collection, permissions, or other Firebase issues
+      if (error.code === 'permission-denied' || 
+          error.message?.includes('permission') || 
+          error.message?.includes('insufficient')) {
+        // For permission errors, show empty array
+        setCustomers([]);
+      } else if (error.code === 'unavailable' || 
+                 error.message?.includes('unavailable') ||
+                 error.message?.includes('offline')) {
+        setCustomers([]);
+      }
+    } finally {
+      setCustomersLoading(false);
+    }
+  };
+
+  const formatDate = (date: Timestamp | string | Date): string => {
+    if (date instanceof Timestamp) {
+      return date.toDate().toLocaleDateString();
+    }
+    if (typeof date === 'string') {
+      return new Date(date).toLocaleDateString();
+    }
+    return date.toLocaleDateString();
+  };
+
+  const getStatusBadge = (status: string) => {
+    return (
+      <Badge variant={status === "active" ? "default" : "secondary"}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
+  };
+
+  // Handle edit customer
+  const handleEditCustomer = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setEditForm({
+      name: customer.name,
+      phone: customer.phone
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  // Handle save edited customer
+  const handleSaveCustomer = async () => {
+    if (!editingCustomer) return;
+    
+    try {
+      const customerRef = doc(db, "users", editingCustomer.id);
+      await updateDoc(customerRef, {
+        name: editForm.name,
+        phone: editForm.phone,
+        updated_at: new Date()
+      });
+      
+      // Update local state
+      setCustomers(customers.map(c => 
+        c.id === editingCustomer.id 
+          ? { ...c, name: editForm.name, phone: editForm.phone }
+          : c
+      ));
+      
+      toast.success("Customer updated successfully!");
+      setIsEditDialogOpen(false);
+      setEditingCustomer(null);
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      toast.error("Failed to update customer");
+    }
+  };
+
+  // Handle delete customer
+  const handleDeleteCustomer = (customer: Customer) => {
+    // Prevent deletion of owner accounts
+    if (customer.email.includes('shbhtshukla930')) {
+      toast.error("Cannot delete owner account");
+      return;
+    }
+    
+    setCustomerToDelete(customer);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Confirm delete customer
+  const confirmDeleteCustomer = async () => {
+    if (!customerToDelete) return;
+    
+    try {
+      const customerRef = doc(db, "users", customerToDelete.id);
+      await deleteDoc(customerRef);
+      
+      // Update local state
+      setCustomers(customers.filter(c => c.id !== customerToDelete.id));
+      
+      toast.success("Customer deleted successfully!");
+      setIsDeleteDialogOpen(false);
+      setCustomerToDelete(null);
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      toast.error("Failed to delete customer");
     }
   };
 
@@ -1002,7 +1229,7 @@ const Owner = () => {
         const sectionId = hash.substring(1);
         // Check if this section exists in our navigation items
         const sectionExists = navigationItems.some(item => item.id === sectionId);
-        if (sectionExists) {
+        if (sectionExists || sectionId === 'customers') { // Allow customers section as well
           setActiveSection(sectionId);
         }
         // Clear the hash from the URL without triggering navigation
@@ -1084,8 +1311,8 @@ const Owner = () => {
                               currentPath: window.location.pathname
                             });
                             
-                            // Handle external navigation
-                            if (item.external && item.path) {
+                            // Handle external navigation, but allow dashboard to navigate internally when already on owner page
+                            if (item.external && item.path && item.id !== "dashboard") {
                               console.log("Desktop sidebar - External navigation to:", item.path);
                               navigate(item.path);
                               return;
@@ -1103,6 +1330,16 @@ const Owner = () => {
                                   categorySection.scrollIntoView({ behavior: 'smooth' });
                                 }
                               }, 100);
+                            } else if (item.id === "customers") {
+                              // Navigate to customers section on the Owner page
+                              setActiveSection("customers");
+                              // Update URL hash to reflect the section
+                              window.location.hash = "customers";
+                            } else if (item.id === "dashboard") {
+                              // Navigate to dashboard section on the Owner page
+                              setActiveSection("dashboard-home");
+                              // Update URL hash to reflect the section
+                              window.location.hash = "dashboard-home";
                             } else {
                               setActiveSection(item.id);
                             }
@@ -1197,6 +1434,10 @@ const Owner = () => {
                     }, 100);
                   } else if (section === 'features') {
                     setActiveSection('features');
+                  } else if (section === 'dashboard') {
+                    setActiveSection('dashboard-home');
+                    // Update URL hash to reflect the section
+                    window.location.hash = 'dashboard-home';
                   } else {
                     setActiveSection(section);
                   }
@@ -1777,6 +2018,200 @@ const Owner = () => {
                           </div>
                         )}
                       </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
+
+            {/* Customers Management Section */}
+            {activeSection === "customers" && (
+              <Accordion type="single" collapsible className="w-full" defaultValue="customers-management">
+                <AccordionItem value="customers-management" className="border border-gray-200 rounded-lg mb-3 overflow-hidden">
+                  <AccordionTrigger className="w-full p-4 text-base font-medium text-gray-800 hover:text-gray-900 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      <span>Customer Management</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-4 bg-white/50">
+                    <div className="space-y-8">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h1 className="text-2xl font-bold">Registered Users</h1>
+                          <p className="text-muted-foreground">
+                            View all registered users and customers
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-8 w-8 text-primary" />
+                          <span className="text-2xl font-bold text-primary">{customers.length}</span>
+                        </div>
+                      </div>
+
+                      {/* Stats Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card className="bg-gradient-to-br from-blue-500/10 via-blue-600/10 to-indigo-600/10 border border-blue-200/50 hover:shadow-lg transition-all duration-300">
+                          <CardHeader className="pb-2">
+                            <CardDescription className="text-blue-700 dark:text-blue-300">Total Users</CardDescription>
+                            <CardTitle className="text-3xl text-blue-800 dark:text-blue-200">{customers.length}</CardTitle>
+                          </CardHeader>
+                        </Card>
+                        
+                        <Card className="bg-gradient-to-br from-green-500/10 via-green-600/10 to-emerald-600/10 border border-green-200/50 hover:shadow-lg transition-all duration-300">
+                          <CardHeader className="pb-2">
+                            <CardDescription className="text-green-700 dark:text-green-300">Active Customers</CardDescription>
+                            <CardTitle className="text-3xl text-green-800 dark:text-green-200">
+                              {customers.filter(c => c.status === "active").length}
+                            </CardTitle>
+                          </CardHeader>
+                        </Card>
+                        
+                        <Card className="bg-gradient-to-br from-purple-500/10 via-purple-600/10 to-violet-600/10 border border-purple-200/50 hover:shadow-lg transition-all duration-300">
+                          <CardHeader className="pb-2">
+                            <CardDescription className="text-purple-700 dark:text-purple-300">New This Month</CardDescription>
+                            <CardTitle className="text-3xl text-purple-800 dark:text-purple-200">
+                              {customers.filter(c => {
+                                const createdDate = c.created_at instanceof Timestamp 
+                                  ? c.created_at.toDate() 
+                                  : new Date(c.created_at);
+                                const oneMonthAgo = new Date();
+                                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                                return createdDate > oneMonthAgo;
+                              }).length}
+                            </CardTitle>
+                          </CardHeader>
+                        </Card>
+                      </div>
+
+                      {/* Customers Table */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>User List</CardTitle>
+                          <CardDescription>
+                            All registered users in the system
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {customersLoading ? (
+                            <div className="flex justify-center items-center h-64">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            </div>
+                          ) : customers.length === 0 ? (
+                            <div className="text-center py-12">
+                              <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                              <h3 className="text-lg font-medium mb-2">No users found</h3>
+                              <p className="text-muted-foreground mb-4">
+                                {customersLoading ? "Loading users..." : "Users will appear here once they register on your store"}
+                              </p>
+                              {customersLoading && (
+                                <div className="flex justify-center">
+                                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="rounded-md border overflow-hidden">
+                              <Table>
+                                <TableHeader className="bg-muted/50">
+                                  <TableRow>
+                                    <TableHead className="text-left md:table-cell">Name</TableHead>
+                                    <TableHead className="text-left md:table-cell">Email</TableHead>
+                                    <TableHead className="text-left hidden md:table-cell">Phone</TableHead>
+                                    <TableHead className="text-left hidden md:table-cell">Registration Date</TableHead>
+                                    <TableHead className="hidden md:table-cell text-left">Last Activity</TableHead>
+                                    <TableHead className="hidden sm:table-cell text-left">Role</TableHead>
+                                    <TableHead className="hidden md:table-cell text-left">Status</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {customers
+                                    .slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage)
+                                    .map((customer) => (
+                                      <TableRow key={customer.id} className="hover:bg-muted/50">
+                                        <TableCell className="font-medium text-left md:table-cell">{customer.name}</TableCell>
+                                        <TableCell className="text-muted-foreground text-left md:table-cell">{customer.email}</TableCell>
+                                        <TableCell className="text-left hidden md:table-cell">{customer.phone}</TableCell>
+                                        <TableCell className="text-left hidden md:table-cell">{formatDate(customer.created_at)}</TableCell>
+                                        <TableCell className="hidden md:table-cell text-left">
+                                          {customer.last_order_date 
+                                            ? formatDate(customer.last_order_date) 
+                                            : "No activity recorded"
+                                          }
+                                        </TableCell>
+                                        <TableCell className="hidden sm:table-cell text-left">
+                                          <Badge variant="outline">
+                                            {customer.email.includes('shbhtshukla930') ? 'OWNER' : 'CUSTOMER'}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell className="hidden md:table-cell text-left">{getStatusBadge(customer.status)}</TableCell>
+                                        <TableCell>
+                                          <div className="flex items-center gap-2 justify-end">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleEditCustomer(customer)}
+                                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                            >
+                                              <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleDeleteCustomer(customer)}
+                                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                              disabled={customer.email.includes('shbhtshukla930')}
+                                            >
+                                              <Trash className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                </TableBody>
+                              </Table>
+                              {/* Pagination */}
+                              <div className="flex items-center justify-between border-t px-6 py-3">
+                                <div className="text-sm text-muted-foreground">
+                                  Showing {Math.min((currentPage - 1) * recordsPerPage + 1, customers.length)} to {Math.min(currentPage * recordsPerPage, customers.length)} of {customers.length} users
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                  >
+                                    <ChevronLeft className="h-4 w-4" />
+                                  </Button>
+                                  <div className="flex items-center gap-1">
+                                    {Array.from({ length: Math.ceil(customers.length / recordsPerPage) }, (_, i) => i + 1).map(page => (
+                                      <Button
+                                        key={page}
+                                        variant={currentPage === page ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setCurrentPage(page)}
+                                        className="w-8 h-8 p-0"
+                                      >
+                                        {page}
+                                      </Button>
+                                    ))}
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(customers.length / recordsPerPage)))}
+                                    disabled={currentPage === Math.ceil(customers.length / recordsPerPage)}
+                                  >
+                                    <ChevronRight className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -2406,6 +2841,91 @@ const Owner = () => {
         onOpenChange={setIsModalOpen}
         onUpdate={fetchMedicineRequests}
       />
+      
+      {/* Edit Customer Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Customer</DialogTitle>
+            <DialogDescription>
+              Edit customer name and phone number. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name *
+              </Label>
+              <Input
+                id="name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">
+                Phone *
+              </Label>
+              <Input
+                id="phone"
+                value={editForm.phone}
+                onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                className="col-span-3"
+                required
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveCustomer}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this customer? This action cannot be undone.
+              {customerToDelete && (
+                <div className="mt-4 p-3 bg-red-50 rounded-lg">
+                  <p className="font-medium text-red-800">Customer to delete:</p>
+                  <p className="text-red-700">{customerToDelete.name} ({customerToDelete.email})</p>
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteCustomer}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Customer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
