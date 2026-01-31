@@ -76,11 +76,13 @@ service cloud.firestore {
     // User-specific data
     match /users/{userId} {
       // Allow users to read their own user document
-      allow read: if isOwner(userId);
+      // Allow admin users to read all user documents
+      allow read: if isOwner(userId) || isAdmin();
       // Allow authenticated users to create their own user document
       allow create: if isOwner(userId);
       // Allow users to update their own user document
-      allow update: if isOwner(userId);
+      // Allow admin users to update any user document
+      allow update: if isOwner(userId) || isAdmin();
       
       // Cart - Users can only access their own cart
       match /cart/{itemId} {
