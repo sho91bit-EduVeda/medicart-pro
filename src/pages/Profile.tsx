@@ -45,6 +45,9 @@ import logoImage from '@/assets/Logo.png';
 import RequestMedicineSheet from '@/components/common/RequestMedicineSheet';
 import CommonHeader from '@/components/layout/CommonHeader';
 import CompleteFooter from '@/components/layout/CompleteFooter';
+import EditProfilePopup from '@/components/common/EditProfilePopup';
+import ChangePasswordPopup from '@/components/common/ChangePasswordPopup';
+import NotificationSettingsPopup from '@/components/common/NotificationSettingsPopup';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -64,6 +67,56 @@ export default function Profile() {
   const isAnyUserLoggedIn = isAuthenticated || isCustomerAuthenticated;
   const currentUser = isAuthenticated ? ownerUser : customerUser;
   const isCurrentUserOwner = isAuthenticated && isAdmin;
+
+  // Function to refresh user data
+  const refreshUserData = () => {
+    if (isAuthenticated) {
+      checkAuth();
+    } else if (isCustomerAuthenticated) {
+      // For customer, we may need to reload customer auth state
+      // This depends on how the customer auth hook works
+    }
+    
+    // Reload user creation date
+    const loadUserCreationDate = async () => {
+      if (isAuthenticated && ownerUser?.uid) {
+        // Load owner creation date
+        try {
+          const userDoc = await getDoc(doc(db, "users", ownerUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setMemberSince(userData.created_at || '');
+          }
+        } catch (error) {
+          console.error('Error loading owner creation date:', error);
+        }
+      } else if (isCustomerAuthenticated && customerUser?.uid) {
+        // Load customer creation date
+        try {
+          const userDoc = await getDoc(doc(db, "customers", customerUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setMemberSince(userData.created_at || '');
+          }
+        } catch (error) {
+          console.error('Error loading customer creation date:', error);
+          // Fallback: try to find by email in users collection for customers
+          try {
+            // Attempt to find customer in users collection if not in customers collection
+            const userDoc = await getDoc(doc(db, "users", customerUser.uid));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              setMemberSince(userData.created_at || '');
+            }
+          } catch (fallbackError) {
+            console.error('Error loading customer creation date from fallback:', fallbackError);
+          }
+        }
+      }
+    };
+    
+    loadUserCreationDate();
+  };
 
   // Handle logout based on user type
   const handleLogout = async () => {
@@ -94,6 +147,9 @@ export default function Profile() {
   const [newOwnerConfirmPassword, setNewOwnerConfirmPassword] = useState('');
   const [loadingNewOwner, setLoadingNewOwner] = useState(false);
   
+  // State for member since date
+  const [memberSince, setMemberSince] = useState<string>('');
+  
   // Load owner login details if user is owner
   useEffect(() => {
     const loadOwnerDetails = async () => {
@@ -112,6 +168,48 @@ export default function Profile() {
     
     loadOwnerDetails();
   }, [isAuthenticated, isCurrentUserOwner, ownerUser?.uid]);
+  
+  // Load user creation date for both owners and customers
+  useEffect(() => {
+    const loadUserCreationDate = async () => {
+      if (isAuthenticated && ownerUser?.uid) {
+        // Load owner creation date
+        try {
+          const userDoc = await getDoc(doc(db, "users", ownerUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setMemberSince(userData.created_at || '');
+          }
+        } catch (error) {
+          console.error('Error loading owner creation date:', error);
+        }
+      } else if (isCustomerAuthenticated && customerUser?.uid) {
+        // Load customer creation date
+        try {
+          const userDoc = await getDoc(doc(db, "customers", customerUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setMemberSince(userData.created_at || '');
+          }
+        } catch (error) {
+          console.error('Error loading customer creation date:', error);
+          // Fallback: try to find by email in users collection for customers
+          try {
+            // Attempt to find customer in users collection if not in customers collection
+            const userDoc = await getDoc(doc(db, "users", customerUser.uid));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              setMemberSince(userData.created_at || '');
+            }
+          } catch (fallbackError) {
+            console.error('Error loading customer creation date from fallback:', fallbackError);
+          }
+        }
+      }
+    };
+    
+    loadUserCreationDate();
+  }, [isAuthenticated, isCustomerAuthenticated, ownerUser?.uid, customerUser?.uid]);
   
   // Handle owner login update
   const handleOwnerLoginUpdate = async () => {
@@ -243,6 +341,25 @@ export default function Profile() {
     }
   }, [isAnyUserLoggedIn, navigate]);
 
+  // Helper function to format date as '1st January 2026'
+  const formatDate = (date: Date): string => {
+    const day = date.getDate();
+    const month = date.toLocaleDateString('en-US', { month: 'long' });
+    const year = date.getFullYear();
+    
+    // Add ordinal suffix to day
+    let daySuffix = 'th';
+    if (day % 10 === 1 && day !== 11) {
+      daySuffix = 'st';
+    } else if (day % 10 === 2 && day !== 12) {
+      daySuffix = 'nd';
+    } else if (day % 10 === 3 && day !== 13) {
+      daySuffix = 'rd';
+    }
+    
+    return `${day}${daySuffix} ${month} ${year}`;
+  };
+  
   // Redirect if not authenticated
   if (!isAnyUserLoggedIn) {
     return null;
@@ -339,7 +456,7 @@ export default function Profile() {
                     <div>
                       <p className="text-sm text-muted-foreground">Member Since</p>
                       <p className="font-medium">
-                        N/A
+                        {memberSince ? formatDate(new Date(memberSince)) : 'N/A'}
                       </p>
                     </div>
                   </div>
@@ -357,38 +474,32 @@ export default function Profile() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      // Placeholder for profile editing functionality
-                      toast.info("Profile editing coming soon!");
-                    }}
-                  >
-                    Edit Profile
-                  </Button>
+                  <EditProfilePopup refreshUserData={refreshUserData}>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                    >
+                      Edit Profile
+                    </Button>
+                  </EditProfilePopup>
                             
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      // Placeholder for password change functionality
-                      toast.info("Password change coming soon!");
-                    }}
-                  >
-                    Change Password
-                  </Button>
+                  <ChangePasswordPopup refreshUserData={refreshUserData}>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                    >
+                      Change Password
+                    </Button>
+                  </ChangePasswordPopup>
                             
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      // Placeholder for notification settings functionality
-                      toast.info("Notification settings coming soon!");
-                    }}
-                  >
-                    Notification Settings
-                  </Button>
+                  <NotificationSettingsPopup refreshUserData={refreshUserData}>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                    >
+                      Notification Settings
+                    </Button>
+                  </NotificationSettingsPopup>
                             
                   <Button 
                     variant="destructive" 

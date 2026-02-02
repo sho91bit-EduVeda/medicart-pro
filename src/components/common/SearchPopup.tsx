@@ -42,7 +42,7 @@ import vitaminsAnim from "@/assets/animations/category-vitamins.json";
 interface Product {
   id: string;
   name: string;
-  description?: string;
+  description?: string;  // Contains manufacturer information
   original_price: number;
   image_url?: string;
   in_stock: boolean;
@@ -52,7 +52,7 @@ interface Product {
   };
   uses?: string;
   side_effects?: string;
-  composition?: string;
+  composition?: string;  // Contains composition information
   stock_quantity?: number;
   discount_percentage?: number;
 }
@@ -203,59 +203,74 @@ export function SearchPopup(props: SearchPopupProps) {
 
     setLoading(true);
     try {
-      // First try prefix search with lowercase (case-insensitive)
       const lowerSearchQuery = searchQuery.toLowerCase();
-      let q = query(
-        collection(db, "products"),
-        where("name", ">=", lowerSearchQuery),
-        where("name", "<=", lowerSearchQuery + "\uf8ff"),
-        limit(20)
-      );
-
-      let querySnapshot = await getDocs(q);
-      let productsData = querySnapshot.docs.map(doc => ({
+      
+      // Get all products and filter client-side across name, composition, and manufacturer
+      const allProductsSnapshot = await getDocs(collection(db, "products"));
+      const allProducts = allProductsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...(doc.data() as any)
       })) as Product[];
 
-      // If no results found with prefix search, try a broader search
-      if (productsData.length === 0) {
-        // Get all products and filter client-side (less efficient but more flexible)
-        const allProductsSnapshot = await getDocs(collection(db, "products"));
-        const allProducts = allProductsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...(doc.data() as any)
-        })) as Product[];
 
-        // Filter products that contain the search query
-        productsData = allProducts.filter(product =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
 
-        // Sort by relevance
-        productsData.sort((a, b) => {
-          const aName = a.name.toLowerCase();
-          const bName = b.name.toLowerCase();
-          const search = searchQuery.toLowerCase();
+      // Filter products that contain the search query in name, description (manufacturer), or composition
+      let productsData = allProducts.filter(product =>
+        product.name.toLowerCase().includes(lowerSearchQuery) ||
+        (product.description && product.description.toLowerCase().includes(lowerSearchQuery)) ||
+        (product.composition && product.composition.toLowerCase().includes(lowerSearchQuery))
+      );
 
-          // Exact matches first
-          if (aName === search) return -1;
-          if (bName === search) return 1;
+      // Sort by relevance: prioritize name matches (highest), then composition (medium), then description/manufacturer (lower)
+      
+      productsData.sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        const aDescription = a.description?.toLowerCase() || '';
+        const bDescription = b.description?.toLowerCase() || '';
+        const aComposition = a.composition?.toLowerCase() || '';
+        const bComposition = b.composition?.toLowerCase() || '';
+        
+        const search = lowerSearchQuery;
 
-          // Starts with search term
-          if (aName.startsWith(search)) return -1;
-          if (bName.startsWith(search)) return 1;
+        // Check if search term is in name (highest priority)
+        const aNameMatch = aName.includes(search);
+        const bNameMatch = bName.includes(search);
+        
+        // Check if search term is in composition (medium priority)
+        const aCompositionMatch = aComposition.includes(search);
+        const bCompositionMatch = bComposition.includes(search);
+        
+        // Check if search term is in description (manufacturer - lower priority)
+        const aDescriptionMatch = aDescription.includes(search);
+        const bDescriptionMatch = bDescription.includes(search);
 
-          // Contains search term
-          if (aName.includes(search)) return -1;
-          if (bName.includes(search)) return 1;
+        // Name matches first
+        if (aNameMatch && !bNameMatch) return -1;
+        if (!aNameMatch && bNameMatch) return 1;
+        
+        // Composition matches second
+        if (aCompositionMatch && !bCompositionMatch) return -1;
+        if (!aCompositionMatch && bCompositionMatch) return 1;
+        
+        // Description/manufacturer matches third
+        if (aDescriptionMatch && !bDescriptionMatch) return -1;
+        if (!aDescriptionMatch && bDescriptionMatch) return 1;
+        
+        // Within same category, prioritize exact matches
+        if (aName === search) return -1;
+        if (bName === search) return 1;
+        
+        // Then prioritize starts with
+        if (aName.startsWith(search) && !bName.startsWith(search)) return -1;
+        if (!aName.startsWith(search) && bName.startsWith(search)) return 1;
+        
+        // Finally, prioritize shorter names (more specific)
+        return aName.length - bName.length;
+      });
 
-          return 0;
-        });
-
-        // Limit to 20 results
-        productsData = productsData.slice(0, 20);
-      }
+      // Limit to 20 results
+      productsData = productsData.slice(0, 20);
 
       setProducts(productsData);
 

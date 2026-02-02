@@ -94,6 +94,9 @@ interface Product {
     name: string;
   };
   discount_percentage?: number;
+  composition?: string;
+  description?: string;
+  brand?: string;
 }
 
 
@@ -570,9 +573,12 @@ const Index = () => {
           ...(doc.data() as any)
         })) as Product[];
         
-        // Filter products that start with the search term
+        // Filter products that match the search term in name, composition, or description (manufacturer)
         productsData = allProductsData.filter(product =>
-          product.name.toLowerCase().startsWith(lowerSearchTerm)
+          product.name.toLowerCase().includes(lowerSearchTerm) ||
+          (product.composition && product.composition.toLowerCase().includes(lowerSearchTerm)) ||
+          (product.description && product.description.toLowerCase().includes(lowerSearchTerm)) ||
+          (product.brand && product.brand.toLowerCase().includes(lowerSearchTerm))
         ).slice(0, 5); // Limit to 5 results
       }
 
@@ -645,6 +651,8 @@ const Index = () => {
       // Filter products based on search query without affecting header search
       const filtered = productsSectionFilteredBase.filter(product =>
         product.name.toLowerCase().includes(productsSearchQuery.toLowerCase()) ||
+        (product.composition && product.composition.toLowerCase().includes(productsSearchQuery.toLowerCase())) ||
+        (product.description && product.description.toLowerCase().includes(productsSearchQuery.toLowerCase())) ||
         (product.brand && product.brand.toLowerCase().includes(productsSearchQuery.toLowerCase())) ||
         (product.categories && product.categories.name.toLowerCase().includes(productsSearchQuery.toLowerCase()))
       );
@@ -825,37 +833,6 @@ const Index = () => {
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 Search
-              </motion.button>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2 justify-center">
-              <motion.button className="rounded-full px-3 py-1.5 text-xs border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300"
-                whileHover={{ y: -2 }}
-                whileTap={{ y: 1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                Popular
-              </motion.button>
-              <motion.button className="rounded-full px-3 py-1.5 text-xs border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300"
-                whileHover={{ y: -2 }}
-                whileTap={{ y: 1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                Offers
-              </motion.button>
-              <motion.button className="rounded-full px-3 py-1.5 text-xs border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300"
-                whileHover={{ y: -2 }}
-                whileTap={{ y: 1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                New Arrivals
-              </motion.button>
-              <motion.button className="rounded-full px-3 py-1.5 text-xs border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-300"
-                whileHover={{ y: -2 }}
-                whileTap={{ y: 1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                Prescriptions
               </motion.button>
             </div>
           </div>
